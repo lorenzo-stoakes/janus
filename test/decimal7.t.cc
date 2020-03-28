@@ -52,6 +52,20 @@ TEST(Decimal7Test, Ctor)
 	EXPECT_EQ(d6.num_places(), 0);
 	EXPECT_EQ(d6.int64(), 123);
 	EXPECT_EQ(d6.fract(), 0);
+
+	// Trailing zeroes.
+	janus::decimal7 d7(123400, 3);
+	EXPECT_EQ(d7.raw(), 1234);
+	EXPECT_EQ(d7.num_places(), 1);
+	EXPECT_EQ(d7.int64(), 123);
+	EXPECT_EQ(d7.fract(), 4);
+
+	// Trailing zeroes to integer.
+	janus::decimal7 d8(123400, 2);
+	EXPECT_EQ(d8.raw(), 1234);
+	EXPECT_EQ(d8.num_places(), 0);
+	EXPECT_EQ(d8.int64(), 1234);
+	EXPECT_EQ(d8.fract(), 0);
 }
 
 // Test that the equality operators behave as expected.
@@ -66,5 +80,22 @@ TEST(Decimal7Test, Equality)
 	janus::decimal7 d3(-654321, 2);
 	EXPECT_NE(d1, d3);
 	EXPECT_NE(d2, d3);
+}
+
+// Test that values with trailing zeroes in the fractional portion of the value
+// but with equivalent values are in fact considered equal (e.g. 1.230 == 1.23).
+TEST(Decimal7Test, TrailingZeroEquality)
+{
+	janus::decimal7 d1(1230, 3);
+	janus::decimal7 d2(123, 2);
+	EXPECT_EQ(d1, d2);
+
+	janus::decimal7 d3(-1230, 3);
+	janus::decimal7 d4(-123, 2);
+	EXPECT_EQ(d3, d4);
+
+	janus::decimal7 d5(123000, 3);
+	janus::decimal7 d6(123, 0);
+	EXPECT_EQ(d5, d6);
 }
 } // namespace
