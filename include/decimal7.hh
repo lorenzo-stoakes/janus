@@ -1,7 +1,8 @@
 #pragma once
 #include <cstdint>
 
-namespace janus {
+namespace janus
+{
 // 64-bit representation of a floating point DECIMAL number with up to 7 decimal
 // places. All digits are stored integrally.
 //
@@ -33,9 +34,7 @@ class decimal7
 {
 public:
 	// Default to 0.
-	decimal7() : decimal7(0, 0)
-	{
-	}
+	decimal7() : decimal7(0, 0) {}
 
 	// Encode a value as decimal.
 	//    val: The integer representation of the full decimal number without
@@ -137,6 +136,7 @@ public:
 	{
 		return encoded;
 	}
+
 private:
 	static constexpr uint64_t PLACE_BITS = 3;
 	static constexpr uint64_t VALUE_BITS = 63 - PLACE_BITS;
