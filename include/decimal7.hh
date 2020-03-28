@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -42,32 +43,32 @@ public:
 	//    val: The integer representation of the full decimal number without
 	//         leading zeroes. E.g. for 1.234 this would be 1234.
 	// places: The number of decimal places, e.g. for 1.234, this would be 3.
-	decimal7(int64_t val, uint8_t places)
+	decimal7(int64_t val, uint8_t places) // NOLINT: encoded _is_ initialised.
 	{
 		normalise(val, places);
 		set(val, places);
 	}
 
 	// Equal to operator.
-	bool operator==(const decimal7& that) const
+	auto operator==(const decimal7& that) const -> bool
 	{
 		return encoded == that.encoded;
 	}
 
 	// Not equal to operator.
-	bool operator!=(const decimal7& that) const
+	auto operator!=(const decimal7& that) const -> bool
 	{
 		return !operator==(that);
 	}
 
 	// Number of decimal places.
-	uint8_t num_places() const
+	auto num_places() const -> uint8_t
 	{
 		return (encoded & PLACE_MASK) >> VALUE_BITS;
 	}
 
 	// Integer part of value.
-	int64_t int64() const
+	auto int64() const -> int64_t
 	{
 		return raw() / exp10();
 	}
@@ -75,14 +76,14 @@ public:
 	// Fractional part of value.
 	// It's important to note here that fract() will strip leading zeroes
 	// after the decimal point, e.g. 0.0003 wlll return fract() == 3.
-	uint64_t fract() const
+	auto fract() const -> uint64_t
 	{
 		int64_t n = raw();
 		return (n < 0 ? -n : n) % exp10();
 	}
 
 	// Convert to a double.
-	double to_double() const
+	auto to_double() const -> double
 	{
 		return static_cast<double>(raw()) / exp10();
 	}
@@ -97,7 +98,7 @@ public:
 	//   .mult10n(6) = 123400
 	//
 	// If req_places > MAX_PLACES then an exception is thrown.
-	int64_t mult10n(uint8_t req_places) const
+	auto mult10n(uint8_t req_places) const -> int64_t
 	{
 		if (req_places > MAX_PLACES)
 			throw std::runtime_error(
@@ -109,14 +110,14 @@ public:
 
 	// Returns raw integral value with 2 decimal places, e.g. 1.23 -> 123.
 	// Equivalent to .mult10n(2).
-	int64_t mult100() const
+	auto mult100() const -> int64_t
 	{
 		return mult10n_unsafe(2);
 	}
 
 	// Returns raw integral value with 3 decimal places, e.g. 1.234 -> 1234.
 	// Equivalent to .mult10n(3).
-	int64_t mult1000() const
+	auto mult1000() const -> int64_t
 	{
 		return mult10n_unsafe(3);
 	}
@@ -124,33 +125,34 @@ public:
 	// Returns the raw integral value (equivalent of removing the decimal
 	// point), e.g. for 1.234 this would return 1234.
 	// External callers probably don't need this.
-	int64_t raw() const
+	auto raw() const -> int64_t
 	{
 		uint64_t masked = encoded & VALUE_MASK;
 		// If this is a negative number we need to set the place bits
 		// as in 2's complement these would only be clear for a very
 		// large negative number.
-		if (masked & SIGN_MASK)
+		if ((masked & SIGN_MASK) == SIGN_MASK)
 			masked |= PLACE_MASK;
 
-		return reinterpret_cast<int64_t&>(masked);
+		return reinterpret_cast<int64_t&>(masked); // NOLINT
 	}
 
 	// Returns the raw value including number of places encoding. Probably
 	// nobody but a unit test will want this.
-	uint64_t raw_encoded() const
+	auto raw_encoded() const -> uint64_t
 	{
 		return encoded;
 	}
 
 private:
+	static constexpr int64_t BASE = 10;
 	static constexpr uint64_t PLACE_BITS = 3;
 	static constexpr uint64_t VALUE_BITS = 63 - PLACE_BITS;
 	static constexpr uint64_t MAX_PLACES = (1ULL << PLACE_BITS) - 1;
 	static constexpr uint64_t SIGN_MASK = 1ULL << 63;
 	static constexpr uint64_t VALUE_MASK = SIGN_MASK + (1ULL << VALUE_BITS) - 1;
 	static constexpr uint64_t PLACE_MASK = ~VALUE_MASK;
-	static constexpr int64_t POW10S[MAX_PLACES + 1] = {
+	static constexpr std::array<int64_t, MAX_PLACES + 1> POW10S = {
 		1, 10, 100, 1000, 10'000, 100'000, 1000'000, 10'000'000,
 	};
 
@@ -158,14 +160,14 @@ private:
 	uint64_t encoded;
 
 	// Returns 10^num_places.
-	int64_t exp10() const
+	auto exp10() const -> int64_t
 	{
 		return POW10S[num_places()];
 	}
 
 	// Normalise specified value and number of decimal places such that
 	// trailing zeroes are eliminated and places <= MAX_PLACES.
-	void normalise(int64_t& val, uint8_t& places) const
+	static void normalise(int64_t& val, uint8_t& places)
 	{
 		// Firstly, constrain the value to the maximum representable
 		// number of decimal places. E.g. 1.234 constrained to 2 places
@@ -175,8 +177,8 @@ private:
 		// and (123, 1) are equivalent. It is redundant to store the
 		// trailing zeroes and doing so breaks equality checks. This
 		// will also normalise zero values with places > 0 to (0, 0).
-		while (places > MAX_PLACES || (places > 0 && val % 10 == 0)) {
-			val /= 10;
+		while (places > MAX_PLACES || (places > 0 && val % BASE == 0)) {
+			val /= BASE;
 			places--;
 		}
 	}
@@ -184,21 +186,21 @@ private:
 	// Returns the raw integral value (equivalent of removing the decimal
 	// point) as if the number of places was now equal to req_places, i.e.
 	// floor(floating_point_value * 10^req_places).
-	int64_t mult10n_unsafe(uint8_t req_places) const
+	auto mult10n_unsafe(uint8_t req_places) const -> int64_t
 	{
 		uint8_t places = num_places();
 		if (req_places == places)
 			return raw();
-		else if (req_places > places)
+		if (req_places > places)
 			return raw() * POW10S[req_places - places];
-		else // req_places < places
-			return raw() / POW10S[places - req_places];
+		// req_places < places
+		return raw() / POW10S[places - req_places];
 	}
 
 	// Encode value and places and set raw value.
 	void set(int64_t val, uint8_t places)
 	{
-		encoded = reinterpret_cast<uint64_t&>(val) & VALUE_MASK;
+		encoded = reinterpret_cast<uint64_t&>(val) & VALUE_MASK; // NOLINT
 		encoded |= (static_cast<uint64_t>(places) << VALUE_BITS) & PLACE_MASK;
 	}
 };
