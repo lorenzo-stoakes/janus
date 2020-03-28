@@ -42,7 +42,7 @@ gtest_add_tests(testrunner "" AUTO)
 
 add_custom_target(test
 	COMMAND ./testrunner --gtest_shuffle
-	DEPENDS testrunner static
+	DEPENDS testrunner tidy cppcheck
 	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 )
 
@@ -65,7 +65,16 @@ add_custom_target(clangformat ALL
 	VERBATIM
 )
 
-add_custom_target(static
+add_custom_target(tidy
 	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${HEADER_SOURCES} ${JUPITER_SOURCES}
 	DEPENDS testrunner
+	COMMENT "Running clang-tidy..."
+	VERBATIM
+)
+
+add_custom_target(cppcheck
+	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet ${HEADER_SOURCES} ${JUPITER_SOURCES}
+	DEPENDS testrunner
+	COMMENT "Running cppcheck..."
+	VERBATIM
 )
