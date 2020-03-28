@@ -1,5 +1,6 @@
 #include "decimal7.hh"
 
+#include <cstdint>
 #include <gtest/gtest.h>
 
 namespace
@@ -66,6 +67,16 @@ TEST(Decimal7Test, Ctor)
 	EXPECT_EQ(d8.num_places(), 0);
 	EXPECT_EQ(d8.int64(), 1234);
 	EXPECT_EQ(d8.fract(), 0);
+
+	// Zero values with trailing zeroes.
+	for (uint8_t i = 0; i < 8; i++) {
+		janus::decimal7 d9(0, i);
+		EXPECT_EQ(d9.raw(), 0);
+		EXPECT_EQ(d9.num_places(), 0);
+		EXPECT_EQ(d9.raw_encoded(), 0);
+		EXPECT_EQ(d9.int64(), 0);
+		EXPECT_EQ(d9.fract(), 0);
+	}
 }
 
 // Test that the equality operators behave as expected.
@@ -97,5 +108,13 @@ TEST(Decimal7Test, TrailingZeroEquality)
 	janus::decimal7 d5(123000, 3);
 	janus::decimal7 d6(123, 0);
 	EXPECT_EQ(d5, d6);
+
+	// Zero values with trailing zeroes should also be equal.
+	janus::decimal7 d7(0, 0);
+	for (uint8_t i = 0; i < 8; i++) {
+		janus::decimal7 d8(0, i);
+
+		EXPECT_EQ(d7, d8);
+	}
 }
 } // namespace
