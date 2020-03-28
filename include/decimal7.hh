@@ -75,7 +75,8 @@ public:
 	// after the decimal point, e.g. 0.0003 wlll return fract() == 3.
 	uint64_t fract() const
 	{
-		return raw() % exp10();
+		int64_t n = raw();
+		return (n < 0 ? -n : n) % exp10();
 	}
 
 	// Convert to a double.
