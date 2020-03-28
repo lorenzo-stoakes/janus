@@ -4,13 +4,17 @@ include_directories(include)
 set(SHARED_COMPILE_OPTIONS
 	--std=gnu++2a -Wall -g)
 
+file(GLOB_RECURSE HEADER_SOURCES
+	"include/*.hh"
+)
+
 # Jupiter
 
 file(GLOB_RECURSE JUPITER_SOURCES
 	"src/jupiter/*.cc"
 )
 add_executable(jupiter
-        ${JUPITER_SOURCES}
+	${JUPITER_SOURCES}
 )
 target_compile_options(jupiter
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
@@ -27,7 +31,7 @@ add_executable(testrunner
 )
 target_compile_options(testrunner
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O0 -fno-omit-frame-pointer
-	-fsanitize=address,leak,undefined,null,return,signed-integer-overflow,bounds-strict,object-size
+	-fsanitize=address,leak,undefined,null,return,signed-integer-overflow,bounds,object-size
 )
 target_link_libraries(testrunner
 	asan
@@ -37,12 +41,13 @@ target_link_libraries(testrunner
 gtest_add_tests(testrunner "" AUTO)
 
 add_custom_target(test
-	COMMAND ./testrunner --gtest_shuffle --gtest_repeat=3
-	DEPENDS testrunner
-	WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
+	COMMAND ./testrunner --gtest_shuffle
+	DEPENDS testrunner static
+	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 )
 
-# clang-format
+# Static analysis
+
 add_custom_target(clangformat ALL
 	find
 	  ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -58,4 +63,9 @@ add_custom_target(clangformat ALL
 	| xargs -0 clang-format -i
 	COMMENT "Running clang-format..."
 	VERBATIM
+)
+
+add_custom_target(static
+	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${HEADER_SOURCES} ${JUPITER_SOURCES}
+	DEPENDS testrunner
 )
