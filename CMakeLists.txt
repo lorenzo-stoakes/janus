@@ -31,7 +31,7 @@ add_executable(testrunner
 )
 target_compile_options(testrunner
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O0 -fno-omit-frame-pointer
-	-fsanitize=address,leak,undefined,null,return,signed-integer-overflow,bounds-strict,object-size
+	-fsanitize=address,leak,undefined,null,return,signed-integer-overflow,bounds,object-size
 )
 target_link_libraries(testrunner
 	asan
