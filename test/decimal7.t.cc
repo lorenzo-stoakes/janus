@@ -396,6 +396,9 @@ TEST(decimal7_test, raw_encoded)
 	janus::decimal7 d3(0, 0);
 	EXPECT_EQ(d3.raw_encoded(), 0);
 
+	// Assert that the underlying data size is equal to that of a uint64_t.
+	EXPECT_EQ(sizeof(d3), sizeof(uint64_t));
+
 	// Avoid relying on implementation details too much, simply ensure that
 	// the underlying value is equal to .raw_encoded().
 	for (uint8_t i = 0; i < 8; i++) {
