@@ -1,5 +1,7 @@
 #pragma once
 #include <cstdint>
+#include <stdexcept>
+#include <string>
 
 namespace janus
 {
@@ -90,25 +92,33 @@ public:
 	// floor(floating_point_value * 10^req_places).
 	//
 	// E.g. for value 1.234:
-	//   .mult10(2) = 123
-	//   .mult10(4) = 1234
-	//   .mult10(6) = 123400
+	//   .mult10n(2) = 123
+	//   .mult10n(4) = 1234
+	//   .mult10n(6) = 123400
 	//
-	// If req_places > MAX_PLACES then this returns .mult10(MAX_PLACES).
-	// This would probably be unexpected behaviour for a caller, so best to
-	// ensure that req_places <= MAX_PLACES.
-	int64_t mult10(uint8_t req_places) const
+	// If req_places > MAX_PLACES then an exception is thrown.
+	int64_t mult10n(uint8_t req_places) const
 	{
-		// Constrain to max places.
-		req_places &= MAX_PLACES;
+		if (req_places > MAX_PLACES)
+			throw std::runtime_error(
+				"Requested places " + std::to_string(static_cast<int>(req_places)) +
+				" exceeds maximum of " + std::to_string(MAX_PLACES));
 
-		uint8_t places = num_places();
-		if (req_places == places)
-			return raw();
-		else if (req_places > places)
-			return raw() * POW10S[req_places - places];
-		else // req_places < places
-			return raw() / POW10S[places - req_places];
+		return mult10n_unsafe(req_places);
+	}
+
+	// Returns raw integral value with 2 decimal places, e.g. 1.23 -> 123.
+	// Equivalent to .mult10n(2).
+	int64_t mult100() const
+	{
+		return mult10n_unsafe(2);
+	}
+
+	// Returns raw integral value with 3 decimal places, e.g. 1.234 -> 1234.
+	// Equivalent to .mult10n(3).
+	int64_t mult1000() const
+	{
+		return mult10n_unsafe(3);
 	}
 
 	// Returns the raw integral value (equivalent of removing the decimal
@@ -169,6 +179,20 @@ private:
 			val /= 10;
 			places--;
 		}
+	}
+
+	// Returns the raw integral value (equivalent of removing the decimal
+	// point) as if the number of places was now equal to req_places, i.e.
+	// floor(floating_point_value * 10^req_places).
+	int64_t mult10n_unsafe(uint8_t req_places) const
+	{
+		uint8_t places = num_places();
+		if (req_places == places)
+			return raw();
+		else if (req_places > places)
+			return raw() * POW10S[req_places - places];
+		else // req_places < places
+			return raw() / POW10S[places - req_places];
 	}
 
 	// Encode value and places and set raw value.
