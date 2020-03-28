@@ -56,6 +56,6 @@ add_custom_target(clangformat ALL
 	  )
 	  -print0
 	| xargs -0 clang-format -i
-        COMMENT "Running clang-format..."
+	COMMENT "Running clang-format..."
 	VERBATIM
 )
