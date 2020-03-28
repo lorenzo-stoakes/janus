@@ -46,13 +46,13 @@ public:
 		set(val, places);
 	}
 
-	// Equality operator.
+	// Equal to operator.
 	bool operator==(const decimal7& that) const
 	{
 		return encoded == that.encoded;
 	}
 
-	// Negative equality operator.
+	// Not equal to operator.
 	bool operator!=(const decimal7& that) const
 	{
 		return !operator==(that);
@@ -71,6 +71,8 @@ public:
 	}
 
 	// Fractional part of value.
+	// It's important to note here that fract() will strip leading zeroes
+	// after the decimal point, e.g. 0.0003 wlll return fract() == 3.
 	uint64_t fract() const
 	{
 		return raw() % exp10();
