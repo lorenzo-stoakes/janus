@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.13.0)
 project(janus)
 include_directories(include)
-add_compile_options(--std=gnu++2a -Wall -O3 -g)
+set(SHARED_COMPILE_OPTIONS
+	--std=gnu++2a -Wall -g)
 
 # Jupiter
 
@@ -10,6 +11,9 @@ file(GLOB_RECURSE JUPITER_SOURCES
 )
 add_executable(jupiter
         ${JUPITER_SOURCES}
+)
+target_compile_options(jupiter
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
 )
 
 # Tests
@@ -21,10 +25,22 @@ file(GLOB_RECURSE TEST_SOURCES
 add_executable(testrunner
 	${TEST_SOURCES}
 )
+target_compile_options(testrunner
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O0 -fno-omit-frame-pointer
+	-fsanitize=address,leak,undefined,null,return,signed-integer-overflow,bounds-strict,object-size
+)
 target_link_libraries(testrunner
+	asan
+	ubsan
 	gtest
 )
 gtest_add_tests(testrunner "" AUTO)
+
+add_custom_target(test
+	COMMAND ./testrunner --gtest_shuffle --gtest_repeat=3
+	DEPENDS testrunner
+	WORKING_DIRECTORY ${CMAKE_PROJECT_DIR}
+)
 
 # clang-format
 add_custom_target(clangformat ALL
