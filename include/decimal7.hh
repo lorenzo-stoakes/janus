@@ -139,7 +139,7 @@ private:
 	static constexpr uint64_t SIGN_MASK = 1ULL << 63;
 	static constexpr uint64_t VALUE_MASK = SIGN_MASK + (1ULL << VALUE_BITS) - 1;
 	static constexpr uint64_t PLACE_MASK = ~VALUE_MASK;
-	static constexpr uint64_t POW10S[MAX_PLACES + 1] = {
+	static constexpr int64_t POW10S[MAX_PLACES + 1] = {
 		1, 10, 100, 1000, 10'000, 100'000, 1000'000, 10'000'000,
 	};
 
@@ -147,7 +147,7 @@ private:
 	uint64_t encoded;
 
 	// Returns 10^num_places.
-	uint64_t exp10() const
+	int64_t exp10() const
 	{
 		return POW10S[num_places()];
 	}
