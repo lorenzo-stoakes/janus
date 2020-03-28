@@ -156,14 +156,15 @@ private:
 	// trailing zeroes are eliminated and places <= MAX_PLACES.
 	void normalise(int64_t& val, uint8_t& places) const
 	{
-		// Firstly elminate redundant trailing zeroes - e.g. (1230, 2)
-		// and (123, 1) are equivalent. It is redundant to store the
-		// trailing zeroes and doing so breaks equality checks.
-		//
-		// Secondly, constrain the value to the maximum representable
+		// Firstly, constrain the value to the maximum representable
 		// number of decimal places. E.g. 1.234 constrained to 2 places
 		// would be encoded as 1.23.
-		while ((val != 0 && places > 0 && val % 10 == 0) || places > MAX_PLACES) {
+		//
+		// Secondly, elminate redundant trailing zeroes - e.g. (1230, 2)
+		// and (123, 1) are equivalent. It is redundant to store the
+		// trailing zeroes and doing so breaks equality checks. This
+		// will also normalise zero values with places > 0 to (0, 0).
+		while (places > MAX_PLACES || (places > 0 && val % 10 == 0)) {
 			val /= 10;
 			places--;
 		}
