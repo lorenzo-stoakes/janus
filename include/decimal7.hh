@@ -42,14 +42,7 @@ public:
 	// places: The number of decimal places, e.g. for 1.234, this would be 3.
 	decimal7(int64_t val, uint8_t places)
 	{
-		// Constrain the number to the maximum representable number of
-		// decimal places. E.g. 1.234 constrained to 2 places would be
-		// encoded as 1.23.
-		while (places > MAX_PLACES) {
-			val /= 10;
-			places--;
-		}
-
+		normalise(val, places);
 		set(val, places);
 	}
 
@@ -155,6 +148,23 @@ private:
 	uint64_t exp10() const
 	{
 		return POW10S[num_places()];
+	}
+
+	// Normalise specified value and number of decimal places such that
+	// trailing zeroes are eliminated and places <= MAX_PLACES.
+	void normalise(int64_t& val, uint8_t& places) const
+	{
+		// Firstly elminate redundant trailing zeroes - e.g. (1230, 2)
+		// and (123, 1) are equivalent. It is redundant to store the
+		// trailing zeroes and doing so breaks equality checks.
+		//
+		// Secondly, constrain the value to the maximum representable
+		// number of decimal places. E.g. 1.234 constrained to 2 places
+		// would be encoded as 1.23.
+		while ((val != 0 && places > 0 && val % 10 == 0) || places > MAX_PLACES) {
+			val /= 10;
+			places--;
+		}
 	}
 
 	// Encode value and places and set raw value.
