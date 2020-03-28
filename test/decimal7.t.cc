@@ -10,7 +10,7 @@ constexpr int64_t DECIMAL7_MAX = 1'152'921'504'606'846'975LL;
 constexpr int64_t DECIMAL7_MIN = -1'152'921'504'606'846'976LL;
 
 // Test that constructors behave as expected.
-TEST(Decimal7Test, Ctor)
+TEST(decimal7_test, ctor)
 {
 	// Default.
 	janus::decimal7 empty;
@@ -84,7 +84,7 @@ TEST(Decimal7Test, Ctor)
 }
 
 // Test that the equality operators behave as expected.
-TEST(Decimal7Test, Equality)
+TEST(decimal7_test, equality)
 {
 	janus::decimal7 d1(123456, 3);
 	janus::decimal7 d2(123456, 3);
@@ -99,7 +99,7 @@ TEST(Decimal7Test, Equality)
 
 // Test that values with trailing zeroes in the fractional portion of the value
 // but with equivalent values are in fact considered equal (e.g. 1.230 == 1.23).
-TEST(Decimal7Test, TrailingZeroEquality)
+TEST(decimal7_test, trailing_zero_equality)
 {
 	janus::decimal7 d1(1230, 3);
 	janus::decimal7 d2(123, 2);
@@ -123,7 +123,7 @@ TEST(Decimal7Test, TrailingZeroEquality)
 }
 
 // Ensure that the .num_places() method returns sane values in all cases.
-TEST(Decimal7Test, NumPlaces)
+TEST(decimal7_test, num_places)
 {
 	// Standard cases, from 0 - 7 decimal places.
 	int64_t n = 1;
@@ -173,7 +173,7 @@ TEST(Decimal7Test, NumPlaces)
 }
 
 // Ensure that the .int64() method returns sane values in all cases.
-TEST(Decimal7Test, Int64)
+TEST(decimal7_test, int64)
 {
 	// Some basic cases.
 
@@ -208,7 +208,7 @@ TEST(Decimal7Test, Int64)
 }
 
 // Ensure that the .fract() method returns sane values in all cases.
-TEST(Decimal7Test, Fract)
+TEST(decimal7_test, fract)
 {
 	// Some basic cases.
 
@@ -267,7 +267,7 @@ TEST(Decimal7Test, Fract)
 }
 
 // Ensure that the .to_double() method returns sane values in all cases.
-TEST(Decimal7Test, ToDouble)
+TEST(decimal7_test, to_double)
 {
 	// Some basic cases.
 
@@ -307,7 +307,7 @@ TEST(Decimal7Test, ToDouble)
 }
 
 // Ensure that the .mult10n() method returns sane values in all cases.
-TEST(Decimal7Test, Mult10n)
+TEST(decimal7_test, mult10n)
 {
 	// Some basic cases.
 
@@ -340,7 +340,7 @@ TEST(Decimal7Test, Mult10n)
 }
 
 // Ensure that .mult100(), .mult1000() function as hardcoded cases of mult10n.
-TEST(Decimal7Test, MultX)
+TEST(decimal7_test, multx)
 {
 	// Effectively the same tests as for .mult10n() but using the .mult100()
 	// and .mult1000() hardcoded methods.
@@ -359,7 +359,7 @@ TEST(Decimal7Test, MultX)
 }
 
 // Ensure that .raw() returns the raw integral value of the decimal.
-TEST(Decimal7Test, Raw)
+TEST(decimal7_test, raw)
 {
 	for (uint8_t i = 0; i < 8; i++) {
 		// Basic checks.
@@ -382,7 +382,7 @@ TEST(Decimal7Test, Raw)
 
 // Ensure that the .raw_encoded() function correclty returns the raw encoded
 // value.
-TEST(Decimal7Test, RawEncoded)
+TEST(decimal7_test, raw_encoded)
 {
 	// Without number of places the value will be identical to the raw
 	// value.
