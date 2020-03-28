@@ -14,7 +14,7 @@ file(GLOB_RECURSE JUPITER_SOURCES
 	"src/jupiter/*.cc"
 )
 add_executable(jupiter
-        ${JUPITER_SOURCES}
+	${JUPITER_SOURCES}
 )
 target_compile_options(jupiter
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
