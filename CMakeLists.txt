@@ -25,3 +25,21 @@ target_link_libraries(testrunner
 	gtest
 )
 gtest_add_tests(testrunner "" AUTO)
+
+# clang-format
+add_custom_target(clangformat ALL
+	find
+	  ${CMAKE_CURRENT_SOURCE_DIR}/src
+	  ${CMAKE_CURRENT_SOURCE_DIR}/test
+	  ${CMAKE_CURRENT_SOURCE_DIR}/include
+	  -type f
+	  (
+	  -name "*.cc"
+	  -o
+	  -name "*.hh"
+	  )
+	  -print0
+	| xargs -0 clang-format -i
+        COMMENT "Running clang-format..."
+	VERBATIM
+)
