@@ -44,7 +44,7 @@ gtest_add_tests(testrunner "" AUTO)
 
 add_custom_target(test
 	COMMAND ./testrunner --gtest_shuffle
-	DEPENDS testrunner tidy cppcheck
+	DEPENDS testrunner tidy cppcheck clangformat
 	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 )
 
