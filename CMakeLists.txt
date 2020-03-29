@@ -5,7 +5,9 @@ set(SHARED_COMPILE_OPTIONS
 	--std=gnu++2a -Wall -g)
 
 file(GLOB_RECURSE HEADER_SOURCES
-	"include/*.hh"
+	# Excluding sajson for now, will add once static issues resolved.
+	"include/janus.hh"
+	"include/decimal7.hh"
 )
 
 # Jupiter
