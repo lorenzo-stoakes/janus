@@ -2226,9 +2226,10 @@ private:
 					int max_suffix = INT64_MAX % 10;
 					if (negative)
 						max_suffix++;
-					if (suffix > max_suffix)
+					if (suffix > max_suffix) {
 						try_double = true;
-					d = i;
+						d = i;
+					}
 				}
 				if (SAJSON_UNLIKELY(try_double)) {
 					d = 10.0 * d + digit;
