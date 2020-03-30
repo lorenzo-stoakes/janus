@@ -4,6 +4,11 @@
 
 namespace
 {
+// These are a port of the unit tests from the original SAJSON repo to google
+// test. See the below link for the original code:
+// https://github.com/chadaustin/sajson/blob/8e8932148a2e4dcd1209a0438ec84acedf165077/tests/test.cpp
+namespace original_tests
+{
 using sajson::document;
 using sajson::literal;
 using sajson::string;
@@ -34,19 +39,19 @@ static size_t ast_buffer[ast_buffer_size];
 
 #define ABSTRACT_TEST(name)                                                                        \
 	static void name##internal(sajson::document (*parse)(const sajson::literal&));             \
-	TEST(sajson_test, single_allocation_##name)                                                \
+	TEST(sajson_original_test, single_allocation_##name)                                       \
 	{                                                                                          \
 		name##internal([](const sajson::literal& literal) {                                \
 			return sajson::parse(sajson::single_allocation(), literal);                \
 		});                                                                                \
 	}                                                                                          \
-	TEST(sajson_test, dynamic_allocation_##name)                                               \
+	TEST(sajson_original_test, dynamic_allocation_##name)                                      \
 	{                                                                                          \
 		name##internal([](const sajson::literal& literal) {                                \
 			return sajson::parse(sajson::dynamic_allocation(), literal);               \
 		});                                                                                \
 	}                                                                                          \
-	TEST(sajson_test, bounded_allocation_##name)                                               \
+	TEST(sajson_original_test, bounded_allocation_##name)                                      \
 	{                                                                                          \
 		name##internal([](const sajson::literal& literal) {                                \
 			return sajson::parse(                                                      \
@@ -183,7 +188,7 @@ ABSTRACT_TEST(more_array_integer_packing)
 	EXPECT_EQ(0, e4.get_integer_value());
 }
 
-// Integers
+// Integers.
 
 ABSTRACT_TEST(negative_and_positive_integers)
 {
@@ -285,7 +290,7 @@ ABSTRACT_TEST(unit_types)
 	EXPECT_EQ(TYPE_NULL, e2.get_type());
 }
 
-// Doubles
+// Doubles.
 
 ABSTRACT_TEST(doubles)
 {
@@ -430,7 +435,7 @@ ABSTRACT_TEST(invalid_utf8_prefix)
 	EXPECT_EQ(sajson::ERROR_INVALID_UTF8, document._internal_get_error_code());
 }
 
-// int53
+// int53.
 
 ABSTRACT_TEST(int32)
 {
@@ -496,7 +501,7 @@ ABSTRACT_TEST(endpoints)
 	EXPECT_EQ(false, e3.get_int53_value(&out));
 }
 
-// commas
+// Commas.
 
 ABSTRACT_TEST(leading_comma_array)
 {
@@ -534,7 +539,7 @@ ABSTRACT_TEST(trailing_comma_object)
 	EXPECT_EQ(sajson::ERROR_MISSING_OBJECT_KEY, document._internal_get_error_code());
 }
 
-// strings
+// Strings.
 
 ABSTRACT_TEST(strings)
 {
@@ -660,7 +665,7 @@ ABSTRACT_TEST(utf8_shifting)
 	EXPECT_STREQ("\n\xc2\x80\xe0\xa0\x80\xf0\x90\x80\x80", e0.as_cstring());
 }
 
-// objects
+// Objects.
 
 ABSTRACT_TEST(empty_object)
 {
@@ -1046,7 +1051,7 @@ ABSTRACT_TEST(object_array_with_integers)
 
 // API.
 
-TEST(sajson_test, mutable_string_view_assignment)
+TEST(sajson_original_test, mutable_string_view_assignment)
 {
 	sajson::mutable_string_view one(sajson::literal("hello"));
 	sajson::mutable_string_view two;
@@ -1056,7 +1061,7 @@ TEST(sajson_test, mutable_string_view_assignment)
 	EXPECT_EQ(5u, two.length());
 }
 
-TEST(sajson_test, mutable_string_view_self_assignment)
+TEST(sajson_original_test, mutable_string_view_self_assignment)
 {
 	sajson::mutable_string_view one(sajson::literal("hello"));
 	one = one;
@@ -1068,7 +1073,7 @@ static sajson::mutable_string_view&& my_move(sajson::mutable_string_view& that)
 	return std::move(that);
 }
 
-TEST(sajson_test, mutable_string_view_self_move_assignment)
+TEST(sajson_original_test, mutable_string_view_self_move_assignment)
 {
 	sajson::mutable_string_view one(sajson::literal("hello"));
 	one = my_move(one);
@@ -1077,7 +1082,7 @@ TEST(sajson_test, mutable_string_view_self_move_assignment)
 
 // Allocator.
 
-TEST(sajson_test, single_allocation_into_existing_memory)
+TEST(sajson_original_test, single_allocation_into_existing_memory)
 {
 	size_t buffer[2];
 	const sajson::document& document =
@@ -1089,7 +1094,7 @@ TEST(sajson_test, single_allocation_into_existing_memory)
 	EXPECT_EQ(0u, buffer[1]);
 }
 
-TEST(sajson_test, bounded_allocation_size_just_right)
+TEST(sajson_original_test, bounded_allocation_size_just_right)
 {
 	// This is awkward: the bounded allocator needs more memory in the worst
 	// case than the single-allocation allocator.  That's because sajson's
@@ -1108,7 +1113,7 @@ TEST(sajson_test, bounded_allocation_size_just_right)
 	EXPECT_EQ(0u, element.get_length());
 }
 
-TEST(sajson_test, bounded_allocation_size_too_small)
+TEST(sajson_original_test, bounded_allocation_size_too_small)
 {
 	// This is awkward: the bounded allocator needs more memory in the worst
 	// case than the single-allocation allocator.  That's because sajson's
@@ -1121,4 +1126,5 @@ TEST(sajson_test, bounded_allocation_size_too_small)
 	EXPECT_FALSE(document.is_valid());
 	EXPECT_EQ(sajson::ERROR_OUT_OF_MEMORY, document._internal_get_error_code());
 }
+} // namespace original_tests
 } // namespace
