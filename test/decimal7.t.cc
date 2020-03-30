@@ -6,9 +6,6 @@
 
 namespace
 {
-constexpr int64_t DECIMAL7_MAX = 1'152'921'504'606'846'975LL;
-constexpr int64_t DECIMAL7_MIN = -1'152'921'504'606'846'976LL;
-
 // Test that constructors behave as expected.
 TEST(decimal7_test, ctor)
 {
@@ -144,13 +141,13 @@ TEST(decimal7_test, num_places)
 
 	// Try some very large numbers.
 	for (uint8_t i = 0; i < 8; i++) {
-		janus::decimal7 d3(DECIMAL7_MAX, i);
+		janus::decimal7 d3(janus::decimal7::MAX, i);
 		EXPECT_EQ(d3.num_places(), i);
-		EXPECT_EQ(d3.raw(), DECIMAL7_MAX);
+		EXPECT_EQ(d3.raw(), janus::decimal7::MAX);
 
-		janus::decimal7 d4(DECIMAL7_MIN, i);
+		janus::decimal7 d4(janus::decimal7::MIN, i);
 		EXPECT_EQ(d4.num_places(), i);
-		EXPECT_EQ(d4.raw(), DECIMAL7_MIN);
+		EXPECT_EQ(d4.raw(), janus::decimal7::MIN);
 	}
 
 	// To risk duplicating other tests here, trailing zeroes should always
@@ -188,20 +185,20 @@ TEST(decimal7_test, int64)
 
 	// Large values.
 
-	janus::decimal7 d4(DECIMAL7_MAX, 0);
-	EXPECT_EQ(d4.int64(), DECIMAL7_MAX);
+	janus::decimal7 d4(janus::decimal7::MAX, 0);
+	EXPECT_EQ(d4.int64(), janus::decimal7::MAX);
 
-	janus::decimal7 d5(DECIMAL7_MIN, 0);
-	EXPECT_EQ(d5.int64(), DECIMAL7_MIN);
+	janus::decimal7 d5(janus::decimal7::MIN, 0);
+	EXPECT_EQ(d5.int64(), janus::decimal7::MIN);
 
 	// Now large values with decimal places.
 	int64_t mult = 1;
 	for (uint8_t i = 0; i < 8; i++) {
-		janus::decimal7 d6(DECIMAL7_MAX, i);
-		EXPECT_EQ(d6.int64(), DECIMAL7_MAX / mult);
+		janus::decimal7 d6(janus::decimal7::MAX, i);
+		EXPECT_EQ(d6.int64(), janus::decimal7::MAX / mult);
 
-		janus::decimal7 d7(DECIMAL7_MIN, i);
-		EXPECT_EQ(d7.int64(), DECIMAL7_MIN / mult);
+		janus::decimal7 d7(janus::decimal7::MIN, i);
+		EXPECT_EQ(d7.int64(), janus::decimal7::MIN / mult);
 
 		mult *= 10;
 	}
@@ -224,11 +221,11 @@ TEST(decimal7_test, fract)
 	// Now large values with decimal places.
 	int64_t mult = 1;
 	for (uint8_t i = 0; i < 8; i++) {
-		janus::decimal7 d4(DECIMAL7_MAX, i);
-		EXPECT_EQ(d4.fract(), DECIMAL7_MAX % mult);
+		janus::decimal7 d4(janus::decimal7::MAX, i);
+		EXPECT_EQ(d4.fract(), janus::decimal7::MAX % mult);
 
-		janus::decimal7 d5(DECIMAL7_MIN, i);
-		EXPECT_EQ(d5.fract(), -DECIMAL7_MIN % mult);
+		janus::decimal7 d5(janus::decimal7::MIN, i);
+		EXPECT_EQ(d5.fract(), -janus::decimal7::MIN % mult);
 
 		mult *= 10;
 	}
@@ -293,12 +290,12 @@ TEST(decimal7_test, to_double)
 
 	// Some larger numbers.
 
-	double max = DECIMAL7_MAX;
-	double min = DECIMAL7_MIN;
+	double max = janus::decimal7::MAX;
+	double min = janus::decimal7::MIN;
 	for (uint8_t i = 0; i < 8; i++) {
-		janus::decimal7 d9(DECIMAL7_MAX, i);
+		janus::decimal7 d9(janus::decimal7::MAX, i);
 		EXPECT_DOUBLE_EQ(d9.to_double(), max);
-		janus::decimal7 d10(DECIMAL7_MIN, i);
+		janus::decimal7 d10(janus::decimal7::MIN, i);
 		EXPECT_DOUBLE_EQ(d10.to_double(), min);
 
 		max /= 10;
@@ -373,10 +370,10 @@ TEST(decimal7_test, raw)
 		EXPECT_EQ(d3.raw(), 0);
 
 		// Try some large numbers.
-		janus::decimal7 d4(DECIMAL7_MAX, i);
-		EXPECT_EQ(d4.raw(), DECIMAL7_MAX);
-		janus::decimal7 d5(DECIMAL7_MIN, i);
-		EXPECT_EQ(d5.raw(), DECIMAL7_MIN);
+		janus::decimal7 d4(janus::decimal7::MAX, i);
+		EXPECT_EQ(d4.raw(), janus::decimal7::MAX);
+		janus::decimal7 d5(janus::decimal7::MIN, i);
+		EXPECT_EQ(d5.raw(), janus::decimal7::MIN);
 	}
 }
 

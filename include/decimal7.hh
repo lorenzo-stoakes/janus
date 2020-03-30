@@ -36,6 +36,9 @@ namespace janus
 class decimal7
 {
 public:
+	static constexpr int64_t MIN = -1'152'921'504'606'846'976;
+	static constexpr int64_t MAX = 1'152'921'504'606'846'975;
+
 	// Default to 0.
 	decimal7() : decimal7(0, 0) {}
 
