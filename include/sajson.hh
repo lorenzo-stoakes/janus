@@ -39,6 +39,9 @@
 #include <string> // for convenient access to error messages and string values.
 #endif
 
+// Only usable on a 64-bit platform.
+static_assert(sizeof(size_t) == sizeof(uint64_t));
+
 #if defined(__GNUC__) || defined(__clang__)
 #define SAJSON_LIKELY(x) __builtin_expect(!!(x), 1)
 #define SAJSON_UNLIKELY(x) __builtin_expect(!!(x), 0)
