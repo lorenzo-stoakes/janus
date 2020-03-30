@@ -329,7 +329,7 @@ ABSTRACT_TEST(large_number)
 	EXPECT_EQ(9223372036854775807LL, element.get_integer_value());
 
 	int64_t out;
-	EXPECT_EQ(true, element.get_int53_value(&out));
+	EXPECT_EQ(true, element.try_get_integer_value(&out));
 	EXPECT_EQ(9223372036854775807LL, out);
 }
 
@@ -448,7 +448,7 @@ ABSTRACT_TEST(int32)
 	const value& element = root.get_array_element(0);
 
 	int64_t out;
-	EXPECT_EQ(true, element.get_int53_value(&out));
+	EXPECT_EQ(true, element.try_get_integer_value(&out));
 	EXPECT_EQ(-54, out);
 }
 
@@ -460,7 +460,7 @@ ABSTRACT_TEST(integer_double)
 	const value& element = root.get_array_element(0);
 
 	int64_t out;
-	EXPECT_EQ(true, element.get_int53_value(&out));
+	EXPECT_EQ(true, element.try_get_integer_value(&out));
 	EXPECT_EQ(10, out);
 }
 
@@ -474,7 +474,7 @@ ABSTRACT_TEST(non_integer_double)
 	EXPECT_EQ(10.5, element.get_double_value());
 
 	int64_t out;
-	EXPECT_EQ(false, element.get_int53_value(&out));
+	EXPECT_EQ(false, element.try_get_integer_value(&out));
 }
 
 ABSTRACT_TEST(endpoints)
@@ -490,14 +490,14 @@ ABSTRACT_TEST(endpoints)
 
 	int64_t out;
 
-	EXPECT_EQ(true, e0.get_int53_value(&out));
+	EXPECT_EQ(true, e0.try_get_integer_value(&out));
 	EXPECT_EQ(-9223372036854775807LL - 1, out);
 
-	EXPECT_EQ(true, e1.get_int53_value(&out));
+	EXPECT_EQ(true, e1.try_get_integer_value(&out));
 	EXPECT_EQ(9223372036854775807LL, out);
 
-	EXPECT_EQ(false, e2.get_int53_value(&out));
-	EXPECT_EQ(false, e3.get_int53_value(&out));
+	EXPECT_EQ(false, e2.try_get_integer_value(&out));
+	EXPECT_EQ(false, e3.try_get_integer_value(&out));
 }
 
 // Commas.

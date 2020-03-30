@@ -572,13 +572,10 @@ public:
 	}
 
 	/// Returns true and writes to the output argument if the numeric value
-	/// fits in a 53-bit integer.  This is useful for timestamps and other
-	/// situations where integral values with greater than 32-bit precision
-	/// are used, as 64-bit values are not understood by all JSON
-	/// implementations or languages.
-	/// Returns false if the value is not an integer or not in range.
+	/// fits in a 64-bit integer.
+	/// Returns false if the value is not an int64 or not in range.
 	/// Only legal if get_type() is TYPE_INTEGER or TYPE_DOUBLE.
-	bool get_int53_value(int64_t* out) const
+	bool try_get_integer_value(int64_t* out) const
 	{
 		// Make sure the output variable is always defined to avoid any
 		// possible situation like
@@ -591,6 +588,8 @@ public:
 			return true;
 		} else if (get_type() == TYPE_DOUBLE) {
 			double v = get_double_value();
+			// A double cannot accurately represent an integer value
+			// with more than 53 bits of significand.
 			if (v < -(1LL << 53) || v > (1LL << 53)) {
 				return false;
 			}
