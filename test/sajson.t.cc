@@ -878,7 +878,7 @@ ABSTRACT_TEST(two_roots_are_invalid)
 	const sajson::document& document = parse(literal("[][]"));
 	EXPECT_EQ(false, document.is_valid());
 	EXPECT_EQ(1u, document.get_error_line());
-	// EXPECT_EQ(3, document.get_error_column());
+	EXPECT_EQ(3, document.get_error_column());
 	EXPECT_EQ(sajson::ERROR_EXPECTED_END_OF_INPUT, document._internal_get_error_code());
 }
 
@@ -905,7 +905,7 @@ ABSTRACT_TEST(commas_are_necessary_between_elements)
 	const sajson::document& document = parse(literal("[0 0]"));
 	EXPECT_EQ(false, document.is_valid());
 	EXPECT_EQ(1u, document.get_error_line());
-	// EXPECT_EQ(3, document.get_error_column());
+	EXPECT_EQ(4, document.get_error_column());
 	EXPECT_EQ(sajson::ERROR_EXPECTED_COMMA, document._internal_get_error_code());
 }
 
@@ -950,7 +950,7 @@ ABSTRACT_TEST(invalid_true_literal)
 	const sajson::document& document = parse(literal("[truf"));
 	EXPECT_EQ(false, document.is_valid());
 	EXPECT_EQ(1u, document.get_error_line());
-	// EXPECT_EQ(3, document.get_error_column());
+	EXPECT_EQ(2, document.get_error_column());
 	EXPECT_EQ(sajson::ERROR_EXPECTED_TRUE, document._internal_get_error_code());
 }
 
@@ -959,7 +959,7 @@ ABSTRACT_TEST(incomplete_true_literal)
 	const sajson::document& document = parse(literal("[tru"));
 	EXPECT_EQ(false, document.is_valid());
 	EXPECT_EQ(1u, document.get_error_line());
-	// EXPECT_EQ(3, document.get_error_column());
+	EXPECT_EQ(2, document.get_error_column());
 	EXPECT_EQ(sajson::ERROR_UNEXPECTED_END, document._internal_get_error_code());
 }
 
@@ -968,7 +968,7 @@ ABSTRACT_TEST(must_close_array_with_square_bracket)
 	const sajson::document& document = parse(literal("[}"));
 	EXPECT_EQ(false, document.is_valid());
 	EXPECT_EQ(1u, document.get_error_line());
-	// EXPECT_EQ(3, document.get_error_column());
+	EXPECT_EQ(2, document.get_error_column());
 	EXPECT_EQ(sajson::ERROR_EXPECTED_VALUE, document._internal_get_error_code());
 }
 
