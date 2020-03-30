@@ -48,12 +48,30 @@ add_custom_target(test
 	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 )
 
+# Benchmark
+
+file(GLOB_RECURSE BENCH_SOURCES
+	"bench/sajson/*.cc"
+)
+add_executable(benchmark
+        ${BENCH_SOURCES}
+)
+target_compile_options(benchmark
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
+)
+add_custom_target(bench
+	COMMAND ${PROJECT_BINARY_DIR}/benchmark
+	DEPENDS benchmark clangformat
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 # Static analysis
 
 add_custom_target(clangformat ALL
 	find
 	  ${CMAKE_CURRENT_SOURCE_DIR}/src
 	  ${CMAKE_CURRENT_SOURCE_DIR}/test
+	  ${CMAKE_CURRENT_SOURCE_DIR}/bench
 	  ${CMAKE_CURRENT_SOURCE_DIR}/include
 	  -type f
 	  (
