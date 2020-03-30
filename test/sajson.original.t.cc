@@ -2,6 +2,10 @@
 // test. See the below link for the original code:
 // https://github.com/chadaustin/sajson/blob/8e8932148a2e4dcd1209a0438ec84acedf165077/tests/test.cpp
 
+// The tests have been updated to reflect changes I have made to the
+// implementation where not doing so would result in these tests failing
+// arbitrarily.
+
 #include "sajson.hh"
 
 #include <gtest/gtest.h>
@@ -314,19 +318,19 @@ ABSTRACT_TEST(doubles)
 
 ABSTRACT_TEST(large_number)
 {
-	const auto& document = parse(literal("[1496756396000]"));
+	const auto& document = parse(literal("[9223372036854775807]"));
 	assert(success(document));
 	const value& root = document.get_root();
 	EXPECT_EQ(TYPE_ARRAY, root.get_type());
 	EXPECT_EQ(1u, root.get_length());
 
 	const value& element = root.get_array_element(0);
-	EXPECT_EQ(TYPE_DOUBLE, element.get_type());
-	EXPECT_EQ(1496756396000.0, element.get_double_value());
+	EXPECT_EQ(TYPE_INTEGER, element.get_type());
+	EXPECT_EQ(9223372036854775807LL, element.get_integer_value());
 
 	int64_t out;
 	EXPECT_EQ(true, element.get_int53_value(&out));
-	EXPECT_EQ(1496756396000LL, out);
+	EXPECT_EQ(9223372036854775807LL, out);
 }
 
 ABSTRACT_TEST(exponents)
@@ -359,12 +363,12 @@ ABSTRACT_TEST(long_no_exponent)
 	EXPECT_EQ(2u, root.get_length());
 
 	const value& e0 = root.get_array_element(0);
-	EXPECT_EQ(TYPE_DOUBLE, e0.get_type());
-	EXPECT_EQ(9999999999.0, e0.get_double_value());
+	EXPECT_EQ(TYPE_INTEGER, e0.get_type());
+	EXPECT_EQ(9999999999LL, e0.get_integer_value());
 
 	const value& e1 = root.get_array_element(1);
-	EXPECT_EQ(TYPE_DOUBLE, e1.get_type());
-	EXPECT_EQ(99999999999.0, e1.get_double_value());
+	EXPECT_EQ(TYPE_INTEGER, e1.get_type());
+	EXPECT_EQ(99999999999, e1.get_integer_value());
 }
 
 ABSTRACT_TEST(exponent_offset)
@@ -475,12 +479,8 @@ ABSTRACT_TEST(non_integer_double)
 
 ABSTRACT_TEST(endpoints)
 {
-	// TODO: What should we do about (1<<53)+1?
-	// When parsed into a double it loses that last bit of precision, so
-	// sajson doesn't distinguish between 9007199254740992 and 9007199254740993.
-	// So for now ignore this boundary condition and unit test one extra value away.
 	const auto& document = parse(literal(
-		"[-9007199254740992, 9007199254740992, -9007199254740994, 9007199254740994]"));
+		"[-9223372036854775808, 9223372036854775807, -9223372036854775809, 9223372036854775808]"));
 	assert(success(document));
 	const value& root = document.get_root();
 	const value& e0 = root.get_array_element(0);
@@ -491,10 +491,10 @@ ABSTRACT_TEST(endpoints)
 	int64_t out;
 
 	EXPECT_EQ(true, e0.get_int53_value(&out));
-	EXPECT_EQ(-9007199254740992LL, out);
+	EXPECT_EQ(-9223372036854775807LL - 1, out);
 
 	EXPECT_EQ(true, e1.get_int53_value(&out));
-	EXPECT_EQ(9007199254740992LL, out);
+	EXPECT_EQ(9223372036854775807LL, out);
 
 	EXPECT_EQ(false, e2.get_int53_value(&out));
 	EXPECT_EQ(false, e3.get_int53_value(&out));
