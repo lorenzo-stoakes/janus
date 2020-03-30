@@ -1,13 +1,12 @@
+// These are a port of the unit tests from the original SAJSON repo to google
+// test. See the below link for the original code:
+// https://github.com/chadaustin/sajson/blob/8e8932148a2e4dcd1209a0438ec84acedf165077/tests/test.cpp
+
 #include "sajson.hh"
 
 #include <gtest/gtest.h>
 
 namespace
-{
-// These are a port of the unit tests from the original SAJSON repo to google
-// test. See the below link for the original code:
-// https://github.com/chadaustin/sajson/blob/8e8932148a2e4dcd1209a0438ec84acedf165077/tests/test.cpp
-namespace original_tests
 {
 using sajson::document;
 using sajson::literal;
@@ -1126,5 +1125,4 @@ TEST(sajson_original_test, bounded_allocation_size_too_small)
 	EXPECT_FALSE(document.is_valid());
 	EXPECT_EQ(sajson::ERROR_OUT_OF_MEMORY, document._internal_get_error_code());
 }
-} // namespace original_tests
 } // namespace
