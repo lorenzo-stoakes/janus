@@ -55,7 +55,7 @@ public:
 	// Equal to operator.
 	auto operator==(const decimal7& that) const -> bool
 	{
-		return encoded == that.encoded;
+		return _encoded == that._encoded;
 	}
 
 	// Not equal to operator.
@@ -67,7 +67,7 @@ public:
 	// Number of decimal places.
 	auto num_places() const -> uint8_t
 	{
-		return (encoded & PLACE_MASK) >> VALUE_BITS;
+		return (_encoded & PLACE_MASK) >> VALUE_BITS;
 	}
 
 	// Integer part of value.
@@ -130,7 +130,7 @@ public:
 	// External callers probably don't need this.
 	auto raw() const -> int64_t
 	{
-		uint64_t masked = encoded & VALUE_MASK;
+		uint64_t masked = _encoded & VALUE_MASK;
 		// If this is a negative number we need to set the place bits
 		// as in 2's complement these would only be clear for a very
 		// large negative number.
@@ -144,7 +144,7 @@ public:
 	// nobody but a unit test will want this.
 	auto raw_encoded() const -> uint64_t
 	{
-		return encoded;
+		return _encoded;
 	}
 
 private:
@@ -160,7 +160,7 @@ private:
 	};
 
 	// The entirety of the data this type stores - a 64-bit value.
-	uint64_t encoded;
+	uint64_t _encoded;
 
 	// Returns 10^num_places.
 	auto exp10() const -> int64_t
@@ -203,8 +203,8 @@ private:
 	// Encode value and places and set raw value.
 	void set(int64_t val, uint8_t places)
 	{
-		encoded = reinterpret_cast<uint64_t&>(val) & VALUE_MASK; // NOLINT
-		encoded |= (static_cast<uint64_t>(places) << VALUE_BITS) & PLACE_MASK;
+		_encoded = reinterpret_cast<uint64_t&>(val) & VALUE_MASK; // NOLINT
+		_encoded |= (static_cast<uint64_t>(places) << VALUE_BITS) & PLACE_MASK;
 	}
 };
 } // namespace janus
