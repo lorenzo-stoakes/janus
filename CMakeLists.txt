@@ -57,7 +57,7 @@ add_executable(benchmark
         ${BENCH_SOURCES}
 )
 target_compile_options(benchmark
-	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3 -DNDEBUG
 )
 add_custom_target(bench
 	COMMAND ${PROJECT_BINARY_DIR}/benchmark
