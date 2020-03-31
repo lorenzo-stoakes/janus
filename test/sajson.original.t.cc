@@ -16,6 +16,7 @@ using sajson::document;
 using sajson::literal;
 using sajson::string;
 using sajson::TYPE_ARRAY;
+using sajson::TYPE_DECIMAL;
 using sajson::TYPE_DOUBLE;
 using sajson::TYPE_FALSE;
 using sajson::TYPE_INTEGER;
@@ -312,7 +313,7 @@ ABSTRACT_TEST(doubles)
 	EXPECT_EQ(-1, e1.get_integer_value());
 
 	const value& e2 = root.get_array_element(2);
-	EXPECT_EQ(TYPE_DOUBLE, e2.get_type());
+	EXPECT_EQ(TYPE_DECIMAL, e2.get_type());
 	EXPECT_EQ(-34.25, e2.get_double_value());
 }
 
@@ -470,7 +471,7 @@ ABSTRACT_TEST(non_integer_double)
 	assert(success(document));
 	const value& root = document.get_root();
 	const value& element = root.get_array_element(0);
-	EXPECT_EQ(TYPE_DOUBLE, element.get_type());
+	EXPECT_EQ(TYPE_DECIMAL, element.get_type());
 	EXPECT_EQ(10.5, element.get_double_value());
 
 	int64_t out;

@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "decimal7.hh"
+
 #include <algorithm>
 #include <assert.h>
 #include <cstdint>
@@ -71,22 +73,25 @@ static_assert(sizeof(size_t) == sizeof(uint64_t));
  */
 namespace sajson
 {
+using decimal = janus::decimal7;
+
 /// Tag indicating a JSON value's type.
 enum type : uint8_t
 {
 	TYPE_INTEGER = 0,
 	TYPE_DOUBLE = 1,
-	TYPE_NULL = 2,
-	TYPE_FALSE = 3,
-	TYPE_TRUE = 4,
-	TYPE_STRING = 5,
-	TYPE_ARRAY = 6,
-	TYPE_OBJECT = 7,
+	TYPE_DECIMAL = 2,
+	TYPE_NULL = 3,
+	TYPE_FALSE = 4,
+	TYPE_TRUE = 5,
+	TYPE_STRING = 6,
+	TYPE_ARRAY = 7,
+	TYPE_OBJECT = 8,
 };
 
 namespace internal
 {
-static const uint64_t TYPE_BITS = 3;
+static const uint64_t TYPE_BITS = 4;
 static const uint64_t TYPE_MASK = (1 << TYPE_BITS) - 1;
 static const uint64_t VALUE_MASK = uint64_t(-1) >> TYPE_BITS;
 
@@ -451,6 +456,31 @@ inline void store(uint64_t* location, double value)
 }
 } // namespace double_storage
 
+namespace decimal_storage
+{
+enum
+{
+	word_length = 1
+};
+
+static_assert(sizeof(decimal) == sizeof(size_t));
+
+inline decimal load(const uint64_t* location)
+{
+	decimal value;
+	memcpy(static_cast<void*>(&value), location, sizeof(decimal));
+	return value;
+}
+
+inline void store(uint64_t* location, decimal value)
+{
+	// NOTE: Most modern compilers optimize away this constant-size
+	// memcpy into a single instruction. If any don't, and treat
+	// punning through a union as legal, they can be special-cased.
+	memcpy(location, &value, sizeof(decimal));
+}
+} // namespace decimal_storage
+
 /// Represents a JSON value.  First, call get_type() to check its type,
 /// which determines which methods are available.
 ///
@@ -552,29 +582,50 @@ public:
 	}
 
 	/// If a numeric value was parsed as a double, returns it.
-	/// Only legal if get_type() is TYPE_DOUBLE.
+	/// Only legal if get_type() is TYPE_DOUBLE or TYPE_DECIMAL.
 	double get_double_value() const
 	{
-		assert_type(TYPE_DOUBLE);
-		return double_storage::load(payload);
+		assert_type_2(TYPE_DOUBLE, TYPE_DECIMAL);
+		if (get_type() == TYPE_DOUBLE) {
+			return double_storage::load(payload);
+		} else {
+			return decimal_storage::load(payload).to_double();
+		}
 	}
 
-	/// Returns a numeric value as a double-precision float.
-	/// Only legal if get_type() is TYPE_INTEGER or TYPE_DOUBLE.
+	/// If a numeric value was parsed as a decimal, returns it.
+	/// Only legal if get_type() is TYPE_DECIMAL or TYPE_INTEGER.
+	decimal get_decimal_value() const
+	{
+		assert_type_2(TYPE_DECIMAL, TYPE_INTEGER);
+		if (get_type() == TYPE_DECIMAL) {
+			return decimal_storage::load(payload);
+		} else {
+			// If the integer value exceeds decimal::MAX or is less
+			// than decimal::MIN, the value will be truncated.
+			return decimal(get_integer_value(), 0);
+		}
+	}
+
+	/// Returns a numeric value as a decimal float.
+	/// Only legal if get_type() is TYPE_INTEGER, TYPE_DOUBLE or TYPE_DECIMAL.
 	double get_number_value() const
 	{
-		assert_type_2(TYPE_INTEGER, TYPE_DOUBLE);
+		assert_type_3(TYPE_INTEGER, TYPE_DOUBLE, TYPE_DECIMAL);
 		if (get_type() == TYPE_INTEGER) {
 			return get_integer_value();
-		} else {
+		} else if (get_type() == TYPE_DOUBLE) {
 			return get_double_value();
+		} else {
+			return get_decimal_value().to_double();
 		}
 	}
 
 	/// Returns true and writes to the output argument if the numeric value
 	/// fits in a 64-bit integer.
 	/// Returns false if the value is not an int64 or not in range.
-	/// Only legal if get_type() is TYPE_INTEGER or TYPE_DOUBLE.
+	/// Only legal if get_type() is TYPE_INTEGER, TYPE_DOUBLE or
+	/// TYPE_DECIMAL.
 	bool try_get_integer_value(int64_t* out) const
 	{
 		// Make sure the output variable is always defined to avoid any
@@ -582,9 +633,17 @@ public:
 		// https://gist.github.com/chadaustin/2c249cb850619ddec05b23ca42cf7a18
 		*out = 0;
 
-		assert_type_2(TYPE_INTEGER, TYPE_DOUBLE);
+		assert_type_3(TYPE_INTEGER, TYPE_DECIMAL, TYPE_DOUBLE);
 		if (get_type() == TYPE_INTEGER) {
 			*out = get_integer_value();
+			return true;
+		} else if (get_type() == TYPE_DECIMAL) {
+			decimal v = get_decimal_value();
+			if (v.fract() != 0) {
+				return false;
+			}
+
+			*out = v.int64();
 			return true;
 		} else if (get_type() == TYPE_DOUBLE) {
 			double v = get_double_value();
@@ -655,6 +714,11 @@ private:
 	void assert_type_2(type e1, type e2) const
 	{
 		assert(e1 == get_type() || e2 == get_type());
+	}
+
+	void assert_type_3(type e1, type e2, type e3) const
+	{
+		assert(e1 == get_type() || e2 == get_type() || e3 == get_type());
 	}
 
 	void assert_in_bounds(uint64_t i) const
@@ -2241,12 +2305,12 @@ private:
 			} while (c >= '0' && c <= '9');
 		}
 
-		int64_t exponent = 0;
+		bool try_decimal = false;
+		int num_places = 0;
 
 		if ('.' == *p) {
-			if (!try_double) {
-				try_double = true;
-				d = i;
+			if (SAJSON_LIKELY(!try_double)) {
+				try_decimal = true;
 			}
 			++p;
 			if (SAJSON_UNLIKELY(at_eof(p))) {
@@ -2265,20 +2329,33 @@ private:
 					return std::make_pair(make_error(p, ERROR_UNEXPECTED_END),
 							      TYPE_NULL);
 				}
-				d = d * 10 + (c - '0');
-				// One option to avoid underflow would be to clamp
-				// to INT_MIN, but int64 subtraction is cheap and
-				// in the absurd case of parsing 2 GB of digits
-				// with an extremely high exponent, this will
-				// produce accurate results.  Instead, we just
-				// leave exponent as int64_t and it will never
-				// underflow.
-				--exponent;
+
+				if (SAJSON_UNLIKELY(try_double)) {
+					d = d * 10 + (c - '0');
+				} else {
+					// Is there any chance of an over/underflow? Needs special
+					// handling.
+					if (SAJSON_UNLIKELY(i >= decimal::MAX / 10)) {
+						// Will this number under/overflow a decimal?
+						int suffix = 10 * (i % 10) + (c - '0');
+						int max_suffix = decimal::MAX % 100;
+						if (negative)
+							max_suffix++;
+						if (suffix > max_suffix) {
+							try_double = true;
+							d = i;
+						}
+					}
+
+					i = i * 10 + (c - '0');
+				}
+				num_places++;
 
 				c = *p;
 			} while (c >= '0' && c <= '9');
 		}
 
+		int exp = 0;
 		char e = *p;
 		if ('e' == e || 'E' == e) {
 			if (!try_double) {
@@ -2306,8 +2383,6 @@ private:
 							      TYPE_NULL);
 				}
 			}
-
-			int exp = 0;
 
 			char c = *p;
 			if (SAJSON_UNLIKELY(c < '0' || c > '9')) {
@@ -2338,19 +2413,16 @@ private:
 				}
 			}
 			static_assert(-INT_MAX >= INT_MIN, "exp can be negated without loss or UB");
-			exponent += (negativeExponent ? -exp : exp);
-		}
-
-		if (exponent) {
-			assert(try_double);
-			// If d is zero but the exponent is huge, don't
-			// multiply zero by inf which gives nan.
-			if (d != 0.0) {
-				d *= pow10(exponent);
-			}
+			exp = negativeExponent ? -exp : exp;
 		}
 
 		if (try_double) {
+			// If d is zero but the exponent is huge, don't
+			// multiply zero by inf which gives nan.
+			if (d != 0.0) {
+				d *= pow10(exp - num_places);
+			}
+
 			bool success;
 			uint64_t* out = allocator.reserve(double_storage::word_length, &success);
 			if (SAJSON_UNLIKELY(!success)) {
@@ -2361,7 +2433,16 @@ private:
 			}
 			double_storage::store(out, d);
 			return std::make_pair(p, TYPE_DOUBLE);
-		} else {
+		} else if (try_decimal) {
+			bool success;
+			uint64_t* out = allocator.reserve(decimal_storage::word_length, &success);
+			if (SAJSON_UNLIKELY(!success)) {
+				return std::make_pair(oom(p), TYPE_NULL);
+			}
+			decimal d = decimal(negative ? -i : i, num_places);
+			decimal_storage::store(out, d);
+			return std::make_pair(p, TYPE_DECIMAL);
+		} else { // integer
 			bool success;
 			uint64_t* out = allocator.reserve(integer_storage::word_length, &success);
 			if (SAJSON_UNLIKELY(!success)) {
