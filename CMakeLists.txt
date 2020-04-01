@@ -11,15 +11,15 @@ file(GLOB_RECURSE HEADER_SOURCES
 	"include/dynamic_buffer.hh"
 )
 
-# Jupiter
+# Neptune
 
-file(GLOB_RECURSE JUPITER_SOURCES
-	"src/jupiter/*.cc"
+file(GLOB_RECURSE NEPTUNE_SOURCES
+	"src/neptune/*.cc"
 )
-add_executable(jupiter
-	${JUPITER_SOURCES}
+add_executable(neptune
+	${NEPTUNE_SOURCES}
 )
-target_compile_options(jupiter
+target_compile_options(neptune
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
 )
 
@@ -87,14 +87,14 @@ add_custom_target(clangformat ALL
 )
 
 add_custom_target(tidy
-	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${HEADER_SOURCES} ${JUPITER_SOURCES}
+	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running clang-tidy..."
 	VERBATIM
 )
 
 add_custom_target(cppcheck
-	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet ${HEADER_SOURCES} ${JUPITER_SOURCES}
+	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running cppcheck..."
 	VERBATIM
