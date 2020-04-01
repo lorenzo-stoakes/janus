@@ -8,6 +8,7 @@ file(GLOB_RECURSE HEADER_SOURCES
 	# Excluding sajson for now, will add once static issues resolved.
 	"include/janus.hh"
 	"include/decimal7.hh"
+	"include/dynamic_buffer.hh"
 )
 
 # Jupiter
