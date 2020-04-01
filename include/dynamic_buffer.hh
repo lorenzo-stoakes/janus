@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -68,6 +69,28 @@ public:
 	{
 		check_overflow(1);
 		_buf[_size++] = n;
+	}
+
+	// Add raw data to the buffer. It will be aligned to word size with
+	// remaining bytes zeroed.
+	//      ptr: Raw pointer of memory to copy to buffer.
+	//     size: Size in bytes of memory to copy.
+	//  returns: Raw pointer to allocated memory.
+	void* add_raw(void* ptr, uint64_t size)
+	{
+		uint64_t aligned_bytes = align64(size);
+		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
+		check_overflow(aligned_words);
+
+		// Reinterpret so we can fill unaligned bytes below.
+		uint8_t* buf = reinterpret_cast<uint8_t*>(_buf.get());
+		std::memcpy(buf, ptr, size);
+		// It is safe to call this with 0 size.
+		// aligned >= size always.
+		std::memset(&buf[size], '\0', aligned_bytes - size);
+		_size += aligned_words;
+
+		return buf;
 	}
 
 	// Clear the buffer but maintain the capacity.
