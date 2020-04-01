@@ -77,7 +77,9 @@ public:
 	}
 
 private:
+	// Capacity of buffer in uint64 words (i.e. cap_bytes = 8 * _cap).
 	uint64_t _cap;
+	// Size of buffer in uint64 words (i.e. size_bytes = 8 * _size).
 	uint64_t _size;
 	// Store our data as an array of uint64_t so we're (64-bit) word aligned
 	// by default.
@@ -94,6 +96,7 @@ private:
 
 	// Determine if we would overflow the capacity of the buffer and if so,
 	// throw.
+	//   delta: Delta in size expressed in uint64 words.
 	void check_overflow(uint64_t delta)
 	{
 		// We are OK with some string allocations on the exceptional
