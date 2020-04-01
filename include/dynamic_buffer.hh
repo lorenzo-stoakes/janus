@@ -94,6 +94,13 @@ public:
 		return buf;
 	}
 
+	// Add an arbitrary object to the buffer.
+	template<typename T>
+	auto add(T& ptr) -> T&
+	{
+		return *static_cast<T*>(add_raw(&ptr, sizeof(T)));
+	}
+
 	// Clear the buffer but maintain the capacity.
 	void reset()
 	{
