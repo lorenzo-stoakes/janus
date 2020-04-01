@@ -166,12 +166,53 @@ TEST(dynamic_buffer_test, add_raw)
 		EXPECT_EQ(raw1[i], 0);
 	}
 
-	// Finally, try an aligned buffer size.
+	// Try an aligned buffer size.
 	auto buf3 = janus::dynamic_buffer(8);
 	EXPECT_EQ(buf3.cap(), 8);
 	std::array<unsigned char, 8> data3 = {1, 2, 3, 4, 5, 6, 7, 8};
 	auto* raw3 = static_cast<uint8_t*>(buf3.add_raw(&data3, sizeof(data3)));
 	EXPECT_EQ(buf3.size(), 8);
 	EXPECT_EQ(std::memcmp(raw3, &data3, sizeof(data3)), 0);
+
+	// Try adding more than once and ensure that there isn't any incorrect
+	// aliasing.
+
+	auto buf4 = janus::dynamic_buffer(16);
+	EXPECT_EQ(buf4.cap(), 16);
+	std::array<unsigned char, 8> data4 = {1, 2, 3};
+	auto* raw4 = static_cast<uint8_t*>(buf4.add_raw(&data4, sizeof(data4)));
+	EXPECT_EQ(buf4.size(), 8);
+	EXPECT_EQ(std::memcmp(raw4, &data4, sizeof(data4)), 0);
+
+	// Modify original data to make sure there's no unexpected aliasing.
+
+	// Make sure modifying original bytes doesn't affect raw.
+	data4[0] = 4;
+	data4[1] = 5;
+	data4[2] = 6;
+	EXPECT_EQ(raw4[0], 1);
+	EXPECT_EQ(raw4[1], 2);
+	EXPECT_EQ(raw4[2], 3);
+
+	// Make sure modifying raw bytes doesn't affect original.
+	raw4[0] = 7;
+	raw4[1] = 8;
+	raw4[2] = 9;
+	EXPECT_EQ(data4[0], 4);
+	EXPECT_EQ(data4[1], 5);
+	EXPECT_EQ(data4[2], 6);
+
+	// Now re-add the modified data.
+	auto* raw5 = static_cast<uint8_t*>(buf4.add_raw(&data4, sizeof(data4)));
+	EXPECT_EQ(buf4.size(), 16);
+	EXPECT_EQ(raw5[0], 4);
+	EXPECT_EQ(raw5[1], 5);
+	EXPECT_EQ(raw5[2], 6);
+
+	// Original raw data should remain unchanged.
+	EXPECT_EQ(raw4[0], 7);
+	EXPECT_EQ(raw4[1], 8);
+	EXPECT_EQ(raw4[2], 9);
+}
 }
 } // namespace
