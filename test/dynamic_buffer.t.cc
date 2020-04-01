@@ -1,5 +1,6 @@
 #include "dynamic_buffer.hh"
 
+#include <cstring>
 #include <gtest/gtest.h>
 #include <stdexcept>
 
@@ -132,5 +133,45 @@ TEST(dynamic_buffer_test, limits)
 	buf2.add_uint64(123456);
 	buf2.add_uint64(654321);
 	EXPECT_EQ(buf2.size(), 16);
+}
+
+// Ensure that .add_raw() behaves correctly and successfully adds raw data to
+// the buffer.
+TEST(dynamic_buffer_test, add_raw)
+{
+	auto buf1 = janus::dynamic_buffer(16);
+
+	std::array<unsigned char, 5> data1 = {0xde, 0xad, 0xbe, 0xef, 42};
+	auto* raw1 = static_cast<uint8_t*>(buf1.add_raw(&data1, sizeof(data1)));
+	// Round up to uinit64 alignment.
+	EXPECT_EQ(buf1.size(), 8);
+	EXPECT_EQ(std::memcmp(raw1, &data1, sizeof(data1)), 0);
+
+	// Rest of the buffer should be empty.
+	for (int i = 5; i < 8; i++) {
+		EXPECT_EQ(raw1[i], 0);
+	}
+
+	// Zero size should not throw.
+	EXPECT_NO_THROW(buf1.add_raw(&data1, 0));
+
+	// Test a buffer size more than 8 bytes aligned.
+	auto buf2 = janus::dynamic_buffer(9);
+	EXPECT_EQ(buf1.cap(), 16);
+	std::array<unsigned char, 9> data2 = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+	auto* raw2 = static_cast<uint8_t*>(buf2.add_raw(&data2, sizeof(data2)));
+	EXPECT_EQ(buf2.size(), 16);
+	EXPECT_EQ(std::memcmp(raw2, &data2, sizeof(data2)), 0);
+	for (int i = 9; i < 16; i++) {
+		EXPECT_EQ(raw1[i], 0);
+	}
+
+	// Finally, try an aligned buffer size.
+	auto buf3 = janus::dynamic_buffer(8);
+	EXPECT_EQ(buf3.cap(), 8);
+	std::array<unsigned char, 8> data3 = {1, 2, 3, 4, 5, 6, 7, 8};
+	auto* raw3 = static_cast<uint8_t*>(buf3.add_raw(&data3, sizeof(data3)));
+	EXPECT_EQ(buf3.size(), 8);
+	EXPECT_EQ(std::memcmp(raw3, &data3, sizeof(data3)), 0);
 }
 } // namespace
