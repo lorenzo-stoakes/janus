@@ -214,5 +214,44 @@ TEST(dynamic_buffer_test, add_raw)
 	EXPECT_EQ(raw4[1], 8);
 	EXPECT_EQ(raw4[2], 9);
 }
+
+// Test that .add() permits us to add arbitrary data types to the buffer.
+TEST(dynamic_buffer_test, add)
+{
+	auto buf = janus::dynamic_buffer(16);
+
+	struct arbitrary
+	{
+		int x;
+		int y;
+	} arb = {123, 456};
+
+	// Add the data and assert it is as expected.
+	auto& ret = buf.add(arb);
+	EXPECT_EQ(buf.size(), sizeof(arbitrary));
+	EXPECT_EQ(ret.x, 123);
+	EXPECT_EQ(ret.y, 456);
+
+	// Ensure that there is no aliasing from arb -> raw data.
+	arb.x = 999;
+	arb.y = 888;
+	EXPECT_EQ(ret.x, 123);
+	EXPECT_EQ(ret.y, 456);
+
+	// Ensure there is no aliasing from raw data -> arb.
+	ret.x = 333;
+	ret.y = 444;
+	EXPECT_EQ(arb.x, 999);
+	EXPECT_EQ(arb.y, 888);
+
+	// Now re-add arb.
+	auto& ret2 = buf.add(arb);
+	EXPECT_EQ(buf.size(), 2 * sizeof(arbitrary));
+	EXPECT_EQ(ret2.x, 999);
+	EXPECT_EQ(ret2.y, 888);
+
+	// Ensure that the original remains unchanged.
+	EXPECT_EQ(ret.x, 333);
+	EXPECT_EQ(ret.y, 444);
 }
 } // namespace
