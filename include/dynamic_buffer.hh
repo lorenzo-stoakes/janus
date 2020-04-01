@@ -17,14 +17,14 @@ public:
 	explicit dynamic_buffer(uint64_t cap)
 		// Note that we store capacity/size values in uint64 words.
 		: _cap{align64(cap) / sizeof(uint64_t)},
-		  _size{0},
+		  _write_offset{0},
 		  _buf{std::make_unique<uint64_t[]>(_cap)} // NOLINT: Can't use std::array here.
 	{
 	}
 
 	// Make the buffer moveable.
 	dynamic_buffer(dynamic_buffer&& that) noexcept
-		: _cap{that._cap}, _size{that._size}, _buf{std::move(that._buf)}
+		: _cap{that._cap}, _write_offset{that._write_offset}, _buf{std::move(that._buf)}
 	{
 		that._cap = 0;
 		that._buf = nullptr;
@@ -55,7 +55,7 @@ public:
 	{
 		// We store this value as a multiple of uint64_t words
 		// internally.
-		return _size * sizeof(uint64_t);
+		return _write_offset * sizeof(uint64_t);
 	}
 
 	// Return raw underlying buffer.
@@ -68,7 +68,7 @@ public:
 	void add_uint64(uint64_t n)
 	{
 		check_overflow(1);
-		_buf[_size++] = n;
+		_buf[_write_offset++] = n;
 	}
 
 	// Add raw data to the buffer. It will be aligned to word size with
@@ -84,12 +84,12 @@ public:
 
 		// Lint disabled for reinterpret cast (useful here) and pointer
 		// arithmetic (required here).
-		auto* buf = reinterpret_cast<uint8_t*>(&_buf.get()[_size]); // NOLINT
+		auto* buf = reinterpret_cast<uint8_t*>(&_buf.get()[_write_offset]); // NOLINT
 		std::memcpy(buf, ptr, size);
 		// It is safe to call this with 0 size.
 		// aligned >= size always.
 		std::memset(&buf[size], '\0', aligned_bytes - size); // NOLINT
-		_size += aligned_words;
+		_write_offset += aligned_words;
 
 		return buf;
 	}
@@ -104,14 +104,14 @@ public:
 	// Clear the buffer but maintain the capacity.
 	void reset()
 	{
-		_size = 0;
+		_write_offset = 0;
 	}
 
 private:
 	// Capacity of buffer in uint64 words (i.e. cap_bytes = 8 * _cap).
 	uint64_t _cap;
-	// Size of buffer in uint64 words (i.e. size_bytes = 8 * _size).
-	uint64_t _size;
+	// Size of buffer in uint64 words (i.e. size_bytes = 8 * _write_offset).
+	uint64_t _write_offset;
 	// Store our data as an array of uint64_t so we're (64-bit) word aligned
 	// by default.
 	std::unique_ptr<uint64_t[]> _buf; // NOLINT: Can't use std::array here.
@@ -132,9 +132,9 @@ private:
 	{
 		// We are OK with some string allocations on the exceptional
 		// code path.
-		if (_cap < _size + delta) {
+		if (_cap < _write_offset + delta) {
 			uint64_t delta_bytes = delta * sizeof(uint64_t);
-			uint64_t size_bytes = _size * sizeof(uint64_t);
+			uint64_t size_bytes = _write_offset * sizeof(uint64_t);
 			uint64_t cap_bytes = _cap * sizeof(uint64_t);
 
 			throw std::runtime_error(
