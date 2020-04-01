@@ -76,7 +76,7 @@ public:
 	//      ptr: Raw pointer of memory to copy to buffer.
 	//     size: Size in bytes of memory to copy.
 	//  returns: Raw pointer to allocated memory.
-	auto add_raw(void* ptr, uint64_t size) -> void*
+	auto add_raw(const void* ptr, uint64_t size) -> void*
 	{
 		uint64_t aligned_bytes = align64(size);
 		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
