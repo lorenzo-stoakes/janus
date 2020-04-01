@@ -59,7 +59,7 @@ public:
 	}
 
 	// Return raw underlying buffer.
-	auto data() const -> const uint64_t*
+	auto data() const -> uint64_t*
 	{
 		return _buf.get();
 	}
