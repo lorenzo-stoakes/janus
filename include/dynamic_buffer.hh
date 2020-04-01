@@ -31,6 +31,8 @@ public:
 		  _buf{std::move(that._buf)}
 	{
 		that._cap = 0;
+		that._read_offset = 0;
+		that._write_offset = 0;
 		that._buf = nullptr;
 	}
 

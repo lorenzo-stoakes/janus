@@ -16,9 +16,10 @@ TEST(dynamic_buffer_test, ctor)
 
 	// We have a move ctor, let's make sure it works properly.
 	auto buf2 = janus::dynamic_buffer(9);
+	buf2.add_uint64(123);
 	auto buf3 = std::move(buf2);
 	EXPECT_EQ(buf3.cap(), 16);
-	EXPECT_EQ(buf3.size(), 0);
+	EXPECT_EQ(buf3.size(), 8);
 	EXPECT_EQ(buf2.cap(), 0);
 	EXPECT_EQ(buf2.size(), 0);
 }
