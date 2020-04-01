@@ -82,12 +82,13 @@ public:
 		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
 		check_overflow(aligned_words);
 
-		// Reinterpret so we can fill unaligned bytes below.
-		auto* buf = reinterpret_cast<uint8_t*>(_buf.get()); // NOLINT
+		// Lint disabled for reinterpret cast (useful here) and pointer
+		// arithmetic (required here).
+		auto* buf = reinterpret_cast<uint8_t*>(&_buf.get()[_size]); // NOLINT
 		std::memcpy(buf, ptr, size);
 		// It is safe to call this with 0 size.
 		// aligned >= size always.
-		std::memset(&buf[size], '\0', aligned_bytes - size); // NOLINT: Required p-arith.
+		std::memset(&buf[size], '\0', aligned_bytes - size); // NOLINT
 		_size += aligned_words;
 
 		return buf;
