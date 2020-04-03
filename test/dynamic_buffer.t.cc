@@ -337,6 +337,7 @@ TEST(dynamic_buffer_test, read_uint64)
 	EXPECT_EQ(buf.read_offset(), 16);
 }
 
+// Test to ensure that .reset_read() correctly resets the read offset.
 TEST(dynamic_buffer_test, reset_read)
 {
 	auto buf = janus::dynamic_buffer(16);
@@ -359,6 +360,8 @@ TEST(dynamic_buffer_test, reset_read)
 	EXPECT_EQ(buf.read_offset(), 16);
 }
 
+// Test to ensure .read_raw() returns a pointer to arbitrary data in the buffer
+// and correclty updates the read offset.
 TEST(dynamic_buffer_test, read_raw)
 {
 	auto buf1 = janus::dynamic_buffer(16);
