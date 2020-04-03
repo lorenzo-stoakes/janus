@@ -64,10 +64,25 @@ public:
 		return _write_offset * sizeof(uint64_t);
 	}
 
+	// Read offset into buffer in bytes.
+	auto read_offset() const -> uint64_t
+	{
+		// We store this value as a multiple of uint64_t words
+		// internally.
+		return _read_offset * sizeof(uint64_t);
+	}
+
 	// Return raw underlying buffer.
 	auto data() const -> uint64_t*
 	{
 		return _buf.get();
+	}
+
+	// Read a uint64 and advance read offset.
+	auto read_uint64() -> uint64_t
+	{
+		check_read_overflow(1);
+		return _buf[_read_offset++];
 	}
 
 	// Add a uint64 value to the buffer.
@@ -111,6 +126,14 @@ public:
 	void reset()
 	{
 		_write_offset = 0;
+		// Clearing the buffer invalidates the read offset.
+		reset_read();
+	}
+
+	// Reset the read offset to the start of the buffer.
+	void reset_read()
+	{
+		_read_offset = 0;
 	}
 
 private:
@@ -133,23 +156,40 @@ private:
 		return (size + (sizeof(uint64_t) - 1)) & ~(sizeof(uint64_t) - 1);
 	}
 
-	// Determine if we would overflow the capacity of the buffer and if so,
-	// throw.
+	// Throw an exception indicating an overflow.
+	static void throw_overflow(const char* op, const char* what, uint64_t delta,
+				   uint64_t offset, uint64_t size)
+	{
+		uint64_t delta_bytes = delta * sizeof(uint64_t);
+		uint64_t offset_bytes = offset * sizeof(uint64_t);
+		uint64_t size_bytes = size * sizeof(uint64_t);
+
+		// We are OK with some string allocations on the exceptional
+		// code path.
+		throw std::runtime_error(op + std::to_string(delta_bytes) +
+					 " bytes from offset of " + std::to_string(offset_bytes) +
+					 " bytes, exceeding " + what + " of" +
+					 std::to_string(size_bytes));
+	}
+
+	// Determine if read would overflow the capacity of the buffer and if
+	// so, throw.
+	//   delta: Delta in size expressed in uint64 words.
+	void check_read_overflow(uint64_t delta)
+	{
+		if (_read_offset + delta > _write_offset)
+			throw_overflow("Requested read of ", "size", delta, _read_offset,
+				       _write_offset);
+	}
+
+	// Determine if write would overflow the capacity of the buffer and if
+	// so, throw.
 	//   delta: Delta in size expressed in uint64 words.
 	void check_write_overflow(uint64_t delta)
 	{
-		// We are OK with some string allocations on the exceptional
-		// code path.
-		if (_cap < _write_offset + delta) {
-			uint64_t delta_bytes = delta * sizeof(uint64_t);
-			uint64_t size_bytes = _write_offset * sizeof(uint64_t);
-			uint64_t cap_bytes = _cap * sizeof(uint64_t);
-
-			throw std::runtime_error(
-				"Requested allocation of " + std::to_string(delta_bytes) +
-				" + size of " + std::to_string(size_bytes) +
-				" bytes exceeds capacity of " + std::to_string(cap_bytes));
-		}
+		if (_write_offset + delta > _cap)
+			throw_overflow("Requested write of ", "capacity", delta, _write_offset,
+				       _cap);
 	}
 };
 } // namespace janus
