@@ -418,4 +418,38 @@ TEST(dynamic_buffer_test, read)
 	EXPECT_EQ(arb.x, arb3.x);
 	EXPECT_EQ(arb.y, arb3.y);
 }
+
+// Test that .add_string() correctly encodes strings.
+TEST(dynamic_buffer_test, add_string)
+{
+	auto buf = janus::dynamic_buffer(32);
+
+	const char* str1 = "ohai";
+	std::string_view ret1 = buf.add_string(str1, 4);
+	EXPECT_EQ(buf.size(), 16);
+	// Use strcmp to ensure that the null terminator is intact.
+	EXPECT_EQ(std::strcmp(str1, ret1.data()), 0);
+	EXPECT_EQ(ret1.size(), 4);
+
+	// We encode the string with a uint64 first followed by the character buffer.
+	EXPECT_EQ(buf.read_uint64(), 4);
+	EXPECT_EQ(buf.read_offset(), 8);
+
+	auto* ret2 = static_cast<char*>(buf.read_raw(5));
+	EXPECT_EQ(buf.read_offset(), 16);
+	EXPECT_EQ(std::strcmp(str1, ret2), 0);
+
+	const char* str2 = "lorenzo";
+	std::string_view ret3 = buf.add_string(str2, 7);
+	EXPECT_EQ(buf.size(), 32);
+	EXPECT_EQ(std::strcmp(str2, ret3.data()), 0);
+	EXPECT_EQ(ret3.size(), 7);
+
+	EXPECT_EQ(buf.read_uint64(), 7);
+	EXPECT_EQ(buf.read_offset(), 24);
+
+	auto* ret4 = static_cast<char*>(buf.read_raw(8));
+	EXPECT_EQ(buf.read_offset(), 32);
+	EXPECT_EQ(std::strcmp(str2, ret4), 0);
+}
 } // namespace
