@@ -99,6 +99,13 @@ public:
 		return ret;
 	}
 
+	// Return an arbitrary object from the buffer at the read offset.
+	template<typename T>
+	auto read() -> T&
+	{
+		return *static_cast<T*>(read_raw(sizeof(T)));
+	}
+
 	// Add a uint64 value to the buffer.
 	void add_uint64(uint64_t n)
 	{
