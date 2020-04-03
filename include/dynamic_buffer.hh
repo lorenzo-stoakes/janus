@@ -105,7 +105,7 @@ public:
 
 		// Lint disabled for reinterpret cast (useful here) and pointer
 		// arithmetic (required here).
-		auto* buf = reinterpret_cast<uint8_t*>(&_buf.get()[_write_offset]); // NOLINT
+		auto* buf = reinterpret_cast<uint8_t*>(&_buf[_write_offset]); // NOLINT
 		std::memcpy(buf, ptr, size);
 		// It is safe to call this with 0 size.
 		// aligned >= size always.
