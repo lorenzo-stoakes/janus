@@ -389,4 +389,33 @@ TEST(dynamic_buffer_test, read_raw)
 	EXPECT_EQ(buf1.read_offset(), 16);
 	EXPECT_EQ(std::memcmp(raw4, &data2, sizeof(data2)), 0);
 }
+
+// Test to ensure .read() returns an arbitrary object reference correctly.
+TEST(dynamic_buffer_test, read)
+{
+	auto buf = janus::dynamic_buffer(16);
+	struct arbitrary
+	{
+		int x;
+		int y;
+	} arb = {123, 456};
+
+	// Add the data and assert it is as expected.
+	auto& ret = buf.add(arb);
+	EXPECT_EQ(buf.size(), sizeof(arbitrary));
+	EXPECT_EQ(ret.x, 123);
+	EXPECT_EQ(ret.y, 456);
+
+	auto& arb2 = buf.read<arbitrary>();
+	EXPECT_EQ(arb.x, arb2.x);
+	EXPECT_EQ(arb.y, arb2.y);
+
+	arb.x = 333;
+	arb.y = 444;
+	buf.add(arb);
+	EXPECT_EQ(buf.size(), 16);
+	auto& arb3 = buf.read<arbitrary>();
+	EXPECT_EQ(arb.x, arb3.x);
+	EXPECT_EQ(arb.y, arb3.y);
+}
 } // namespace
