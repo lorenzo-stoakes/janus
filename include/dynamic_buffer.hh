@@ -85,6 +85,27 @@ public:
 		return _buf[_read_offset++];
 	}
 
+	// Return a pointer to the the buffer at the current read offset and
+	// increment read offset, taking into account 64-bit alignment accordingly.
+	//   size: Size in bytes of required block of memory.
+	auto read_raw(uint64_t size) -> void*
+	{
+		uint64_t aligned_bytes = align64(size);
+		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
+		check_read_overflow(aligned_words);
+
+		void* ret = &_buf[_read_offset];
+		_read_offset += aligned_words;
+		return ret;
+	}
+
+	// Return an arbitrary object from the buffer at the read offset.
+	template<typename T>
+	auto read() -> T&
+	{
+		return *static_cast<T*>(read_raw(sizeof(T)));
+	}
+
 	// Add a uint64 value to the buffer.
 	void add_uint64(uint64_t n)
 	{

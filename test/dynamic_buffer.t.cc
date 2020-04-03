@@ -337,6 +337,7 @@ TEST(dynamic_buffer_test, read_uint64)
 	EXPECT_EQ(buf.read_offset(), 16);
 }
 
+// Test to ensure that .reset_read() correctly resets the read offset.
 TEST(dynamic_buffer_test, reset_read)
 {
 	auto buf = janus::dynamic_buffer(16);
@@ -357,5 +358,64 @@ TEST(dynamic_buffer_test, reset_read)
 	EXPECT_EQ(buf.read_offset(), 8);
 	EXPECT_EQ(buf.read_uint64(), 999);
 	EXPECT_EQ(buf.read_offset(), 16);
+}
+
+// Test to ensure .read_raw() returns a pointer to arbitrary data in the buffer
+// and correclty updates the read offset.
+TEST(dynamic_buffer_test, read_raw)
+{
+	auto buf = janus::dynamic_buffer(16);
+
+	std::array<uint8_t, 5> data1 = {0xde, 0xad, 0xbe, 0xef, 42};
+	auto* raw1 = static_cast<uint8_t*>(buf.add_raw(&data1, sizeof(data1)));
+	// Round up to uinit64 alignment.
+	EXPECT_EQ(buf.size(), 8);
+	EXPECT_EQ(std::memcmp(raw1, &data1, sizeof(data1)), 0);
+	EXPECT_EQ(buf.read_offset(), 0);
+
+	auto* raw2 = static_cast<uint8_t*>(buf.read_raw(5));
+	EXPECT_EQ(std::memcmp(raw1, raw2, sizeof(data1)), 0);
+	EXPECT_EQ(buf.read_offset(), 8);
+
+	// Can't read past end of read offset.
+	EXPECT_THROW(buf.read_raw(sizeof(data1)), std::runtime_error);
+
+	std::array<uint8_t, 3> data2 = {0xfe, 0xef, 0xff};
+	auto* raw3 = static_cast<uint8_t*>(buf.add_raw(&data2, sizeof(data2)));
+	EXPECT_EQ(buf.size(), 16);
+	EXPECT_EQ(std::memcmp(raw3, &data2, sizeof(data2)), 0);
+
+	auto* raw4 = static_cast<uint8_t*>(buf.read_raw(sizeof(data2)));
+	EXPECT_EQ(buf.read_offset(), 16);
+	EXPECT_EQ(std::memcmp(raw4, &data2, sizeof(data2)), 0);
+}
+
+// Test to ensure .read() returns an arbitrary object reference correctly.
+TEST(dynamic_buffer_test, read)
+{
+	auto buf = janus::dynamic_buffer(16);
+	struct arbitrary
+	{
+		int x;
+		int y;
+	} arb = {123, 456};
+
+	// Add the data and assert it is as expected.
+	auto& ret = buf.add(arb);
+	EXPECT_EQ(buf.size(), sizeof(arbitrary));
+	EXPECT_EQ(ret.x, 123);
+	EXPECT_EQ(ret.y, 456);
+
+	auto& arb2 = buf.read<arbitrary>();
+	EXPECT_EQ(arb.x, arb2.x);
+	EXPECT_EQ(arb.y, arb2.y);
+
+	arb.x = 333;
+	arb.y = 444;
+	buf.add(arb);
+	EXPECT_EQ(buf.size(), 16);
+	auto& arb3 = buf.read<arbitrary>();
+	EXPECT_EQ(arb.x, arb3.x);
+	EXPECT_EQ(arb.y, arb3.y);
 }
 } // namespace
