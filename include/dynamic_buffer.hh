@@ -107,6 +107,16 @@ public:
 		return *static_cast<T*>(read_raw(sizeof(T)));
 	}
 
+	// Decode and read a string from the buffer. Returns a string view
+	// pointing at the char array in the buffer.
+	auto read_string() -> std::string_view
+	{
+		uint64_t count = read_uint64();
+		char* str = static_cast<char*>(read_raw(count));
+
+		return std::string_view(str, count);
+	}
+
 	// Add a uint64 value to the buffer.
 	void add_uint64(uint64_t n)
 	{
