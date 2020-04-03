@@ -5,6 +5,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 namespace janus
 {
@@ -141,6 +142,17 @@ public:
 	auto add(T& ptr) -> T&
 	{
 		return *static_cast<T*>(add_raw(&ptr, sizeof(T)));
+	}
+
+	// Encode a string into binary format and add it to the buffer.
+	//   str: Pointer to the char buffer, WITH null termintaor.
+	//  size: Size of string WITHOUT null terminator.
+	auto add_string(const char* str, uint64_t size) -> std::string_view
+	{
+		add_uint64(size);
+		void* ptr = add_raw(str, size + 1);
+
+		return std::string_view(static_cast<char*>(ptr), size);
 	}
 
 	// Clear the buffer but maintain the capacity.
