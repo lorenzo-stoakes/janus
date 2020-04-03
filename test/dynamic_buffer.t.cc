@@ -452,4 +452,30 @@ TEST(dynamic_buffer_test, add_string)
 	EXPECT_EQ(buf.read_offset(), 32);
 	EXPECT_EQ(std::strcmp(str2, ret4), 0);
 }
+
+// Test that .read_string() correctly reads a string from the buffer and returns
+// a valid std::string_view.
+TEST(dynamic_buffer_test, read_string)
+{
+	auto buf = janus::dynamic_buffer(32);
+
+	const char* str1 = "ohai";
+	buf.add_string(str1, 4);
+	EXPECT_EQ(buf.size(), 16);
+	EXPECT_EQ(buf.read_offset(), 0);
+
+	std::string_view ret1 = buf.read_string();
+	EXPECT_EQ(buf.read_offset(), 16);
+	EXPECT_EQ(ret1.size(), 4);
+	EXPECT_EQ(std::strcmp(str1, ret1.data()), 0);
+
+	const char* str2 = "lorenzo";
+	buf.add_string(str2, 7);
+	EXPECT_EQ(buf.size(), 32);
+
+	std::string_view ret2 = buf.read_string();
+	EXPECT_EQ(buf.read_offset(), 32);
+	EXPECT_EQ(ret2.size(), 7);
+	EXPECT_EQ(std::strcmp(str2, ret2.data()), 0);
+}
 } // namespace
