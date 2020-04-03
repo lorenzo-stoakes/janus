@@ -13,14 +13,19 @@ TEST(dynamic_buffer_test, ctor)
 	auto buf1 = janus::dynamic_buffer(0);
 	EXPECT_EQ(buf1.cap(), 0);
 	EXPECT_EQ(buf1.size(), 0);
+	EXPECT_EQ(buf1.read_offset(), 0);
 
 	// We have a move ctor, let's make sure it works properly.
 	auto buf2 = janus::dynamic_buffer(9);
+	buf2.add_uint64(123);
+	buf2.read_uint64();
 	auto buf3 = std::move(buf2);
 	EXPECT_EQ(buf3.cap(), 16);
-	EXPECT_EQ(buf3.size(), 0);
+	EXPECT_EQ(buf3.size(), 8);
+	EXPECT_EQ(buf3.read_offset(), 8);
 	EXPECT_EQ(buf2.cap(), 0);
 	EXPECT_EQ(buf2.size(), 0);
+	EXPECT_EQ(buf2.read_offset(), 0);
 }
 
 // Test that the .cap() method returns the correct capacity of the buffer.
@@ -101,14 +106,25 @@ TEST(dynamic_buffer_test, reset)
 	buf.add_uint64(123456);
 	buf.add_uint64(654321);
 	EXPECT_EQ(buf.size(), 16);
+	EXPECT_EQ(buf.read_offset(), 0);
+
+	// Now read a value.
+	EXPECT_EQ(buf.read_uint64(), 123456);
+	EXPECT_EQ(buf.read_offset(), 8);
 
 	buf.reset();
 	EXPECT_EQ(buf.size(), 0);
+	// .reset() should also reset the read offset.
+	EXPECT_EQ(buf.read_offset(), 0);
 
 	// We should be able to insert new data after reset.
 	buf.add_uint64(123456);
 	EXPECT_EQ(buf.size(), 8);
+	EXPECT_EQ(buf.read_offset(), 0);
 	EXPECT_EQ(buf.data()[0], 123456);
+	// And read.
+	EXPECT_EQ(buf.read_uint64(), 123456);
+	EXPECT_EQ(buf.read_offset(), 8);
 }
 
 // Ensure that the expected limits of the buffer are adhered to.
@@ -133,6 +149,49 @@ TEST(dynamic_buffer_test, limits)
 	buf2.add_uint64(123456);
 	buf2.add_uint64(654321);
 	EXPECT_EQ(buf2.size(), 16);
+
+	// Try to exceed read limits.
+
+	auto buf3 = janus::dynamic_buffer(16);
+	EXPECT_EQ(buf3.read_offset(), 0);
+	EXPECT_EQ(buf3.size(), 0);
+
+	buf3.add_uint64(123);
+	EXPECT_EQ(buf3.read_offset(), 0);
+	EXPECT_EQ(buf3.size(), 8);
+
+	buf3.add_uint64(456);
+	EXPECT_EQ(buf3.read_offset(), 0);
+	EXPECT_EQ(buf3.size(), 16);
+
+	// Adding an additional value should result in an overflow.
+	EXPECT_THROW(buf3.add_uint64(0), std::runtime_error);
+
+	EXPECT_EQ(buf3.read_uint64(), 123);
+	EXPECT_EQ(buf3.read_offset(), 8);
+
+	EXPECT_EQ(buf3.read_uint64(), 456);
+	EXPECT_EQ(buf3.read_offset(), 16);
+
+	// Reading another uint64 should result in an overflow.
+	EXPECT_THROW(buf3.read_uint64(), std::runtime_error);
+
+	// Now try writing and reading as we go.
+
+	buf3.reset();
+	EXPECT_EQ(buf3.size(), 0);
+	EXPECT_EQ(buf3.read_offset(), 0);
+
+	buf3.add_uint64(888);
+	EXPECT_EQ(buf3.read_uint64(), 888);
+	EXPECT_EQ(buf3.read_offset(), 8);
+	// We shouldn't be able to exceed the write offset.
+	EXPECT_THROW(buf3.read_uint64(), std::runtime_error);
+
+	buf3.add_uint64(999);
+	EXPECT_EQ(buf3.read_uint64(), 999);
+	EXPECT_EQ(buf3.read_offset(), 16);
+	EXPECT_THROW(buf3.read_uint64(), std::runtime_error);
 }
 
 // Ensure that .add_raw() behaves correctly and successfully adds raw data to
@@ -253,5 +312,50 @@ TEST(dynamic_buffer_test, add)
 	// Ensure that the original remains unchanged.
 	EXPECT_EQ(ret.x, 333);
 	EXPECT_EQ(ret.y, 444);
+}
+
+// Test that .read_uint64() successfully reads a uint64 and increments the read
+// offset.
+TEST(dynamic_buffer_test, read_uint64)
+{
+	auto buf = janus::dynamic_buffer(16);
+	EXPECT_EQ(buf.read_offset(), 0);
+	EXPECT_EQ(buf.size(), 0);
+
+	buf.add_uint64(123);
+	EXPECT_EQ(buf.read_offset(), 0);
+	EXPECT_EQ(buf.size(), 8);
+
+	buf.add_uint64(456);
+	EXPECT_EQ(buf.read_offset(), 0);
+	EXPECT_EQ(buf.size(), 16);
+
+	EXPECT_EQ(buf.read_uint64(), 123);
+	EXPECT_EQ(buf.read_offset(), 8);
+
+	EXPECT_EQ(buf.read_uint64(), 456);
+	EXPECT_EQ(buf.read_offset(), 16);
+}
+
+TEST(dynamic_buffer_test, reset_read)
+{
+	auto buf = janus::dynamic_buffer(16);
+	EXPECT_EQ(buf.read_offset(), 0);
+	buf.add_uint64(123456789);
+	EXPECT_EQ(buf.read_uint64(), 123456789);
+	EXPECT_EQ(buf.read_offset(), 8);
+
+	buf.add_uint64(999);
+	EXPECT_EQ(buf.read_uint64(), 999);
+	EXPECT_EQ(buf.read_offset(), 16);
+
+	buf.reset_read();
+	EXPECT_EQ(buf.size(), 16);
+	EXPECT_EQ(buf.read_offset(), 0);
+
+	EXPECT_EQ(buf.read_uint64(), 123456789);
+	EXPECT_EQ(buf.read_offset(), 8);
+	EXPECT_EQ(buf.read_uint64(), 999);
+	EXPECT_EQ(buf.read_offset(), 16);
 }
 } // namespace

@@ -17,16 +17,22 @@ public:
 	explicit dynamic_buffer(uint64_t cap)
 		// Note that we store capacity/size values in uint64 words.
 		: _cap{align64(cap) / sizeof(uint64_t)},
-		  _size{0},
+		  _read_offset{0},
+		  _write_offset{0},
 		  _buf{std::make_unique<uint64_t[]>(_cap)} // NOLINT: Can't use std::array here.
 	{
 	}
 
 	// Make the buffer moveable.
 	dynamic_buffer(dynamic_buffer&& that) noexcept
-		: _cap{that._cap}, _size{that._size}, _buf{std::move(that._buf)}
+		: _cap{that._cap},
+		  _read_offset(that._read_offset),
+		  _write_offset{that._write_offset},
+		  _buf{std::move(that._buf)}
 	{
 		that._cap = 0;
+		that._read_offset = 0;
+		that._write_offset = 0;
 		that._buf = nullptr;
 	}
 
@@ -55,7 +61,15 @@ public:
 	{
 		// We store this value as a multiple of uint64_t words
 		// internally.
-		return _size * sizeof(uint64_t);
+		return _write_offset * sizeof(uint64_t);
+	}
+
+	// Read offset into buffer in bytes.
+	auto read_offset() const -> uint64_t
+	{
+		// We store this value as a multiple of uint64_t words
+		// internally.
+		return _read_offset * sizeof(uint64_t);
 	}
 
 	// Return raw underlying buffer.
@@ -64,11 +78,18 @@ public:
 		return _buf.get();
 	}
 
+	// Read a uint64 and advance read offset.
+	auto read_uint64() -> uint64_t
+	{
+		check_read_overflow(1);
+		return _buf[_read_offset++];
+	}
+
 	// Add a uint64 value to the buffer.
 	void add_uint64(uint64_t n)
 	{
-		check_overflow(1);
-		_buf[_size++] = n;
+		check_write_overflow(1);
+		_buf[_write_offset++] = n;
 	}
 
 	// Add raw data to the buffer. It will be aligned to word size with
@@ -80,16 +101,16 @@ public:
 	{
 		uint64_t aligned_bytes = align64(size);
 		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
-		check_overflow(aligned_words);
+		check_write_overflow(aligned_words);
 
 		// Lint disabled for reinterpret cast (useful here) and pointer
 		// arithmetic (required here).
-		auto* buf = reinterpret_cast<uint8_t*>(&_buf.get()[_size]); // NOLINT
+		auto* buf = reinterpret_cast<uint8_t*>(&_buf.get()[_write_offset]); // NOLINT
 		std::memcpy(buf, ptr, size);
 		// It is safe to call this with 0 size.
 		// aligned >= size always.
 		std::memset(&buf[size], '\0', aligned_bytes - size); // NOLINT
-		_size += aligned_words;
+		_write_offset += aligned_words;
 
 		return buf;
 	}
@@ -104,14 +125,24 @@ public:
 	// Clear the buffer but maintain the capacity.
 	void reset()
 	{
-		_size = 0;
+		_write_offset = 0;
+		// Clearing the buffer invalidates the read offset.
+		reset_read();
+	}
+
+	// Reset the read offset to the start of the buffer.
+	void reset_read()
+	{
+		_read_offset = 0;
 	}
 
 private:
 	// Capacity of buffer in uint64 words (i.e. cap_bytes = 8 * _cap).
 	uint64_t _cap;
-	// Size of buffer in uint64 words (i.e. size_bytes = 8 * _size).
-	uint64_t _size;
+	// Offset tracking a read through this buffer in uint64 words.
+	uint64_t _read_offset;
+	// Size of buffer in uint64 words (i.e. size_bytes = 8 * _write_offset).
+	uint64_t _write_offset;
 	// Store our data as an array of uint64_t so we're (64-bit) word aligned
 	// by default.
 	std::unique_ptr<uint64_t[]> _buf; // NOLINT: Can't use std::array here.
@@ -125,23 +156,40 @@ private:
 		return (size + (sizeof(uint64_t) - 1)) & ~(sizeof(uint64_t) - 1);
 	}
 
-	// Determine if we would overflow the capacity of the buffer and if so,
-	// throw.
-	//   delta: Delta in size expressed in uint64 words.
-	void check_overflow(uint64_t delta)
+	// Throw an exception indicating an overflow.
+	static void throw_overflow(const char* op, const char* what, uint64_t delta,
+				   uint64_t offset, uint64_t size)
 	{
+		uint64_t delta_bytes = delta * sizeof(uint64_t);
+		uint64_t offset_bytes = offset * sizeof(uint64_t);
+		uint64_t size_bytes = size * sizeof(uint64_t);
+
 		// We are OK with some string allocations on the exceptional
 		// code path.
-		if (_cap < _size + delta) {
-			uint64_t delta_bytes = delta * sizeof(uint64_t);
-			uint64_t size_bytes = _size * sizeof(uint64_t);
-			uint64_t cap_bytes = _cap * sizeof(uint64_t);
+		throw std::runtime_error(op + std::to_string(delta_bytes) +
+					 " bytes from offset of " + std::to_string(offset_bytes) +
+					 " bytes, exceeding " + what + " of" +
+					 std::to_string(size_bytes));
+	}
 
-			throw std::runtime_error(
-				"Requested allocation of " + std::to_string(delta_bytes) +
-				" + size of " + std::to_string(size_bytes) +
-				" bytes exceeds capacity of " + std::to_string(cap_bytes));
-		}
+	// Determine if read would overflow the capacity of the buffer and if
+	// so, throw.
+	//   delta: Delta in size expressed in uint64 words.
+	void check_read_overflow(uint64_t delta)
+	{
+		if (_read_offset + delta > _write_offset)
+			throw_overflow("Requested read of ", "size", delta, _read_offset,
+				       _write_offset);
+	}
+
+	// Determine if write would overflow the capacity of the buffer and if
+	// so, throw.
+	//   delta: Delta in size expressed in uint64 words.
+	void check_write_overflow(uint64_t delta)
+	{
+		if (_write_offset + delta > _cap)
+			throw_overflow("Requested write of ", "capacity", delta, _write_offset,
+				       _cap);
 	}
 };
 } // namespace janus
