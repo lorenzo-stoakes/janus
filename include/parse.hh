@@ -55,6 +55,26 @@ static inline auto parse_digits10 = parse_digits<10>;     // NOLINT: Not magical
 static inline auto parse_digits100 = parse_digits<100>;   // NOLINT: Not magical.
 static inline auto parse_digits1000 = parse_digits<1000>; // NOLINT: Not magical.
 
+// Print digits to the specified char buffer and update the buffer pointer to
+// point at the end of it. If log10(start_mult) > num_digits, leading zeroes
+// will be printed.
+//   start_mult: The multiplier of the left-most digit, e.g. 10^(num_digits - 1)
+//          str: Pointer to char buffer to output to.
+//      returns: Pointer to character after written digits.
+template<uint64_t start_mult>
+static inline auto print_digits(char* str, uint64_t num) -> char*
+{
+	for (uint64_t mult = start_mult; mult > 0; mult /= 10) { // NOLINT: Not magical.
+		*str++ = '0' + (num / mult) % 10;                // NOLINT: Not magical.
+	}
+
+	return str;
+}
+
+static inline auto print_digits10 = print_digits<10>;     // NOLINT: Not magical.
+static inline auto print_digits100 = print_digits<100>;   // NOLINT: Not magical.
+static inline auto print_digits1000 = print_digits<1000>; // NOLINT: Not magical.
+
 // Determine if the specified year is a leap year.
 static inline auto is_leap(uint64_t year) -> bool
 {
