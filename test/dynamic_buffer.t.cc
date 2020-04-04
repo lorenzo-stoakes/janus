@@ -422,7 +422,7 @@ TEST(dynamic_buffer_test, read)
 // Test that .add_string() correctly encodes strings.
 TEST(dynamic_buffer_test, add_string)
 {
-	auto buf = janus::dynamic_buffer(32);
+	auto buf = janus::dynamic_buffer(40);
 
 	const char* str1 = "ohai";
 	std::string_view ret1 = buf.add_string(str1, 4);
@@ -451,13 +451,21 @@ TEST(dynamic_buffer_test, add_string)
 	auto* ret4 = static_cast<char*>(buf.read_raw(8));
 	EXPECT_EQ(buf.read_offset(), 32);
 	EXPECT_EQ(std::strcmp(str2, ret4), 0);
+
+	// Ensure we can write a zero size string.
+	std::string_view ret5 = buf.add_string(str2, 0);
+	EXPECT_EQ(buf.size(), 40);
+	EXPECT_EQ(buf.read_uint64(), 0);
+	EXPECT_EQ(buf.read_offset(), 40);
+	EXPECT_EQ(ret5.size(), 0);
+	EXPECT_TRUE(ret5.empty());
 }
 
 // Test that .read_string() correctly reads a string from the buffer and returns
 // a valid std::string_view.
 TEST(dynamic_buffer_test, read_string)
 {
-	auto buf = janus::dynamic_buffer(32);
+	auto buf = janus::dynamic_buffer(40);
 
 	const char* str1 = "ohai";
 	buf.add_string(str1, 4);
@@ -477,5 +485,13 @@ TEST(dynamic_buffer_test, read_string)
 	EXPECT_EQ(buf.read_offset(), 32);
 	EXPECT_EQ(ret2.size(), 7);
 	EXPECT_EQ(std::strcmp(str2, ret2.data()), 0);
+
+	// Ensure we can read a zero size string.
+	buf.add_string(str2, 0);
+	EXPECT_EQ(buf.size(), 40);
+	std::string_view ret3 = buf.read_string();
+	EXPECT_EQ(buf.read_offset(), 40);
+	EXPECT_EQ(ret3.size(), 0);
+	EXPECT_TRUE(ret3.empty());
 }
 } // namespace

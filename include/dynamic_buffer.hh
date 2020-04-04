@@ -112,6 +112,9 @@ public:
 	auto read_string() -> std::string_view
 	{
 		uint64_t count = read_uint64();
+		if (count == 0)
+			return std::string_view(nullptr, 0);
+
 		char* str = static_cast<char*>(read_raw(count));
 
 		return std::string_view(str, count);
@@ -135,8 +138,6 @@ public:
 		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
 		check_write_overflow(aligned_words);
 
-		// Lint disabled for reinterpret cast (useful here) and pointer
-		// arithmetic (required here).
 		auto* buf = reinterpret_cast<uint8_t*>(&_buf[_write_offset]);
 		std::memcpy(buf, ptr, size);
 		// It is safe to call this with 0 size.
@@ -159,9 +160,13 @@ public:
 	//  size: Size of string WITHOUT null terminator.
 	auto add_string(const char* str, uint64_t size) -> std::string_view
 	{
+		if (size == 0) {
+			add_uint64(0);
+			return std::string_view(nullptr, 0);
+		}
+
 		add_uint64(size);
 		void* ptr = add_raw(str, size + 1);
-
 		return std::string_view(static_cast<char*>(ptr), size);
 	}
 
@@ -211,7 +216,7 @@ private:
 		// code path.
 		throw std::runtime_error(op + std::to_string(delta_bytes) +
 					 " bytes from offset of " + std::to_string(offset_bytes) +
-					 " bytes, exceeding " + what + " of" +
+					 " bytes, exceeding " + what + " of " +
 					 std::to_string(size_bytes));
 	}
 
