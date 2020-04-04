@@ -112,6 +112,9 @@ public:
 	auto read_string() -> std::string_view
 	{
 		uint64_t count = read_uint64();
+		if (count == 0)
+			return std::string_view(nullptr, 0);
+
 		char* str = static_cast<char*>(read_raw(count));
 
 		return std::string_view(str, count);
@@ -157,9 +160,13 @@ public:
 	//  size: Size of string WITHOUT null terminator.
 	auto add_string(const char* str, uint64_t size) -> std::string_view
 	{
+		if (size == 0) {
+			add_uint64(0);
+			return std::string_view(nullptr, 0);
+		}
+
 		add_uint64(size);
 		void* ptr = add_raw(str, size + 1);
-
 		return std::string_view(static_cast<char*>(ptr), size);
 	}
 
