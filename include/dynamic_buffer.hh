@@ -135,8 +135,6 @@ public:
 		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
 		check_write_overflow(aligned_words);
 
-		// Lint disabled for reinterpret cast (useful here) and pointer
-		// arithmetic (required here).
 		auto* buf = reinterpret_cast<uint8_t*>(&_buf[_write_offset]);
 		std::memcpy(buf, ptr, size);
 		// It is safe to call this with 0 size.
