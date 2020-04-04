@@ -137,7 +137,7 @@ public:
 		if ((masked & SIGN_MASK) == SIGN_MASK)
 			masked |= PLACE_MASK;
 
-		return reinterpret_cast<int64_t&>(masked); // NOLINT
+		return reinterpret_cast<int64_t&>(masked);
 	}
 
 	// Returns the raw value including number of places encoding. Probably
@@ -203,7 +203,7 @@ private:
 	// Encode value and places and set raw value.
 	void set(int64_t val, uint8_t places)
 	{
-		_encoded = reinterpret_cast<uint64_t&>(val) & VALUE_MASK; // NOLINT
+		_encoded = reinterpret_cast<uint64_t&>(val) & VALUE_MASK;
 		_encoded |= (static_cast<uint64_t>(places) << VALUE_BITS) & PLACE_MASK;
 	}
 };
