@@ -11,8 +11,8 @@
 auto main(int argc, char** argv) -> int
 {
 	if (argc < 3) {
-		std::cerr << "usage: " << argv[0] << // NOLINT
-			" [output file] [meta json file(s)]..." << std::endl;
+		std::cerr << "usage: " << argv[0] << " [output file] [meta json file(s)]..."
+			  << std::endl;
 		return 1;
 	}
 

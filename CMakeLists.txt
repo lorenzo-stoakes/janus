@@ -9,6 +9,7 @@ file(GLOB_RECURSE HEADER_SOURCES
 	"include/janus.hh"
 	"include/decimal7.hh"
 	"include/dynamic_buffer.hh"
+        "include/parse.hh"
 )
 
 # Neptune

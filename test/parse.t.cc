@@ -1,0 +1,142 @@
+#include "parse.hh"
+
+#include <cstdlib>
+#include <ctime>
+#include <gtest/gtest.h>
+#include <iomanip>
+#include <sstream>
+#include <string>
+
+namespace
+{
+// Helper method to get epoch time using system libraries.
+uint64_t get_epoch_ms(uint64_t year, uint64_t month, uint64_t day, uint64_t hour, uint64_t min,
+		      uint64_t sec, uint64_t ms, std::string& as_str)
+{
+	// Pretty Heath Robinson.
+	std::ostringstream oss;
+	oss << year << "-" << std::setw(2) << std::setfill('0') << month << "-" << std::setw(2)
+	    << day << "T" << std::setw(2) << hour << ":" << std::setw(2) << min << ":"
+	    << std::setw(2) << sec;
+	std::string str = oss.str();
+
+	// Parse the time and obtain a 'tm' struct value.
+	std::tm tm_time = {0};
+	::strptime(str.c_str(), "%Y-%m-%dT%H:%M:%S", &tm_time);
+
+	// Then obtain seconds since epoch in UTC.
+	// Safe to assume time_t is a uint64.
+	uint64_t secs_since_epoch = ::timegm(&tm_time);
+
+	// Convert to ISO-8601 string.
+	as_str = str + "." + std::to_string(ms) + "Z";
+
+	return secs_since_epoch * 1000 + ms;
+}
+
+// 41696
+// :56
+// 34:56
+
+// Test that the parse_digits() internal helper function correctly parses digits
+// from 1 - 4 digits long.
+TEST(parse_test, parse_digits)
+{
+	// Single digit values.
+	for (uint64_t i = 0; i < 10; i++) {
+		uint64_t actual = janus::internal::parse_digits<1>(std::to_string(i).c_str());
+		EXPECT_EQ(i, actual);
+	}
+
+	// 2 digits.
+	for (uint64_t i = 10; i < 100; i++) {
+		uint64_t actual = janus::internal::parse_digits<10>(std::to_string(i).c_str());
+		EXPECT_EQ(i, actual);
+	}
+
+	// 3 digits.
+	for (uint64_t i = 100; i < 1000; i++) {
+		uint64_t actual = janus::internal::parse_digits<100>(std::to_string(i).c_str());
+		EXPECT_EQ(i, actual);
+	}
+
+	// 4 digits.
+	for (uint64_t i = 1000; i < 10'000; i++) {
+		uint64_t actual = janus::internal::parse_digits<1000>(std::to_string(i).c_str());
+		EXPECT_EQ(i, actual);
+	}
+}
+
+// Test that the is_leap() internal helper function correctly identifies leap years.
+TEST(parse_test, is_leap)
+{
+	EXPECT_TRUE(janus::internal::is_leap(1600));
+	EXPECT_FALSE(janus::internal::is_leap(1700));
+	EXPECT_FALSE(janus::internal::is_leap(1800));
+	EXPECT_FALSE(janus::internal::is_leap(1900));
+	EXPECT_TRUE(janus::internal::is_leap(2000));
+	EXPECT_TRUE(janus::internal::is_leap(2020));
+}
+
+// Test that parse_iso8601() correctly parses a date/time in the ISO-8601 format
+// (e.g. 2020-03-11T13:20:00.123Z)
+TEST(parse_test, parse_iso8601)
+{
+	auto parse = [&](std::string str) { return janus::parse_iso8601(str.c_str(), str.size()); };
+
+	// Start with an arbitrary February 29th.
+	std::string timestamp_str;
+	uint64_t expected = get_epoch_ms(2020, 2, 29, 17, 39, 57, 176, timestamp_str);
+	EXPECT_EQ(parse(timestamp_str), expected) << "Couldn't parse " << timestamp_str;
+
+	// Now range over some days that occur in every year.
+	for (uint64_t year = 1970; year <= janus::internal::MAX_YEAR; year++) {
+		for (uint64_t month = 1; month <= 12; month++) {
+			for (uint64_t day = 1; day <= 28; day++) {
+				// Check 12:34:56.789 for each day.
+				expected = get_epoch_ms(year, month, day, 12, 34, 56, 789,
+							timestamp_str);
+				ASSERT_EQ(parse(timestamp_str), expected)
+					<< "Couldn't parse " << timestamp_str;
+
+				expected -= 789;
+				std::string without_ms_str =
+					timestamp_str.substr(0, timestamp_str.size() - 5) + "Z";
+				// Check 12:34:56 for each day.
+				ASSERT_EQ(parse(without_ms_str), expected)
+					<< "Couldn't parse " << without_ms_str;
+			}
+		}
+	}
+
+	// Now range over times on a fixed date.
+	for (uint64_t hour = 0; hour < 24; hour++) {
+		for (uint64_t min = 0; min < 60; min++) {
+			for (uint64_t sec = 0; sec < 60; sec++) {
+				// Sticking to .789 ms.
+				expected = get_epoch_ms(2020, 4, 4, hour, min, sec, 789,
+							timestamp_str);
+				ASSERT_EQ(parse(timestamp_str), expected)
+					<< "Couldn't parse " << timestamp_str;
+
+				expected -= 789;
+				std::string without_ms_str =
+					timestamp_str.substr(0, timestamp_str.size() - 5) + "Z";
+				// Check 12:34:56 for each day.
+				ASSERT_EQ(parse(without_ms_str), expected)
+					<< "Couldn't parse " << without_ms_str;
+			}
+		}
+	}
+
+	// Now try out some invalid inputs.
+	EXPECT_EQ(parse(""), 0);
+	EXPECT_EQ(parse("ohai"), 0);
+	EXPECT_EQ(parse("2020-03-11T13:20:00.123"), 0);
+	EXPECT_EQ(parse("2020-03-11T13:20:00."), 0);
+	EXPECT_EQ(parse("2020-03-11T13:20:00"), 0);
+	EXPECT_EQ(parse("2020-03-11T13:20:0"), 0);
+	EXPECT_EQ(parse("2020-03-11T13:20:00.123z"), 0);
+	EXPECT_EQ(parse("2020-03-11T13:20:00.123x"), 0);
+}
+} // namespace
