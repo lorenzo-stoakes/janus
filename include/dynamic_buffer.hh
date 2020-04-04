@@ -209,7 +209,7 @@ private:
 		// code path.
 		throw std::runtime_error(op + std::to_string(delta_bytes) +
 					 " bytes from offset of " + std::to_string(offset_bytes) +
-					 " bytes, exceeding " + what + " of" +
+					 " bytes, exceeding " + what + " of " +
 					 std::to_string(size_bytes));
 	}
 
