@@ -1,11 +1,13 @@
 #include "parse.hh"
 
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <gtest/gtest.h>
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 namespace
 {
@@ -138,5 +140,115 @@ TEST(parse_test, parse_iso8601)
 	EXPECT_EQ(parse("2020-03-11T13:20:0"), 0);
 	EXPECT_EQ(parse("2020-03-11T13:20:00.123z"), 0);
 	EXPECT_EQ(parse("2020-03-11T13:20:00.123x"), 0);
+}
+
+// Test that internal method .print_digits() prints digits correctly to a char
+// buffer.
+TEST(parse_test, print_digits)
+{
+	char buf[5] = {0};
+
+	// Single digit values.
+	for (uint64_t i = 0; i < 10; i++) {
+		char* ptr = janus::internal::print_digits<1>(buf, i);
+		ASSERT_EQ(buf[0], '0' + i);
+		ASSERT_EQ(ptr, &buf[1]);
+	}
+
+	// 2 digits.
+	for (uint64_t i = 0; i < 100; i++) {
+		char* ptr = janus::internal::print_digits<10>(buf, i);
+		if (i < 10)
+			ASSERT_EQ(buf[0], '0');
+		else
+			ASSERT_EQ(buf[0], '0' + (i / 10));
+		ASSERT_EQ(buf[1], '0' + (i % 10));
+		ASSERT_EQ(ptr, &buf[2]);
+	}
+
+	// 3 digits.
+	for (uint64_t i = 0; i < 1000; i++) {
+		char* ptr = janus::internal::print_digits<100>(buf, i);
+		if (i < 100)
+			ASSERT_EQ(buf[0], '0');
+		else
+			ASSERT_EQ(buf[0], '0' + (i / 100));
+
+		if (i < 10)
+			ASSERT_EQ(buf[1], '0');
+		else
+			ASSERT_EQ(buf[1], '0' + ((i / 10) % 10));
+		ASSERT_EQ(buf[2], '0' + (i % 10));
+		ASSERT_EQ(ptr, &buf[3]);
+	}
+
+	// 4 digits.
+	for (uint64_t i = 100; i < 10'000; i++) {
+		char* ptr = janus::internal::print_digits<1000>(buf, i);
+		if (i < 1000)
+			ASSERT_EQ(buf[0], '0');
+		else
+			ASSERT_EQ(buf[0], '0' + (i / 1000));
+
+		if (i < 100)
+			ASSERT_EQ(buf[1], '0');
+		else
+			ASSERT_EQ(buf[1], '0' + ((i / 100) % 10));
+
+		if (i < 10)
+			ASSERT_EQ(buf[2], '0');
+		else
+			ASSERT_EQ(buf[2], '0' + ((i / 10) % 10));
+		ASSERT_EQ(buf[3], '0' + (i % 10));
+		ASSERT_EQ(ptr, &buf[4]);
+	}
+}
+
+// Test that .print_iso8601() method correctly outputs ISO-8601 numbers to a
+// character buffer from ms since epoch values.
+TEST(parse_test, print_iso8601)
+{
+	char buf[25];
+
+	// Parse value then print it back and make sure they match.
+
+	const char* test_timestamp = "2020-03-11T13:20:00.123Z";
+	uint64_t epoch_ms = janus::parse_iso8601(test_timestamp, 24);
+	std::string_view view = janus::print_iso8601(buf, epoch_ms);
+
+	EXPECT_EQ(std::strcmp(buf, test_timestamp), 0)
+		<< "Expected " << test_timestamp << " actual " << buf;
+
+	// Make sure returned string view reflects what was written to buf.
+	EXPECT_EQ(std::strcmp(view.data(), buf), 0) << "Expected " << buf << " actual " << view;
+
+	// Now range over some days that occur in every year.
+	std::string timestamp_str;
+	for (uint64_t year = 1970; year <= janus::internal::MAX_YEAR; year++) {
+		for (uint64_t month = 1; month <= 12; month++) {
+			for (uint64_t day = 1; day <= 28; day++) {
+				// Check 12:34:56.789 for each day.
+				epoch_ms = get_epoch_ms(year, month, day, 12, 34, 56, 789,
+							timestamp_str);
+				view = janus::print_iso8601(buf, epoch_ms);
+				EXPECT_EQ(std::strcmp(buf, timestamp_str.c_str()), 0);
+				EXPECT_EQ(std::strcmp(view.data(), timestamp_str.c_str()), 0);
+			}
+		}
+	}
+
+	// Now range over times on a fixed date.
+	for (uint64_t hour = 0; hour < 24; hour++) {
+		for (uint64_t min = 0; min < 60; min++) {
+			for (uint64_t sec = 0; sec < 60; sec++) {
+				// Sticking to .789 ms.
+				epoch_ms = get_epoch_ms(2020, 4, 4, hour, min, sec, 789,
+							timestamp_str);
+				view = janus::print_iso8601(buf, epoch_ms);
+				EXPECT_EQ(std::strcmp(buf, timestamp_str.c_str()), 0);
+				EXPECT_EQ(std::strcmp(view.data(), timestamp_str.c_str()), 0);
+			}
+		}
+	}
 }
 } // namespace

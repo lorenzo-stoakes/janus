@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string_view>
 
 namespace janus
 {
@@ -15,7 +16,7 @@ static const std::array<uint64_t, 13> DAY_OFFSET_BY_MONTH_NO_LEAP = {
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
 static const std::array<uint64_t, 13> DAY_OFFSET_BY_MONTH_LEAP = {0,   31,  60,  91,  121, 152, 182,
 								  213, 244, 274, 305, 335, 366};
-static const std::array<uint64_t, NUM_YEARS> DAY_OFFSET_BY_YEAR_SINCE_EPOCH = {
+static const std::array<uint64_t, NUM_YEARS + 1> DAY_OFFSET_BY_YEAR_SINCE_EPOCH = {
 	0,     365,   730,   1096,  1461,  1826,  2191,  2557,  2922,  3287,  3652,  4018,
 	4383,  4748,  5113,  5479,  5844,  6209,  6574,  6940,  7305,  7670,  8035,  8401,
 	8766,  9131,  9496,  9862,  10227, 10592, 10957, 11323, 11688, 12053, 12418, 12784,
@@ -26,14 +27,16 @@ static const std::array<uint64_t, NUM_YEARS> DAY_OFFSET_BY_YEAR_SINCE_EPOCH = {
 	30681, 31046, 31411, 31777, 32142, 32507, 32872, 33238, 33603, 33968, 34333, 34699,
 	35064, 35429, 35794, 36160, 36525, 36890, 37255, 37621, 37986, 38351, 38716, 39082,
 	39447, 39812, 40177, 40543, 40908, 41273, 41638, 42004, 42369, 42734, 43099, 43465,
-	43830, 44195, 44560, 44926, 45291, 45656, 46021, 46387, 46752, 47117, 47482,
-};
+	43830, 44195, 44560, 44926, 45291, 45656, 46021, 46387, 46752, 47117, 47482, 47847};
 
 // Convenient units.
 static constexpr uint64_t MS_IN_SEC = 1000;
 static constexpr uint64_t SECS_IN_MIN = 60;
 static constexpr uint64_t MINS_IN_HR = 60;
 static constexpr uint64_t HRS_IN_DAY = 24;
+static constexpr uint64_t DAYS_IN_YEAR = 365;
+static constexpr uint64_t DAYS_IN_LEAP_YEAR = 366;
+static constexpr uint64_t MONTHS_IN_YEAR = 12;
 
 // Parse digits for a fixed size integer = log10(start_mult), e.g. parse_digits<100>("123");
 //   start_mult: The multiplier of the left-most digit, e.g. 10^(num_digits - 1)
@@ -54,6 +57,26 @@ static inline auto parse_digits(const char* str) -> uint64_t
 static inline auto parse_digits10 = parse_digits<10>;     // NOLINT: Not magical.
 static inline auto parse_digits100 = parse_digits<100>;   // NOLINT: Not magical.
 static inline auto parse_digits1000 = parse_digits<1000>; // NOLINT: Not magical.
+
+// Print digits to the specified char buffer and update the buffer pointer to
+// point at the end of it. If log10(start_mult) > num_digits, leading zeroes
+// will be printed.
+//   start_mult: The multiplier of the left-most digit, e.g. 10^(num_digits - 1)
+//          str: Pointer to char buffer to output to.
+//      returns: Pointer to character after written digits.
+template<uint64_t start_mult>
+static inline auto print_digits(char* str, uint64_t num) -> char*
+{
+	for (uint64_t mult = start_mult; mult > 0; mult /= 10) { // NOLINT: Not magical.
+		*str++ = '0' + (num / mult) % 10;                // NOLINT: Not magical.
+	}
+
+	return str;
+}
+
+static inline auto print_digits10 = print_digits<10>;     // NOLINT: Not magical.
+static inline auto print_digits100 = print_digits<100>;   // NOLINT: Not magical.
+static inline auto print_digits1000 = print_digits<1000>; // NOLINT: Not magical.
 
 // Determine if the specified year is a leap year.
 static inline auto is_leap(uint64_t year) -> bool
@@ -96,7 +119,7 @@ static inline auto parse_iso8601(const char* str, uint64_t size) -> uint64_t // 
 	// ****
 	// 2020-03-11T13:20:00.123Z
 	static constexpr uint64_t YEAR_INDEX = 0;
-	// ****
+	//      **
 	// 2020-03-11T13:20:00.123Z
 	static constexpr uint64_t MONTH_INDEX = 5;
 	//         **
@@ -148,5 +171,86 @@ static inline auto parse_iso8601(const char* str, uint64_t size) -> uint64_t // 
 	ms += internal::DAY_OFFSET_BY_YEAR_SINCE_EPOCH[year - internal::MIN_YEAR] * in_ms;
 
 	return ms;
+}
+
+// Convert ms since epoch value to an ISO-8601 string. It outputs to a 25 byte
+// character buffer including ms, e.g. 2020-03-11T13:20:00.123Z.
+//   epoch_ms: Milliseconds since epoch (1/1/1970 00:00)
+//        str: Character buffer containing minimum 25 bytes space where string will be output to
+//    returns: Returns a std::string_view pointing at the provided char buffer for convenience.
+static inline auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view // NOLINT
+{
+	uint64_t ms = epoch_ms % internal::MS_IN_SEC;
+	epoch_ms /= internal::MS_IN_SEC;
+	uint64_t second = epoch_ms % internal::SECS_IN_MIN;
+	epoch_ms /= internal::SECS_IN_MIN;
+	uint64_t minute = epoch_ms % internal::MINS_IN_HR;
+	epoch_ms /= internal::MINS_IN_HR;
+	uint64_t hour = epoch_ms % internal::HRS_IN_DAY;
+	epoch_ms /= internal::HRS_IN_DAY;
+
+	// We are now left with the number of days from epoch to 00:00 on the
+	// date specified.
+	uint64_t days_in_date = epoch_ms;
+
+	// First guess which year we are in.
+	uint64_t year = internal::MIN_YEAR + days_in_date / internal::DAYS_IN_YEAR;
+
+	// If we are wrong, we will appear to be in a later year than we
+	// actually are due to leap years meaning we under-estimate the length
+	// of a year(s).
+	if (year > internal::MIN_YEAR) {
+		// For a year to be out by more than 1 we would have had to have
+		// >=365 Feb 29th's.
+		uint64_t day_offset =
+			internal::DAY_OFFSET_BY_YEAR_SINCE_EPOCH[year - internal::MIN_YEAR];
+		if (days_in_date < day_offset)
+			year--;
+	}
+
+	// Now extract the number of days we are offset from Jan 1st in the year.
+	uint64_t days_in_year =
+		days_in_date - internal::DAY_OFFSET_BY_YEAR_SINCE_EPOCH[year - internal::MIN_YEAR];
+
+	// Linear search day offsets in month. This is faster than alternatives
+	// due to cache friendliness.
+
+	const auto& month_offsets = internal::is_leap(year) ? internal::DAY_OFFSET_BY_MONTH_LEAP
+							    : internal::DAY_OFFSET_BY_MONTH_NO_LEAP;
+	uint64_t month_offset = 0;
+	uint64_t month;
+	// The month value is offset by 1 so is equal to the human-readable
+	// month number.
+	for (month = 1; month <= internal::MONTHS_IN_YEAR; month++) {
+		if (days_in_year < month_offsets[month]) {
+			month_offset = month_offsets[month - 1];
+			break;
+		}
+	}
+
+	// Retrieve day offset in month and offset by 1 for a human-readable day
+	// number.
+	uint64_t day = days_in_year - month_offset + 1;
+
+	char* ptr = str;
+
+	ptr = internal::print_digits1000(ptr, year);
+	*ptr++ = '-';
+	ptr = internal::print_digits10(ptr, month);
+	*ptr++ = '-';
+	ptr = internal::print_digits10(ptr, day);
+	*ptr++ = 'T';
+	ptr = internal::print_digits10(ptr, hour);
+	*ptr++ = ':';
+	ptr = internal::print_digits10(ptr, minute);
+	*ptr++ = ':';
+	ptr = internal::print_digits10(ptr, second);
+	*ptr++ = '.';
+	ptr = internal::print_digits100(ptr, ms);
+	*ptr++ = 'Z';
+
+	// Null terminate string.
+	*ptr = '\0';
+	return std::string_view(str, 24); // NOLINT: Not magical.
 }
 } // namespace janus
