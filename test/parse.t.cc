@@ -139,4 +139,66 @@ TEST(parse_test, parse_iso8601)
 	EXPECT_EQ(parse("2020-03-11T13:20:00.123z"), 0);
 	EXPECT_EQ(parse("2020-03-11T13:20:00.123x"), 0);
 }
+
+// Test that internal method .print_digits() prints digits correctly to a char
+// buffer.
+TEST(parse_test, print_digits)
+{
+	char buf[5] = {0};
+
+	// Single digit values.
+	for (uint64_t i = 0; i < 10; i++) {
+		char* ptr = janus::internal::print_digits<1>(buf, i);
+		ASSERT_EQ(buf[0], '0' + i);
+		ASSERT_EQ(ptr, &buf[1]);
+	}
+
+	// 2 digits.
+	for (uint64_t i = 0; i < 100; i++) {
+		char* ptr = janus::internal::print_digits<10>(buf, i);
+		if (i < 10)
+			ASSERT_EQ(buf[0], '0');
+		else
+			ASSERT_EQ(buf[0], '0' + (i / 10));
+		ASSERT_EQ(buf[1], '0' + (i % 10));
+		ASSERT_EQ(ptr, &buf[2]);
+	}
+
+	// 3 digits.
+	for (uint64_t i = 0; i < 1000; i++) {
+		char* ptr = janus::internal::print_digits<100>(buf, i);
+		if (i < 100)
+			ASSERT_EQ(buf[0], '0');
+		else
+			ASSERT_EQ(buf[0], '0' + (i / 100));
+
+		if (i < 10)
+			ASSERT_EQ(buf[1], '0');
+		else
+			ASSERT_EQ(buf[1], '0' + ((i / 10) % 10));
+		ASSERT_EQ(buf[2], '0' + (i % 10));
+		ASSERT_EQ(ptr, &buf[3]);
+	}
+
+	// 4 digits.
+	for (uint64_t i = 100; i < 10'000; i++) {
+		char* ptr = janus::internal::print_digits<1000>(buf, i);
+		if (i < 1000)
+			ASSERT_EQ(buf[0], '0');
+		else
+			ASSERT_EQ(buf[0], '0' + (i / 1000));
+
+		if (i < 100)
+			ASSERT_EQ(buf[1], '0');
+		else
+			ASSERT_EQ(buf[1], '0' + ((i / 100) % 10));
+
+		if (i < 10)
+			ASSERT_EQ(buf[2], '0');
+		else
+			ASSERT_EQ(buf[2], '0' + ((i / 10) % 10));
+		ASSERT_EQ(buf[3], '0' + (i % 10));
+		ASSERT_EQ(ptr, &buf[4]);
+	}
+}
 } // namespace
