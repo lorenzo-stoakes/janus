@@ -119,7 +119,7 @@ static inline auto parse_iso8601(const char* str, uint64_t size) -> uint64_t // 
 	// ****
 	// 2020-03-11T13:20:00.123Z
 	static constexpr uint64_t YEAR_INDEX = 0;
-	// ****
+	//      **
 	// 2020-03-11T13:20:00.123Z
 	static constexpr uint64_t MONTH_INDEX = 5;
 	//         **
