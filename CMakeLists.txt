@@ -5,11 +5,13 @@ set(SHARED_COMPILE_OPTIONS
 	--std=gnu++2a -Wall -g)
 
 file(GLOB_RECURSE HEADER_SOURCES
-	# Excluding sajson for now, will add once static issues resolved.
-	"include/janus.hh"
-	"include/decimal7.hh"
-	"include/dynamic_buffer.hh"
-        "include/parse.hh"
+	"include/*.hh"
+)
+# Excluding sajson for now, will add once static issues resolved.
+list(FILTER HEADER_SOURCES EXCLUDE REGEX "sajson.*")
+
+file(GLOB JANUS_SOURCES
+	"src/*.cc"
 )
 
 # Neptune
@@ -18,6 +20,7 @@ file(GLOB_RECURSE NEPTUNE_SOURCES
 	"src/neptune/*.cc"
 )
 add_executable(neptune
+	${JANUS_SOURCES}
 	${NEPTUNE_SOURCES}
 )
 target_compile_options(neptune
@@ -31,6 +34,7 @@ file(GLOB_RECURSE TEST_SOURCES
 	"test/*.cc"
 )
 add_executable(testrunner
+	${JANUS_SOURCES}
 	${TEST_SOURCES}
 )
 target_compile_options(testrunner
@@ -46,7 +50,7 @@ gtest_add_tests(testrunner "" AUTO)
 
 add_custom_target(test
 	COMMAND ./testrunner --gtest_shuffle
-	DEPENDS testrunner tidy cppcheck clangformat
+	DEPENDS testrunner cppcheck clangformat
 	WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
 )
 
@@ -56,7 +60,8 @@ file(GLOB_RECURSE BENCH_SOURCES
 	"bench/sajson/*.cc"
 )
 add_executable(benchmark
-        ${BENCH_SOURCES}
+	${JANUS_SOURCES}
+	${BENCH_SOURCES}
 )
 target_compile_options(benchmark
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3 -DNDEBUG
@@ -88,14 +93,14 @@ add_custom_target(clangformat ALL
 )
 
 add_custom_target(tidy
-	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
+	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${JANUS_SOURCES} ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running clang-tidy..."
 	VERBATIM
 )
 
 add_custom_target(cppcheck
-	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
+	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet ${JANUS_SOURCES} ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running cppcheck..."
 	VERBATIM
