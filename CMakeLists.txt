@@ -9,7 +9,11 @@ file(GLOB_RECURSE HEADER_SOURCES
 	"include/janus.hh"
 	"include/decimal7.hh"
 	"include/dynamic_buffer.hh"
-        "include/parse.hh"
+	"include/parse.hh"
+)
+
+file(GLOB JANUS_SOURCES
+	"src/*.cc"
 )
 
 # Neptune
@@ -18,6 +22,7 @@ file(GLOB_RECURSE NEPTUNE_SOURCES
 	"src/neptune/*.cc"
 )
 add_executable(neptune
+	${JANUS_SOURCES}
 	${NEPTUNE_SOURCES}
 )
 target_compile_options(neptune
@@ -31,6 +36,7 @@ file(GLOB_RECURSE TEST_SOURCES
 	"test/*.cc"
 )
 add_executable(testrunner
+	${JANUS_SOURCES}
 	${TEST_SOURCES}
 )
 target_compile_options(testrunner
@@ -56,7 +62,8 @@ file(GLOB_RECURSE BENCH_SOURCES
 	"bench/sajson/*.cc"
 )
 add_executable(benchmark
-        ${BENCH_SOURCES}
+	${JANUS_SOURCES}
+	${BENCH_SOURCES}
 )
 target_compile_options(benchmark
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3 -DNDEBUG
