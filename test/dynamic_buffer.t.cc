@@ -1,4 +1,6 @@
 #include "dynamic_buffer.hh"
+#include "json.hh"
+#include "sajson.hh"
 
 #include <cstring>
 #include <gtest/gtest.h>
@@ -422,7 +424,7 @@ TEST(dynamic_buffer_test, read)
 // Test that .add_string() correctly encodes strings.
 TEST(dynamic_buffer_test, add_string)
 {
-	auto buf = janus::dynamic_buffer(40);
+	auto buf = janus::dynamic_buffer(56);
 
 	const char* str1 = "ohai";
 	std::string_view ret1 = buf.add_string(str1, 4);
@@ -459,6 +461,17 @@ TEST(dynamic_buffer_test, add_string)
 	EXPECT_EQ(buf.read_offset(), 40);
 	EXPECT_EQ(ret5.size(), 0);
 	EXPECT_TRUE(ret5.empty());
+
+	// Test sajson node overload.
+	char json[] = R"(["foo"])";
+	uint64_t json_size = sizeof(json) - 1;
+
+	sajson::document doc = janus::internal::parse_json("", json, json_size);
+	const sajson::value& root = doc.get_root();
+	sajson::value val = root.get_array_element(0);
+	std::string_view ret6 = buf.add_string(val);
+	EXPECT_EQ(std::strcmp(ret6.data(), "foo"), 0);
+	EXPECT_EQ(buf.size(), 56);
 }
 
 // Test that .read_string() correctly reads a string from the buffer and returns
