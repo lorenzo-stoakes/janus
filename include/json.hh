@@ -31,6 +31,14 @@ static inline auto parse_json(const char* filename, char* str, uint64_t size) ->
 	// We rely on RVO for performance.
 	return doc;
 }
+
+// Remove outer array from a JSON string buffer, if present. This is used to
+// work around legacy metadata files which placed data as a single object within
+// an array.
+//        str: Char buffer containing JSON to parse. WILL BE MUTATED.
+//       size: Size of char buffer.
+//    returns: The new size after the adjustment has been made.
+auto remove_outer_array(char* str, uint64_t& size) -> char*;
 } // namespace internal
 
 namespace betfair
