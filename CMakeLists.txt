@@ -100,7 +100,7 @@ add_custom_target(tidy
 )
 
 add_custom_target(cppcheck
-	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet ${JANUS_SOURCES} ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
+	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet --suppress=unusedStructMember ${JANUS_SOURCES} ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running cppcheck..."
 	VERBATIM
