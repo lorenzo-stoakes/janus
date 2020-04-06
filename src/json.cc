@@ -82,8 +82,10 @@ auto parse_meta_json(const char* filename, char* str, uint64_t size, dynamic_buf
 {
 	str = internal::remove_outer_array(str, size);
 	sajson::document doc = internal::parse_json(filename, str, size);
+	const sajson::value& root = doc.get_root();
+	uint64_t count = internal::betfair_extract_meta_header(root, dyn_buf);
 
-	return 0;
+	return count;
 }
 } // namespace betfair
 } // namespace janus
