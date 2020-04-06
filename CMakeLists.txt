@@ -5,12 +5,10 @@ set(SHARED_COMPILE_OPTIONS
 	--std=gnu++2a -Wall -g)
 
 file(GLOB_RECURSE HEADER_SOURCES
-	# Excluding sajson for now, will add once static issues resolved.
-	"include/janus.hh"
-	"include/decimal7.hh"
-	"include/dynamic_buffer.hh"
-	"include/parse.hh"
+	"include/*.hh"
 )
+# Excluding sajson for now, will add once static issues resolved.
+list(FILTER HEADER_SOURCES EXCLUDE REGEX "sajson.*")
 
 file(GLOB JANUS_SOURCES
 	"src/*.cc"
