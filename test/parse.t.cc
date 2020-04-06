@@ -251,4 +251,19 @@ TEST(parse_test, print_iso8601)
 		}
 	}
 }
+
+// Ensure that internal function parse_market_id() correctly parses betfair market IDs.
+TEST(parse_test, parse_market_id)
+{
+	// Errors result in 0 being returned.
+	EXPECT_EQ(janus::internal::parse_market_id("", 0), 0);
+
+	EXPECT_EQ(janus::internal::parse_market_id("1.1", 3), 1);
+	EXPECT_EQ(janus::internal::parse_market_id("1.12", 4), 12);
+	EXPECT_EQ(janus::internal::parse_market_id("1.123", 5), 123);
+	EXPECT_EQ(janus::internal::parse_market_id("1.1234", 6), 1234);
+
+	// Try a long number.
+	EXPECT_EQ(janus::internal::parse_market_id("1.1234567890123", 17), 1'234'567'890'123ULL);
+}
 } // namespace
