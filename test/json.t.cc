@@ -142,5 +142,27 @@ TEST(json_test, betfair_extract_meta_header)
 	EXPECT_EQ(header2.market_start_timestamp,
 		  janus::parse_iso8601(timestamp, sizeof(timestamp) - 1));
 	EXPECT_EQ(header2.num_runners, 4);
+
+	// Now eliminate the competition key altogether.
+	char json3[] =
+		R"({"marketId":"1.170020941","marketStartTime":"2020-03-11T13:20:00Z","eventType":{"id":"7","name":"Horse Racing"},"event":{"id":"29746086","name":"Ling  11th Mar","countryCode":"GB","timezone":"Europe/London","venue":"Lingfield","openDate":"2020-03-11T13:20:00Z"},"runners":[{"selectionId":13233309,"runnerName":"Zayriyan","sortPriority":1},{"selectionId":11622845,"runnerName":"Abel Tasman","sortPriority":2},{"selectionId":17247906,"runnerName":"Huddle","sortPriority":3},{"selectionId":12635885,"runnerName":"Muraaqeb","sortPriority":4}]})";
+	uint64_t size3 = sizeof(json3) - 1;
+
+	sajson::document doc3 = janus::internal::parse_json("", json3, size3);
+	const sajson::value& root3 = doc3.get_root();
+
+	uint64_t count3 = janus::internal::betfair_extract_meta_header(root3, dyn_buf);
+	EXPECT_EQ(count3, sizeof(janus::meta_header));
+	EXPECT_EQ(dyn_buf.size(), 3 * sizeof(janus::meta_header));
+
+	auto& header3 = dyn_buf.read<janus::meta_header>();
+	EXPECT_EQ(header3.market_id, 170020941);
+	EXPECT_EQ(header3.event_type_id, 7);
+	EXPECT_EQ(header3.event_id, 29746086);
+	EXPECT_EQ(header3.competition_id, 0);
+	EXPECT_EQ(header3.market_start_timestamp,
+		  janus::parse_iso8601(timestamp, sizeof(timestamp) - 1));
+	EXPECT_EQ(header3.num_runners, 4);
+}
 }
 } // namespace

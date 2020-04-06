@@ -62,10 +62,12 @@ auto betfair_extract_meta_header(const sajson::value& node, dynamic_buffer& dyn_
 
 	// Competition is optional (not in life).
 	sajson::value competition_node = node.get_value_of_key(sajson::literal("competition"));
-	sajson::value competition_id_node =
-		competition_node.get_value_of_key(sajson::literal("id"));
-	if (competition_id_node.get_string_length() > 0)
-		header.competition_id = std::atol(competition_id_node.as_cstring());
+	if (competition_node.get_type() != sajson::TYPE_NULL) {
+		sajson::value competition_id_node =
+			competition_node.get_value_of_key(sajson::literal("id"));
+		if (competition_id_node.get_string_length() > 0)
+			header.competition_id = std::atol(competition_id_node.as_cstring());
+	}
 
 	sajson::value runners_node = node.get_value_of_key(sajson::literal("runners"));
 	header.num_runners = runners_node.get_length();
