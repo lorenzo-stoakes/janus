@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sajson.h"
+#include "sajson.hh"
 #include <ostream>
 
 namespace sajson
