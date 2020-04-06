@@ -9,8 +9,8 @@ namespace janus
 class json_parse_error : public std::exception
 {
 public:
-	json_parse_error(const char* filename, int row, int col, const char* error)
-		: _what{std::string("JSON parse error: ") + filename + ":" + std::to_string(row) +
+	json_parse_error(const char* filename, int line, int col, const char* error)
+		: _what{std::string("JSON parse error: ") + filename + ":" + std::to_string(line) +
 			":" + std::to_string(col) + ": " + error}
 	{
 	}
