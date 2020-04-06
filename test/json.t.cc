@@ -1,5 +1,7 @@
 #include "dynamic_buffer.hh"
 #include "json.hh"
+#include "meta.hh"
+#include "parse.hh"
 
 #include <cstdint>
 #include <cstring>
@@ -83,5 +85,62 @@ TEST(json_test, remove_outer_array)
 	char buf4[] = R"([{"x":3})";
 	size = sizeof(buf4) - 1;
 	EXPECT_THROW(janus::internal::remove_outer_array(buf4, size), std::runtime_error);
+}
+
+// Test that we can parse a betfair metadata header correctly.
+TEST(json_test, betfair_extract_meta_header)
+{
+	// Most of the functionality underlying all of this is implemented and
+	// tested elsewhere so there is no need to go too deep - we know we can
+	// parse JSON, we know we can parse the market ID and start time, we
+	// know the dynamic buffer works, so what matters now is to ensure we
+	// parse the right fields and put them in the correct place.
+
+	char json[] =
+		R"({"marketId":"1.170020941","marketStartTime":"2020-03-11T13:20:00Z","eventType":{"id":"7","name":"Horse Racing"},"competition":{"id":"","name":""},"event":{"id":"29746086","name":"Ling  11th Mar","countryCode":"GB","timezone":"Europe/London","venue":"Lingfield","openDate":"2020-03-11T13:20:00Z"},"runners":[{"selectionId":13233309,"runnerName":"Zayriyan","sortPriority":1},{"selectionId":11622845,"runnerName":"Abel Tasman","sortPriority":2},{"selectionId":17247906,"runnerName":"Huddle","sortPriority":3},{"selectionId":12635885,"runnerName":"Muraaqeb","sortPriority":4}]})";
+	uint64_t size = sizeof(json) - 1;
+
+	sajson::document doc = janus::internal::parse_json("", json, size);
+	const sajson::value& root = doc.get_root();
+
+	// Won't be larger than the JSON buffer.
+	auto dyn_buf = janus::dynamic_buffer(size);
+
+	uint64_t count = janus::internal::betfair_extract_meta_header(root, dyn_buf);
+	// Already a multiple of 8.
+	EXPECT_EQ(count, sizeof(janus::meta_header));
+
+	auto& header = dyn_buf.read<janus::meta_header>();
+
+	EXPECT_EQ(header.market_id, 170020941);
+	EXPECT_EQ(header.event_type_id, 7);
+	EXPECT_EQ(header.event_id, 29746086);
+	EXPECT_EQ(header.competition_id, 0);
+	char timestamp[] = "2020-03-11T13:20:00Z";
+	EXPECT_EQ(header.market_start_timestamp,
+		  janus::parse_iso8601(timestamp, sizeof(timestamp) - 1));
+	EXPECT_EQ(header.num_runners, 4);
+
+	// Try again and make sure count looks correct, add a competition ID.
+
+	char json2[] =
+		R"({"marketId":"1.170020941","marketStartTime":"2020-03-11T13:20:00Z","eventType":{"id":"7","name":"Horse Racing"},"competition":{"id":"123456","name":"Foobar"},"event":{"id":"29746086","name":"Ling  11th Mar","countryCode":"GB","timezone":"Europe/London","venue":"Lingfield","openDate":"2020-03-11T13:20:00Z"},"runners":[{"selectionId":13233309,"runnerName":"Zayriyan","sortPriority":1},{"selectionId":11622845,"runnerName":"Abel Tasman","sortPriority":2},{"selectionId":17247906,"runnerName":"Huddle","sortPriority":3},{"selectionId":12635885,"runnerName":"Muraaqeb","sortPriority":4}]})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	sajson::document doc2 = janus::internal::parse_json("", json2, size2);
+	const sajson::value& root2 = doc2.get_root();
+
+	uint64_t count2 = janus::internal::betfair_extract_meta_header(root2, dyn_buf);
+	EXPECT_EQ(count2, sizeof(janus::meta_header));
+	EXPECT_EQ(dyn_buf.size(), 2 * sizeof(janus::meta_header));
+
+	auto& header2 = dyn_buf.read<janus::meta_header>();
+	EXPECT_EQ(header2.market_id, 170020941);
+	EXPECT_EQ(header2.event_type_id, 7);
+	EXPECT_EQ(header2.event_id, 29746086);
+	EXPECT_EQ(header2.competition_id, 123456);
+	EXPECT_EQ(header2.market_start_timestamp,
+		  janus::parse_iso8601(timestamp, sizeof(timestamp) - 1));
+	EXPECT_EQ(header2.num_runners, 4);
 }
 } // namespace

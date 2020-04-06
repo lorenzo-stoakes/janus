@@ -39,6 +39,13 @@ static inline auto parse_json(const char* filename, char* str, uint64_t size) ->
 //       size: Size of char buffer.
 //    returns: The new size after the adjustment has been made.
 auto remove_outer_array(char* str, uint64_t& size) -> char*;
+
+// Extract the betfair metadata from the metadata JSON object node and place in
+// binary file format in the specified dynamic buffer.
+//      node: The SAJSON node containing the betfair metadata object data.
+//   dyn_buf: The dynamic buffer to output the data to in binary file format.
+//   returns: The number of BYTES written into the dynamic buffer.
+auto betfair_extract_meta_header(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t;
 } // namespace internal
 
 namespace betfair

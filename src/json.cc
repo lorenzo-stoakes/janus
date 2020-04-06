@@ -1,5 +1,6 @@
 #include "janus.hh"
 
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 
@@ -34,6 +35,43 @@ auto remove_outer_array(char* str, uint64_t& size) -> char*
 	size--;
 
 	return str;
+}
+
+auto betfair_extract_meta_header(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t
+{
+	uint64_t prev_size = dyn_buf.size();
+
+	// Each value is required, if one is not found, an error will be raised.
+	meta_header header = {0};
+	sajson::value market_id_node = node.get_value_of_key(sajson::literal("marketId"));
+	header.market_id = internal::parse_market_id(market_id_node.as_cstring(),
+						     market_id_node.get_string_length());
+	sajson::value start_time_node = node.get_value_of_key(sajson::literal("marketStartTime"));
+	header.market_start_timestamp = janus::parse_iso8601(start_time_node.as_cstring(),
+							     start_time_node.get_string_length());
+
+	sajson::value event_type_node = node.get_value_of_key(sajson::literal("eventType"));
+	// ID is stored as a string for some reason.
+	const char* event_type_id_str =
+		event_type_node.get_value_of_key(sajson::literal("id")).as_cstring();
+	header.event_type_id = std::atol(event_type_id_str);
+
+	sajson::value event_node = node.get_value_of_key(sajson::literal("event"));
+	const char* event_id_str = event_node.get_value_of_key(sajson::literal("id")).as_cstring();
+	header.event_id = std::atol(event_id_str);
+
+	// Competition is optional (not in life).
+	sajson::value competition_node = node.get_value_of_key(sajson::literal("competition"));
+	sajson::value competition_id_node =
+		competition_node.get_value_of_key(sajson::literal("id"));
+	if (competition_id_node.get_string_length() > 0)
+		header.competition_id = std::atol(competition_id_node.as_cstring());
+
+	sajson::value runners_node = node.get_value_of_key(sajson::literal("runners"));
+	header.num_runners = runners_node.get_length();
+
+	dyn_buf.add(header);
+	return dyn_buf.size() - prev_size;
 }
 } // namespace internal
 
