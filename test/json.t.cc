@@ -314,4 +314,55 @@ TEST(json_test, betfair_extract_meta_runners)
 		EXPECT_EQ(trainer_name.size(), 0);
 	}
 }
+
+// Test that betfair::parse_meta_json() correctly parses betfair metadata into
+// the specified dynamic buffer in binary file format.
+TEST(json_test, parse_meta_json)
+{
+	// As we are testing each individual internal function this function
+	// invokes separately and in detail, we need not go too deep in testing
+	// here, rather simply ensure that the
+
+	std::string json = janus_test::sample_meta_json;
+
+	// Won't be larger than the JSON buffer.
+	auto dyn_buf = janus::dynamic_buffer(json.size());
+
+	uint64_t count = janus::betfair::parse_meta_json("", reinterpret_cast<char*>(json.data()),
+							 json.size(), dyn_buf);
+	EXPECT_EQ(count, 1272);
+	EXPECT_EQ(count, dyn_buf.size());
+
+	// Note that the magic nubmer is not prefixed by this function rather
+	// would be prefixed elsewhere.
+	auto& header = dyn_buf.read<janus::meta_header>();
+	EXPECT_EQ(header.market_id, 170020941);
+	EXPECT_EQ(header.event_type_id, 7);
+	EXPECT_EQ(header.event_id, 29746086);
+	EXPECT_EQ(header.competition_id, 0);
+	char timestamp[] = "2020-03-11T13:20:00Z";
+	EXPECT_EQ(header.market_start_timestamp,
+		  janus::parse_iso8601(timestamp, sizeof(timestamp) - 1));
+	EXPECT_EQ(header.num_runners, 12);
+
+	EXPECT_EQ(dyn_buf.read_string(), "1m2f Hcap");      // Market name
+	EXPECT_EQ(dyn_buf.read_string(), "Horse Racing");   // Event type name
+	EXPECT_EQ(dyn_buf.read_string(), "Ling  11th Mar"); // Event name
+	EXPECT_EQ(dyn_buf.read_string(), "GB");             // Country code
+	EXPECT_EQ(dyn_buf.read_string(), "Europe/London");  // Timezone
+	EXPECT_EQ(dyn_buf.read_string(), "WIN");            // Market type name
+	EXPECT_EQ(dyn_buf.read_string(), "Lingfield");      // Venue name
+	EXPECT_EQ(dyn_buf.read_string(), "");               // Competition name
+
+	for (uint64_t i = 0; i < 12; i++) {
+		EXPECT_EQ(dyn_buf.read_uint64(), janus_test::sample_runner_ids[i]);
+		EXPECT_EQ(dyn_buf.read_uint64(), i + 1);
+		EXPECT_EQ(dyn_buf.read_string(), janus_test::sample_runner_names[i]);
+		EXPECT_EQ(dyn_buf.read_string(), janus_test::sample_jockey_names[i]);
+		EXPECT_EQ(dyn_buf.read_string(), janus_test::sample_trainer_names[i]);
+	}
+
+	EXPECT_EQ(dyn_buf.read_offset(), count);
+	EXPECT_EQ(dyn_buf.read_offset(), dyn_buf.size());
+}
 } // namespace
