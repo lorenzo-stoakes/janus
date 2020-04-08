@@ -117,7 +117,8 @@ public:
 		if (count == 0)
 			return std::string_view(nullptr, 0);
 
-		char* str = static_cast<char*>(read_raw(count));
+		// + 1 for the null terminator.
+		char* str = static_cast<char*>(read_raw(count + 1));
 
 		return std::string_view(str, count);
 	}
