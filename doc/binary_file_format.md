@@ -17,9 +17,9 @@
 * event_name              (string)
 * event_country_code      (string)
 * event_timezone          (string)
-* venue_name              (string) [optional]
-* competition_name        (string)
 * market_type_name        (string)
+* venue_name              (string) [optional]
+* competition_name        (string) [optional]
 
 ### Runners
 
