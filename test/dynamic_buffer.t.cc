@@ -424,7 +424,7 @@ TEST(dynamic_buffer_test, read)
 // Test that .add_string() correctly encodes strings.
 TEST(dynamic_buffer_test, add_string)
 {
-	auto buf = janus::dynamic_buffer(56);
+	auto buf = janus::dynamic_buffer(64);
 
 	const char* str1 = "ohai";
 	std::string_view ret1 = buf.add_string(str1, 4);
@@ -463,7 +463,7 @@ TEST(dynamic_buffer_test, add_string)
 	EXPECT_TRUE(ret5.empty());
 
 	// Test sajson node overload.
-	char json[] = R"(["foo"])";
+	char json[] = R"(["foo",{}])";
 	uint64_t json_size = sizeof(json) - 1;
 
 	sajson::document doc = janus::internal::parse_json("", json, json_size);
@@ -472,6 +472,12 @@ TEST(dynamic_buffer_test, add_string)
 	std::string_view ret6 = buf.add_string(val);
 	EXPECT_EQ(std::strcmp(ret6.data(), "foo"), 0);
 	EXPECT_EQ(buf.size(), 56);
+
+	// Null node should add an empty string.
+	EXPECT_EQ(buf.add_string(root.get_array_element(1).get_value_of_key(
+			  sajson::literal("charlie_the_unicorn"))),
+		  "");
+	EXPECT_EQ(buf.size(), 64);
 }
 
 // Test that .read_string() correctly reads a string from the buffer and returns

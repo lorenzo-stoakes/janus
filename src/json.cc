@@ -92,16 +92,14 @@ auto betfair_extract_meta_static_strings(const sajson::value& node, dynamic_buff
 	dyn_buf.add_string(event_node.get_value_of_key(sajson::literal("timezone")));
 
 	sajson::value description_node = node.get_value_of_key(sajson::literal("description"));
-	dyn_buf.add_string(description_node.get_value_of_key(sajson::literal("marketType")));
+	if (description_node.get_type() == sajson::TYPE_NULL)
+		dyn_buf.add_string(nullptr, 0);
+	else
+		dyn_buf.add_string(
+			description_node.get_value_of_key(sajson::literal("marketType")));
 
 	sajson::value venue_node = event_node.get_value_of_key(sajson::literal("venue"));
-	if (venue_node.get_type() == sajson::TYPE_NULL) {
-		dyn_buf.add_string(nullptr, 0);
-	} else {
-		// If it is present but an empty string, .add_string() will
-		// handle it correctly.
-		dyn_buf.add_string(venue_node);
-	}
+	dyn_buf.add_string(venue_node);
 
 	sajson::value competition_node = node.get_value_of_key(sajson::literal("competition"));
 	if (competition_node.get_type() == sajson::TYPE_NULL) {
@@ -144,17 +142,11 @@ auto betfair_extract_meta_runners(const sajson::value& node, dynamic_buffer& dyn
 
 		sajson::value jockey_name_node =
 			metadata_node.get_value_of_key(sajson::literal("JOCKEY_NAME"));
-		if (jockey_name_node.get_type() == sajson::TYPE_NULL)
-			dyn_buf.add_string("", 0);
-		else
-			dyn_buf.add_string(jockey_name_node);
+		dyn_buf.add_string(jockey_name_node);
 
 		sajson::value trainer_name_node =
 			metadata_node.get_value_of_key(sajson::literal("TRAINER_NAME"));
-		if (trainer_name_node.get_type() == sajson::TYPE_NULL)
-			dyn_buf.add_string("", 0);
-		else
-			dyn_buf.add_string(trainer_name_node);
+		dyn_buf.add_string(trainer_name_node);
 	}
 
 	return dyn_buf.size() - prev_size;
