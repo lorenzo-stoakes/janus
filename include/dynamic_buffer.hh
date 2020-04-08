@@ -179,6 +179,11 @@ public:
 	// returns: String view pointing at the string within the dynamic buffer.
 	auto add_string(const sajson::value& node) -> std::string_view
 	{
+		if (node.get_type() == sajson::TYPE_NULL) {
+			add_uint64(0);
+			return std::string_view(nullptr, 0);
+		}
+
 		return add_string(node.as_cstring(), node.get_string_length());
 	}
 
