@@ -13,6 +13,14 @@
 
 static constexpr uint64_t DYN_BUFFER_MAX_SIZE = 500'000'000;
 
+static void clear_line()
+{
+	std::cout << "\r";
+	for (int i = 0; i < 100; i++)
+		std::cout << " ";
+	std::cout << "\r" << std::flush;
+}
+
 auto main(int argc, char** argv) -> int
 {
 	if (argc < 3) {
@@ -27,6 +35,10 @@ auto main(int argc, char** argv) -> int
 		const char* filename = argv[i];
 		std::string json;
 		uint64_t size;
+
+		clear_line();
+		std::cout << std::to_string(i - 1) << "/" << std::to_string(argc - 2) << ": "
+			  << filename << std::flush;
 
 		if (auto file = std::ifstream(filename, std::ios::ate)) {
 			size = file.tellg();
@@ -55,5 +67,6 @@ auto main(int argc, char** argv) -> int
 		return 1;
 	}
 
+	std::cout << std::endl;
 	return 0;
 }
