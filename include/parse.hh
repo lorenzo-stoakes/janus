@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdlib>
 #include <string_view>
 
 namespace janus
@@ -57,6 +58,18 @@ static inline auto is_leap(uint64_t year) -> bool
 		return false;
 
 	return (year % 400) == 0 || (year % 100) != 0; // NOLINT: Not magical.
+}
+
+// Parse a market ID in format x.yyyy... (where x is typically 1).
+//     str: Null-terminated string of size at least 3.
+//    size: Size of input string.
+// returns: uint64 of digits after prefix (e.g. yyyy).
+static inline auto parse_market_id(const char* str, uint64_t size) -> uint64_t
+{
+	if (size < 3)
+		return 0;
+
+	return static_cast<uint64_t>(std::atol(&str[2]));
 }
 } // namespace internal
 

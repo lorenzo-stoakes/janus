@@ -7,6 +7,8 @@
 #include <string>
 #include <string_view>
 
+#include "sajson.hh"
+
 namespace janus
 {
 // A simple dynamically-sized binary buffer with a fixed capacity.
@@ -115,7 +117,8 @@ public:
 		if (count == 0)
 			return std::string_view(nullptr, 0);
 
-		char* str = static_cast<char*>(read_raw(count));
+		// + 1 for the null terminator.
+		char* str = static_cast<char*>(read_raw(count + 1));
 
 		return std::string_view(str, count);
 	}
@@ -156,8 +159,9 @@ public:
 	}
 
 	// Encode a string into binary format and add it to the buffer.
-	//   str: Pointer to the char buffer, WITH null termintaor.
-	//  size: Size of string WITHOUT null terminator.
+	//     str: Pointer to the char buffer, WITH null termintaor.
+	//    size: Size of string WITHOUT null terminator.
+	// returns: String view pointing at the string within the dynamic buffer.
 	auto add_string(const char* str, uint64_t size) -> std::string_view
 	{
 		if (size == 0) {
@@ -168,6 +172,14 @@ public:
 		add_uint64(size);
 		void* ptr = add_raw(str, size + 1);
 		return std::string_view(static_cast<char*>(ptr), size);
+	}
+
+	// Encode an sajson string into binary format and add it to the buffer.
+	//    node: sajson::value node.
+	// returns: String view pointing at the string within the dynamic buffer.
+	auto add_string(const sajson::value& node) -> std::string_view
+	{
+		return add_string(node.as_cstring(), node.get_string_length());
 	}
 
 	// Clear the buffer but maintain the capacity.

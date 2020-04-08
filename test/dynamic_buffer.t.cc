@@ -1,4 +1,6 @@
 #include "dynamic_buffer.hh"
+#include "json.hh"
+#include "sajson.hh"
 
 #include <cstring>
 #include <gtest/gtest.h>
@@ -422,7 +424,7 @@ TEST(dynamic_buffer_test, read)
 // Test that .add_string() correctly encodes strings.
 TEST(dynamic_buffer_test, add_string)
 {
-	auto buf = janus::dynamic_buffer(40);
+	auto buf = janus::dynamic_buffer(56);
 
 	const char* str1 = "ohai";
 	std::string_view ret1 = buf.add_string(str1, 4);
@@ -459,13 +461,24 @@ TEST(dynamic_buffer_test, add_string)
 	EXPECT_EQ(buf.read_offset(), 40);
 	EXPECT_EQ(ret5.size(), 0);
 	EXPECT_TRUE(ret5.empty());
+
+	// Test sajson node overload.
+	char json[] = R"(["foo"])";
+	uint64_t json_size = sizeof(json) - 1;
+
+	sajson::document doc = janus::internal::parse_json("", json, json_size);
+	const sajson::value& root = doc.get_root();
+	sajson::value val = root.get_array_element(0);
+	std::string_view ret6 = buf.add_string(val);
+	EXPECT_EQ(std::strcmp(ret6.data(), "foo"), 0);
+	EXPECT_EQ(buf.size(), 56);
 }
 
 // Test that .read_string() correctly reads a string from the buffer and returns
 // a valid std::string_view.
 TEST(dynamic_buffer_test, read_string)
 {
-	auto buf = janus::dynamic_buffer(40);
+	auto buf = janus::dynamic_buffer(48);
 
 	const char* str1 = "ohai";
 	buf.add_string(str1, 4);
@@ -477,20 +490,23 @@ TEST(dynamic_buffer_test, read_string)
 	EXPECT_EQ(ret1.size(), 4);
 	EXPECT_EQ(std::strcmp(str1, ret1.data()), 0);
 
-	const char* str2 = "lorenzo";
-	buf.add_string(str2, 7);
-	EXPECT_EQ(buf.size(), 32);
+	// Intentionally making this 8 chars long, as testing for a previous bug
+	// where the null terminator was not encoded correctly, 8 + 1 should
+	// move over to the next uint64 word and trigger this bug if present.
+	const char* str2 = "Zayriyan";
+	buf.add_string(str2, 8);
+	EXPECT_EQ(buf.size(), 40);
 
 	std::string_view ret2 = buf.read_string();
-	EXPECT_EQ(buf.read_offset(), 32);
-	EXPECT_EQ(ret2.size(), 7);
+	EXPECT_EQ(buf.read_offset(), 40);
+	EXPECT_EQ(ret2.size(), 8);
 	EXPECT_EQ(std::strcmp(str2, ret2.data()), 0);
 
 	// Ensure we can read a zero size string.
 	buf.add_string(str2, 0);
-	EXPECT_EQ(buf.size(), 40);
+	EXPECT_EQ(buf.size(), 48);
 	std::string_view ret3 = buf.read_string();
-	EXPECT_EQ(buf.read_offset(), 40);
+	EXPECT_EQ(buf.read_offset(), 48);
 	EXPECT_EQ(ret3.size(), 0);
 	EXPECT_TRUE(ret3.empty());
 }

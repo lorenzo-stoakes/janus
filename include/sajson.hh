@@ -296,7 +296,7 @@ public:
 
 	/// Allocates a copy of the given \ref literal string and exposes a
 	/// mutable view into it.  Throws std::bad_alloc if allocation fails.
-	mutable_string_view(const literal& s) : length_(s.length()), buffer(length_)
+	explicit mutable_string_view(const literal& s) : length_(s.length()), buffer(length_)
 	{
 		data = buffer.get_data();
 		memcpy(data, s.data(), length_);
@@ -304,7 +304,7 @@ public:
 
 	/// Allocates a copy of the given \ref string and exposes a mutable view
 	/// into it.  Throws std::bad_alloc if allocation fails.
-	mutable_string_view(const string& s) : length_(s.length()), buffer(length_)
+	explicit mutable_string_view(const string& s) : length_(s.length()), buffer(length_)
 	{
 		data = buffer.get_data();
 		memcpy(data, s.data(), length_);
@@ -375,7 +375,7 @@ struct object_key_record
 
 struct object_key_comparator
 {
-	object_key_comparator(const char* object_data) : data(object_data) {}
+	explicit object_key_comparator(const char* object_data) : data(object_data) {}
 
 	bool operator()(const object_key_record& lhs, const string& rhs) const
 	{

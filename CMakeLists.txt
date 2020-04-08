@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 project(janus)
-include_directories(include)
+include_directories(include .)
 set(SHARED_COMPILE_OPTIONS
 	--std=gnu++2a -Wall -g)
 
@@ -100,7 +100,7 @@ add_custom_target(tidy
 )
 
 add_custom_target(cppcheck
-	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet ${JANUS_SOURCES} ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
+	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet --suppress=unusedStructMember ${JANUS_SOURCES} ${HEADER_SOURCES} ${NEPTUNE_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running cppcheck..."
 	VERBATIM
