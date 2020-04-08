@@ -26,10 +26,6 @@
 Per-runner:
 * runner_id               (uint64)
 * sort_priority           (uint64)
-
-#### Runner strings
-
-Per-runner:
 * runner_name             (string)
 * jockey_name             (string) [optional]
 * trainer_name            (string) [optional]
