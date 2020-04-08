@@ -96,8 +96,7 @@ auto betfair_extract_meta_static_strings(const sajson::value& node, dynamic_buff
 
 	sajson::value venue_node = event_node.get_value_of_key(sajson::literal("venue"));
 	if (venue_node.get_type() == sajson::TYPE_NULL) {
-		char empty_buf[] = "";
-		dyn_buf.add_string(empty_buf, 0);
+		dyn_buf.add_string(nullptr, 0);
 	} else {
 		// If it is present but an empty string, .add_string() will
 		// handle it correctly.
@@ -106,8 +105,7 @@ auto betfair_extract_meta_static_strings(const sajson::value& node, dynamic_buff
 
 	sajson::value competition_node = node.get_value_of_key(sajson::literal("competition"));
 	if (competition_node.get_type() == sajson::TYPE_NULL) {
-		char empty_buf[] = "";
-		dyn_buf.add_string(empty_buf, 0);
+		dyn_buf.add_string(nullptr, 0);
 	} else {
 		dyn_buf.add_string(competition_node.get_value_of_key(sajson::literal("name")));
 	}
