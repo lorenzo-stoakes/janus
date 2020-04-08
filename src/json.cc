@@ -75,6 +75,45 @@ auto betfair_extract_meta_header(const sajson::value& node, dynamic_buffer& dyn_
 	dyn_buf.add(header);
 	return dyn_buf.size() - prev_size;
 }
+
+auto betfair_extract_meta_static_strings(const sajson::value& node, dynamic_buffer& dyn_buf)
+	-> uint64_t
+{
+	uint64_t prev_size = dyn_buf.size();
+
+	dyn_buf.add_string(node.get_value_of_key(sajson::literal("marketName")));
+
+	sajson::value event_type_node = node.get_value_of_key(sajson::literal("eventType"));
+	dyn_buf.add_string(event_type_node.get_value_of_key(sajson::literal("name")));
+
+	sajson::value event_node = node.get_value_of_key(sajson::literal("event"));
+	dyn_buf.add_string(event_node.get_value_of_key(sajson::literal("name")));
+	dyn_buf.add_string(event_node.get_value_of_key(sajson::literal("countryCode")));
+	dyn_buf.add_string(event_node.get_value_of_key(sajson::literal("timezone")));
+
+	sajson::value description_node = node.get_value_of_key(sajson::literal("description"));
+	dyn_buf.add_string(description_node.get_value_of_key(sajson::literal("marketType")));
+
+	sajson::value venue_node = event_node.get_value_of_key(sajson::literal("venue"));
+	if (venue_node.get_type() == sajson::TYPE_NULL) {
+		char empty_buf[] = "";
+		dyn_buf.add_string(empty_buf, 0);
+	} else {
+		// If it is present but an empty string, .add_string() will
+		// handle it correctly.
+		dyn_buf.add_string(venue_node);
+	}
+
+	sajson::value competition_node = node.get_value_of_key(sajson::literal("competition"));
+	if (competition_node.get_type() == sajson::TYPE_NULL) {
+		char empty_buf[] = "";
+		dyn_buf.add_string(empty_buf, 0);
+	} else {
+		dyn_buf.add_string(competition_node.get_value_of_key(sajson::literal("name")));
+	}
+
+	return dyn_buf.size() - prev_size;
+}
 } // namespace internal
 
 namespace betfair
@@ -86,6 +125,7 @@ auto parse_meta_json(const char* filename, char* str, uint64_t size, dynamic_buf
 	sajson::document doc = internal::parse_json(filename, str, size);
 	const sajson::value& root = doc.get_root();
 	uint64_t count = internal::betfair_extract_meta_header(root, dyn_buf);
+	count += internal::betfair_extract_meta_static_strings(root, dyn_buf);
 
 	return count;
 }

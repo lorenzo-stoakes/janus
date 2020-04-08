@@ -46,6 +46,14 @@ auto remove_outer_array(char* str, uint64_t& size) -> char*;
 //   dyn_buf: The dynamic buffer to output the data to in binary file format.
 //   returns: The number of BYTES written into the dynamic buffer.
 auto betfair_extract_meta_header(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t;
+
+// Extract static betfair metadata strings from the metadata JSON object node
+// and place in binary file format in the specified dynamic buffer.
+//      node: The SAJSON node containing the betfair metadata object data.
+//   dyn_buf: The dynamic buffer to output the data to in binary file format.
+//   returns: The number of BYTES written into the dynamic buffer.
+auto betfair_extract_meta_static_strings(const sajson::value& node, dynamic_buffer& dyn_buf)
+	-> uint64_t;
 } // namespace internal
 
 namespace betfair

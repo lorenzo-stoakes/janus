@@ -122,7 +122,6 @@ TEST(json_test, betfair_extract_meta_header)
 	EXPECT_EQ(header.num_runners, 4);
 
 	// Try again and make sure count looks correct, add a competition ID.
-
 	char json2[] =
 		R"({"marketId":"1.170020941","marketStartTime":"2020-03-11T13:20:00Z","eventType":{"id":"7","name":"Horse Racing"},"competition":{"id":"123456","name":"Foobar"},"event":{"id":"29746086","name":"Ling  11th Mar","countryCode":"GB","timezone":"Europe/London","venue":"Lingfield","openDate":"2020-03-11T13:20:00Z"},"runners":[{"selectionId":13233309,"runnerName":"Zayriyan","sortPriority":1},{"selectionId":11622845,"runnerName":"Abel Tasman","sortPriority":2},{"selectionId":17247906,"runnerName":"Huddle","sortPriority":3},{"selectionId":12635885,"runnerName":"Muraaqeb","sortPriority":4}]})";
 	uint64_t size2 = sizeof(json2) - 1;
@@ -164,5 +163,83 @@ TEST(json_test, betfair_extract_meta_header)
 		  janus::parse_iso8601(timestamp, sizeof(timestamp) - 1));
 	EXPECT_EQ(header3.num_runners, 4);
 }
+
+// Test that we can parse betfair metadata static strings correctly.
+TEST(json_test, betfair_extract_meta_static_strings)
+{
+	char json[] =
+		R"({"marketId":"1.170020941","marketName":"1m2f Hcap","marketStartTime":"2020-03-11T13:20:00Z","eventType":{"id":"7","name":"Horse Racing"},"competition":{"id":"123456","name":"Foobar"},"event":{"id":"29746086","name":"Ling  11th Mar","countryCode":"GB","timezone":"Europe/London","venue":"Lingfield","openDate":"2020-03-11T13:20:00Z"},"runners":[{"selectionId":13233309,"runnerName":"Zayriyan","sortPriority":1},{"selectionId":11622845,"runnerName":"Abel Tasman","sortPriority":2},{"selectionId":17247906,"runnerName":"Huddle","sortPriority":3},{"selectionId":12635885,"runnerName":"Muraaqeb","sortPriority":4}],"description":{"marketType":"WIN"}})";
+	uint64_t size = sizeof(json) - 1;
+
+	sajson::document doc = janus::internal::parse_json("", json, size);
+	const sajson::value& root = doc.get_root();
+
+	// Won't be larger than the JSON buffer.
+	auto dyn_buf = janus::dynamic_buffer(size);
+
+	uint64_t count = janus::internal::betfair_extract_meta_static_strings(root, dyn_buf);
+	EXPECT_EQ(count, dyn_buf.size());
+
+	std::string_view market_name = dyn_buf.read_string();
+	EXPECT_EQ(market_name, "1m2f Hcap");
+
+	std::string_view event_type_name = dyn_buf.read_string();
+	EXPECT_EQ(event_type_name, "Horse Racing");
+
+	std::string_view event_name = dyn_buf.read_string();
+	EXPECT_EQ(event_name, "Ling  11th Mar");
+
+	std::string_view event_country_code = dyn_buf.read_string();
+	EXPECT_EQ(event_country_code, "GB");
+
+	std::string_view event_timezone = dyn_buf.read_string();
+	EXPECT_EQ(event_timezone, "Europe/London");
+
+	std::string_view market_type_name = dyn_buf.read_string();
+	EXPECT_EQ(market_type_name, "WIN");
+
+	std::string_view venue_name = dyn_buf.read_string();
+	EXPECT_EQ(venue_name, "Lingfield");
+
+	std::string_view competition_name = dyn_buf.read_string();
+	EXPECT_EQ(competition_name, "Foobar");
+
+	// Missing venue and competition.
+	char json2[] =
+		R"({"marketId":"1.170020941","marketName":"1m2f Hcap","marketStartTime":"2020-03-11T13:20:00Z","eventType":{"id":"7","name":"Horse Racing"},"competition":null,"event":{"id":"29746086","name":"Ling  11th Mar","countryCode":"GB","timezone":"Europe/London","openDate":"2020-03-11T13:20:00Z"},"runners":[{"selectionId":13233309,"runnerName":"Zayriyan","sortPriority":1},{"selectionId":11622845,"runnerName":"Abel Tasman","sortPriority":2},{"selectionId":17247906,"runnerName":"Huddle","sortPriority":3},{"selectionId":12635885,"runnerName":"Muraaqeb","sortPriority":4}],"description":{"marketType":"WIN"}})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	sajson::document doc2 = janus::internal::parse_json("", json2, size2);
+	const sajson::value& root2 = doc2.get_root();
+
+	// Won't be larger than the JSON buffer.
+	auto dyn_buf2 = janus::dynamic_buffer(size);
+
+	uint64_t count2 = janus::internal::betfair_extract_meta_static_strings(root2, dyn_buf2);
+	EXPECT_EQ(count2, dyn_buf2.size());
+
+	std::string_view market_name2 = dyn_buf2.read_string();
+	EXPECT_EQ(market_name2, "1m2f Hcap");
+
+	std::string_view event_type_name2 = dyn_buf2.read_string();
+	EXPECT_EQ(event_type_name2, "Horse Racing");
+
+	std::string_view event_name2 = dyn_buf2.read_string();
+	EXPECT_EQ(event_name2, "Ling  11th Mar");
+
+	std::string_view event_country_code2 = dyn_buf2.read_string();
+	EXPECT_EQ(event_country_code2, "GB");
+
+	std::string_view event_timezone2 = dyn_buf2.read_string();
+	EXPECT_EQ(event_timezone2, "Europe/London");
+
+	std::string_view market_type_name2 = dyn_buf2.read_string();
+	EXPECT_EQ(market_type_name2, "WIN");
+
+	std::string_view venue_name2 = dyn_buf2.read_string();
+	EXPECT_EQ(venue_name2, "");
+
+	std::string_view competition_name2 = dyn_buf2.read_string();
+	EXPECT_EQ(competition_name2, "");
 }
 } // namespace
