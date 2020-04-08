@@ -54,6 +54,13 @@ auto betfair_extract_meta_header(const sajson::value& node, dynamic_buffer& dyn_
 //   returns: The number of BYTES written into the dynamic buffer.
 auto betfair_extract_meta_static_strings(const sajson::value& node, dynamic_buffer& dyn_buf)
 	-> uint64_t;
+
+// Extract static betfair runner metadata from the metadata JSON runner array
+// node.
+//      node: The SAJSON node containing the betfair metadata runner array.
+//   dyn_buf: The dynamic buffer to output the data to in binary file format.
+//   returns: The number of BYTES written into the dynamic buffer.
+auto betfair_extract_meta_runners(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t;
 } // namespace internal
 
 namespace betfair

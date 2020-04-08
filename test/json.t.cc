@@ -6,6 +6,9 @@
 #include <cstdint>
 #include <cstring>
 #include <gtest/gtest.h>
+#include <string>
+
+#include "sample_data.hh"
 
 namespace
 {
@@ -241,5 +244,74 @@ TEST(json_test, betfair_extract_meta_static_strings)
 
 	std::string_view competition_name2 = dyn_buf2.read_string();
 	EXPECT_EQ(competition_name2, "");
+}
+
+// Test that the internal betfair_extract_meta_runners() function correctly extracts runner
+// metadata.
+TEST(json_test, betfair_extract_meta_runners)
+{
+	std::string json = janus_test::sample_meta_json;
+
+	sajson::document doc =
+		janus::internal::parse_json("", reinterpret_cast<char*>(json.data()), json.size());
+	const sajson::value& root = doc.get_root();
+
+	// Won't be larger than the JSON buffer.
+	auto dyn_buf = janus::dynamic_buffer(json.size());
+
+	// Extract header so we can get a runner count.
+	janus::internal::betfair_extract_meta_header(root, dyn_buf);
+	auto& header = dyn_buf.read<janus::meta_header>();
+	uint64_t num_runners = header.num_runners;
+	EXPECT_EQ(num_runners, 12);
+
+	// Now we've extracted number of runners, reset the dynamic buffer for
+	// reading runner data.
+	dyn_buf.reset();
+
+	sajson::value runners_node = root.get_value_of_key(sajson::literal("runners"));
+	uint64_t count = janus::internal::betfair_extract_meta_runners(runners_node, dyn_buf);
+	ASSERT_EQ(count, dyn_buf.size());
+
+	for (uint64_t i = 0; i < num_runners; i++) {
+		uint64_t runner_id = dyn_buf.read_uint64();
+		uint64_t sort_priority = dyn_buf.read_uint64();
+		std::string_view runner_name = dyn_buf.read_string();
+		std::string_view jockey_name = dyn_buf.read_string();
+		std::string_view trainer_name = dyn_buf.read_string();
+
+		EXPECT_EQ(runner_id, janus_test::sample_runner_ids[i]);
+		EXPECT_EQ(sort_priority, i + 1);
+		EXPECT_EQ(runner_name, janus_test::sample_runner_names[i]);
+		EXPECT_EQ(jockey_name, janus_test::sample_jockey_names[i]);
+		EXPECT_EQ(trainer_name, janus_test::sample_trainer_names[i]);
+	}
+
+	// Now read data without any metadata attached (e.g. jockey, trainer name) and make sure
+	// this works correctly.
+
+	char json2[] =
+		R"({"marketId":"1.170020941","marketName":"1m2f Hcap","marketStartTime":"2020-03-11T13:20:00Z","eventType":{"id":"7","name":"Horse Racing"},"competition":null,"event":{"id":"29746086","name":"Ling  11th Mar","countryCode":"GB","timezone":"Europe/London","openDate":"2020-03-11T13:20:00Z"},"runners":[{"selectionId":13233309,"runnerName":"Zayriyan","sortPriority":1},{"selectionId":11622845,"runnerName":"Abel Tasman","sortPriority":2,"metadata":{}},{"selectionId":17247906,"runnerName":"Huddle","sortPriority":3,"metadata":null},{"selectionId":12635885,"runnerName":"Muraaqeb","sortPriority":4}],"description":{"marketType":"WIN"}})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	sajson::document doc2 = janus::internal::parse_json("", json2, size2);
+	const sajson::value& root2 = doc2.get_root();
+	sajson::value runners_node2 = root2.get_value_of_key(sajson::literal("runners"));
+
+	janus::internal::betfair_extract_meta_runners(runners_node2, dyn_buf);
+
+	for (uint64_t i = 0; i < 4; i++) {
+		uint64_t runner_id = dyn_buf.read_uint64();
+		uint64_t sort_priority = dyn_buf.read_uint64();
+		std::string_view runner_name = dyn_buf.read_string();
+		std::string_view jockey_name = dyn_buf.read_string();
+		std::string_view trainer_name = dyn_buf.read_string();
+
+		EXPECT_EQ(runner_id, janus_test::sample_runner_ids[i]);
+		EXPECT_EQ(sort_priority, i + 1);
+		EXPECT_EQ(runner_name, janus_test::sample_runner_names[i]);
+		EXPECT_EQ(jockey_name.size(), 0);
+		EXPECT_EQ(trainer_name.size(), 0);
+	}
 }
 } // namespace

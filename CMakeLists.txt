@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 project(janus)
-include_directories(include)
+include_directories(include .)
 set(SHARED_COMPILE_OPTIONS
 	--std=gnu++2a -Wall -g)
 

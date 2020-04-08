@@ -114,6 +114,53 @@ auto betfair_extract_meta_static_strings(const sajson::value& node, dynamic_buff
 
 	return dyn_buf.size() - prev_size;
 }
+
+auto betfair_extract_meta_runners(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t
+{
+	uint64_t prev_size = dyn_buf.size();
+
+	uint64_t count = node.get_length();
+	for (uint64_t i = 0; i < count; i++) {
+		sajson::value runner_node = node.get_array_element(i);
+
+		uint64_t id = runner_node.get_value_of_key(sajson::literal("selectionId"))
+				      .get_integer_value();
+		uint64_t sort_priority =
+			runner_node.get_value_of_key(sajson::literal("sortPriority"))
+				.get_integer_value();
+		sajson::value name_node =
+			runner_node.get_value_of_key(sajson::literal("runnerName"));
+
+		dyn_buf.add_uint64(id);
+		dyn_buf.add_uint64(sort_priority);
+		dyn_buf.add_string(name_node);
+
+		sajson::value metadata_node =
+			runner_node.get_value_of_key(sajson::literal("metadata"));
+		if (metadata_node.get_type() == sajson::TYPE_NULL) {
+			// Add empty jockey, trainer names.
+			dyn_buf.add_string("", 0);
+			dyn_buf.add_string("", 0);
+			continue;
+		}
+
+		sajson::value jockey_name_node =
+			metadata_node.get_value_of_key(sajson::literal("JOCKEY_NAME"));
+		if (jockey_name_node.get_type() == sajson::TYPE_NULL)
+			dyn_buf.add_string("", 0);
+		else
+			dyn_buf.add_string(jockey_name_node);
+
+		sajson::value trainer_name_node =
+			metadata_node.get_value_of_key(sajson::literal("TRAINER_NAME"));
+		if (trainer_name_node.get_type() == sajson::TYPE_NULL)
+			dyn_buf.add_string("", 0);
+		else
+			dyn_buf.add_string(trainer_name_node);
+	}
+
+	return dyn_buf.size() - prev_size;
+}
 } // namespace internal
 
 namespace betfair
@@ -126,6 +173,8 @@ auto parse_meta_json(const char* filename, char* str, uint64_t size, dynamic_buf
 	const sajson::value& root = doc.get_root();
 	uint64_t count = internal::betfair_extract_meta_header(root, dyn_buf);
 	count += internal::betfair_extract_meta_static_strings(root, dyn_buf);
+	count += internal::betfair_extract_meta_runners(
+		root.get_value_of_key(sajson::literal("runners")), dyn_buf);
 
 	return count;
 }
