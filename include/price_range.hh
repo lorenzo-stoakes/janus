@@ -50,7 +50,7 @@ public:
 	// MAX_PRICEX100 this will buffer overflow.
 	auto pricex100_to_nearest_index(uint64_t pricex100) -> uint64_t
 	{
-		return price_map[pricex100];
+		return _price_map[pricex100];
 	}
 
 	// Obtain the PRECISE price index of the specified pricex100, if it is
@@ -172,7 +172,7 @@ private:
 
 	// Perfect hash mapping from pricex100 to price index. It maps to the
 	// nearest price rounding down, e.g. 627 -> 620.
-	std::array<uint64_t, MAX_PRICEX100 + 1> price_map;
+	std::array<uint64_t, MAX_PRICEX100 + 1> _price_map;
 
 	// Populate the price map array.
 	void populate_price_map()
@@ -180,7 +180,7 @@ private:
 		// All values less than the minimum pricex100 (101) are marked
 		// as invalid.
 		for (uint64_t i = 0; i < MIN_PRICEX100; i++) {
-			price_map[i] = INVALID_PRICE_INDEX;
+			_price_map[i] = INVALID_PRICE_INDEX;
 		}
 
 		// For the rest we map the nearest price less than or equal to
@@ -192,7 +192,7 @@ private:
 			if (i > PRICESX100[price_index])
 				price_index++;
 
-			price_map[i] = price_index;
+			_price_map[i] = price_index;
 		}
 	}
 };
