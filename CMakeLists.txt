@@ -27,6 +27,10 @@ target_compile_options(neptune
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
 )
 
+target_link_libraries(neptune
+	m
+)
+
 # Tests
 
 include(GoogleTest)
@@ -42,10 +46,12 @@ target_compile_options(testrunner
 	-fsanitize=address,leak,undefined,null,return,signed-integer-overflow,bounds,object-size
 )
 target_link_libraries(testrunner
+	m
 	asan
 	ubsan
 	gtest
 )
+
 gtest_add_tests(testrunner "" AUTO)
 
 add_custom_target(test
@@ -65,6 +71,9 @@ add_executable(benchmark
 )
 target_compile_options(benchmark
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3 -DNDEBUG
+)
+target_link_libraries(benchmark
+        m
 )
 add_custom_target(bench
 	COMMAND ${PROJECT_BINARY_DIR}/benchmark

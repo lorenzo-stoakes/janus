@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 
 namespace janus::betfair
@@ -71,6 +72,36 @@ public:
 	auto nearest_pricex100(uint64_t pricex100) -> uint64_t
 	{
 		uint64_t i = pricex100_to_nearest_index(pricex100);
+		if (i == INVALID_PRICE_INDEX)
+			return INVALID_PRICEX100;
+
+		return index_to_pricex100(i);
+	}
+
+	// Find the index of the nearest price to the specified price, rounding
+	// the price such that 6.19999 is correctly rounded to 6.2, and rounding
+	// down such that 6.27 -> index of 6.2.
+	// Note that the price is NOT checked, i.e. if it is larger than 1000
+	// this will buffer overflow.
+	auto price_to_nearest_index(double price) -> uint64_t
+	{
+		// Round to price x 10,000, which should help avoid rounding
+		// errors, but divide DOWN to x 100 in order that we maintain
+		// our bias towards the lower pricex100.
+		uint64_t pricex10000 = ::llround(price * 10000.);
+		uint64_t pricex100 = pricex10000 / 100;
+
+		return pricex100_to_nearest_index(pricex100);
+	}
+
+	// Find the nearest pricex100 to the specified price, rounding the price
+	// such that 6.19999 is correctly rounded to 6.2, and rounding down such
+	// that 6.27 -> 620.
+	// Note that the price is NOT checked, i.e. if it is larger than 1000
+	// this will buffer overflow.
+	auto price_to_nearest_pricex100(double price) -> uint64_t
+	{
+		uint64_t i = price_to_nearest_index(price);
 		if (i == INVALID_PRICE_INDEX)
 			return INVALID_PRICEX100;
 
