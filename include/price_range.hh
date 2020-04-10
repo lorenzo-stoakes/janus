@@ -48,14 +48,14 @@ public:
 	// down, e.g. 627 -> index of 620.
 	// Note that the pricex100 is NOT checked, i.e. if it is larger than
 	// MAX_PRICEX100 this will buffer overflow.
-	auto pricex100_to_nearest_index(uint64_t pricex100) -> uint64_t
+	auto pricex100_to_nearest_index(uint64_t pricex100) const -> uint64_t
 	{
-		return price_map[pricex100];
+		return _price_map[pricex100];
 	}
 
 	// Obtain the PRECISE price index of the specified pricex100, if it is
 	// not a valid price then INVALID_PRICE_INDEX is returned.
-	auto pricex100_to_index(uint64_t pricex100) -> uint64_t
+	auto pricex100_to_index(uint64_t pricex100) const -> uint64_t
 	{
 		uint64_t i = pricex100_to_nearest_index(pricex100);
 		if (i == INVALID_PRICE_INDEX || index_to_pricex100(i) != pricex100)
@@ -69,7 +69,7 @@ public:
 	// Note that the pricex100 is NOT checked, i.e. if it is larger than
 	// MAX_PRICEX100 this will buffer overflow.
 	// If the price is not valid then INVALID_PRICEX100 is returned.
-	auto nearest_pricex100(uint64_t pricex100) -> uint64_t
+	auto nearest_pricex100(uint64_t pricex100) const -> uint64_t
 	{
 		uint64_t i = pricex100_to_nearest_index(pricex100);
 		if (i == INVALID_PRICE_INDEX)
@@ -83,13 +83,13 @@ public:
 	// down such that 6.27 -> index of 6.2.
 	// Note that the price is NOT checked, i.e. if it is larger than 1000
 	// this will buffer overflow.
-	auto price_to_nearest_index(double price) -> uint64_t
+	auto price_to_nearest_index(double price) const -> uint64_t
 	{
 		// Round to price x 10,000, which should help avoid rounding
 		// errors, but divide DOWN to x 100 in order that we maintain
 		// our bias towards the lower pricex100.
-		uint64_t pricex10000 = ::llround(price * 10000.);
-		uint64_t pricex100 = pricex10000 / 100;
+		uint64_t pricex10000 = ::llround(price * 10000.); // NOLINT: Not magical.
+		uint64_t pricex100 = pricex10000 / 100;           // NOLINT: Not magical.
 
 		return pricex100_to_nearest_index(pricex100);
 	}
@@ -99,7 +99,7 @@ public:
 	// that 6.27 -> 620.
 	// Note that the price is NOT checked, i.e. if it is larger than 1000
 	// this will buffer overflow.
-	auto price_to_nearest_pricex100(double price) -> uint64_t
+	auto price_to_nearest_pricex100(double price) const -> uint64_t
 	{
 		uint64_t i = price_to_nearest_index(price);
 		if (i == INVALID_PRICE_INDEX)
@@ -172,7 +172,7 @@ private:
 
 	// Perfect hash mapping from pricex100 to price index. It maps to the
 	// nearest price rounding down, e.g. 627 -> 620.
-	std::array<uint64_t, MAX_PRICEX100 + 1> price_map;
+	std::array<uint64_t, MAX_PRICEX100 + 1> _price_map;
 
 	// Populate the price map array.
 	void populate_price_map()
@@ -180,7 +180,7 @@ private:
 		// All values less than the minimum pricex100 (101) are marked
 		// as invalid.
 		for (uint64_t i = 0; i < MIN_PRICEX100; i++) {
-			price_map[i] = INVALID_PRICE_INDEX;
+			_price_map[i] = INVALID_PRICE_INDEX;
 		}
 
 		// For the rest we map the nearest price less than or equal to
@@ -192,7 +192,7 @@ private:
 			if (i > PRICESX100[price_index])
 				price_index++;
 
-			price_map[i] = price_index;
+			_price_map[i] = price_index;
 		}
 	}
 };
