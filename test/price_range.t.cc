@@ -285,8 +285,6 @@ TEST(price_range_test, pricex100_to_index)
 		}
 	}
 
-	return;
-
 	for (uint64_t pricex100 = 300; pricex100 < 400; pricex100++) {
 		if (pricex100 % 5 == 0) {
 			ASSERT_EQ(range.pricex100_to_index(pricex100), i);
