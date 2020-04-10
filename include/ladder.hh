@@ -126,21 +126,45 @@ private:
 			throw invalid_unmatched_update(i, vol, _max_atb_index);
 	}
 
+	static constexpr uint64_t NOT_FOUND_INDEX = static_cast<uint64_t>(-1);
+
+	// Starting from the specified price index, find the first price where
+	// we have back (ATL) available and return its price index.
+	auto get_next_atl_index(uint64_t start_index) const -> uint64_t
+	{
+		for (uint64_t i = start_index; i < NUM_PRICES; i++) {
+			if (_unmatched[i] > 0)
+				return i;
+		}
+
+		return NOT_FOUND_INDEX;
+	}
+
+	// Starting from the specified price index, find the first price where
+	// we have lay (ATB) available and return its price index.
+	auto get_next_atb_index(uint64_t start_index) const -> uint64_t
+	{
+		for (auto i = static_cast<int64_t>(start_index); i >= 0; i--) {
+			if (_unmatched[i] < 0)
+				return i;
+		}
+
+		return NOT_FOUND_INDEX;
+	}
+
 	// Starting from the specified price index, find the first price where
 	// we have back (ATL) available and set _min_atl_index to this price
 	// index.
 	void update_min_atl_index(uint64_t start_index)
 	{
-		for (uint64_t i = start_index; i < NUM_PRICES; i++) {
-			if (_unmatched[i] > 0) {
-				_min_atl_index = i;
-				return;
-			}
+		uint64_t next_index = get_next_atl_index(start_index);
+		if (next_index == NOT_FOUND_INDEX) {
+			// If we reach here then everything's 0 our minimum ATL index is
+			// the maximum price.
+			_min_atl_index = NUM_PRICES - 1;
+		} else {
+			_min_atl_index = next_index;
 		}
-
-		// If we reach here then everything's 0 our minimum ATL index is
-		// the maximum price.
-		_min_atl_index = NUM_PRICES - 1;
 	}
 
 	// Starting from the specified price index, find the first price where
@@ -148,16 +172,14 @@ private:
 	// index.
 	void update_max_atb_index(uint64_t start_index)
 	{
-		for (auto i = static_cast<int64_t>(start_index); i >= 0; i--) {
-			if (_unmatched[i] < 0) {
-				_max_atb_index = i;
-				return;
-			}
+		uint64_t next_index = get_next_atb_index(start_index);
+		if (next_index == NOT_FOUND_INDEX) {
+			// If we reach here then everything's 0 our maximum ATB index is
+			// the minimum price.
+			_max_atb_index = 0;
+		} else {
+			_max_atb_index = next_index;
 		}
-
-		// If we reach here then everything's 0 our maximum ATB index is
-		// the minimum price.
-		_max_atb_index = 0;
 	}
 
 	// Update min/max ATL/ATB indexes when we are _clearing_ unmatched
