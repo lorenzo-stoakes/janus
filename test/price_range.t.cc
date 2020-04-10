@@ -163,7 +163,7 @@ TEST(price_range_test, index_to_price)
 	}
 }
 
-// Test that the .pricex100_to_nearest_index() returns the index ofthe nearest
+// Test that .pricex100_to_nearest_index() returns the index ofthe nearest
 // pricex100 less than or equal to the one specified.
 TEST(price_range_test, pricex100_to_nearest_index)
 {
@@ -251,7 +251,7 @@ TEST(price_range_test, pricex100_to_nearest_index)
 	}
 }
 
-// Test that the .pricex100_to_index() returns the correct index or
+// Test that .pricex100_to_index() returns the correct index or
 // INVALID_PRICE_INDEX otherwise.
 TEST(price_range_test, pricex100_to_index)
 {
@@ -366,7 +366,7 @@ TEST(price_range_test, pricex100_to_index)
 	}
 }
 
-// TEst that .nearest_pricex100() returns the nearest pricex100 (rounding down)
+// Test that .nearest_pricex100() returns the nearest pricex100 (rounding down)
 // to the specified pricex100 or INVALID_PRICEX100 if unable to determine
 // (e.g. pricex100 < 101).
 TEST(price_range_test, nearest_pricex100)
@@ -448,6 +448,236 @@ TEST(price_range_test, nearest_pricex100)
 
 	for (uint64_t pricex100 = 10000; pricex100 <= 100000; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
+
+		if (pricex100 % 1000 == 0)
+			i++;
+	}
+}
+
+// Test that the .price_to_nearest_index() method correctly rounds the floating
+// point price and returns the index of the nearest pricex100 less than or equal
+// to the one specified.
+TEST(price_range_test, price_to_nearest_index)
+{
+	janus::betfair::price_range range;
+
+	// Test each of the tick ranges one-by-one and ensure that we obtain the
+	// index of the nearest pricex100, rounding down.
+
+	// Expect all pricex100's below 101 are invalid.
+	for (uint64_t pricex100 = 0; pricex100 < 101; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), janus::betfair::INVALID_PRICE_INDEX);
+	}
+
+	uint64_t i = 0;
+
+	// 101 -> 200 have a tick size of 1, so no fuzzy values to check.
+	for (uint64_t pricex100 = 101; pricex100 < 200; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		i++;
+	}
+
+	for (uint64_t pricex100 = 200; pricex100 < 300; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		if (pricex100 % 2 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 300; pricex100 < 400; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		if (pricex100 % 5 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 400; pricex100 < 600; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		if (pricex100 % 10 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 600; pricex100 < 1000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		if (pricex100 % 20 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 1000; pricex100 < 2000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		if (pricex100 % 50 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 2000; pricex100 < 3000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		if (pricex100 % 100 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 3000; pricex100 < 5000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		if (pricex100 % 200 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 5000; pricex100 < 10000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		if (pricex100 % 500 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 10000; pricex100 <= 100000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index(price), i);
+		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
+
+		if (pricex100 % 1000 == 0)
+			i++;
+	}
+}
+
+// Test that the .price_to_nearest_index() method rounds specifically offset
+// floating point numbers correctly.
+TEST(price_range_test, price_to_nearest_index_rounding)
+{
+	janus::betfair::price_range range;
+
+	EXPECT_EQ(range.price_to_nearest_index(1.009999547), 0);
+	EXPECT_EQ(range.price_to_nearest_index(1.014566667), 0);
+	EXPECT_EQ(range.price_to_nearest_index(6.1999423823), range.pricex100_to_index(620));
+}
+
+// Test that the .price_to_nearest_pricex100() method correctly rounds the
+// floating point price and returns the nearest pricex100 less than or equal to
+// the one specified. Leave out rounding errors as covered by index test.
+TEST(price_range_test, price_to_nearest_pricex100)
+{
+	janus::betfair::price_range range;
+
+	// Test each of the tick ranges one-by-one and ensure that we obtain the
+	// index of the nearest pricex100, rounding down.
+
+	// Expect all pricex100's below 101 are invalid.
+	for (uint64_t pricex100 = 0; pricex100 < 101; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price),
+			  janus::betfair::INVALID_PRICEX100);
+	}
+
+	uint64_t i = 0;
+
+	// 101 -> 200 have a tick size of 1, so no fuzzy values to check.
+	for (uint64_t pricex100 = 101; pricex100 < 200; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), pricex100);
+
+		i++;
+	}
+
+	for (uint64_t pricex100 = 200; pricex100 < 300; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
+
+		if (pricex100 % 2 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 300; pricex100 < 400; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
+
+		if (pricex100 % 5 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 400; pricex100 < 600; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
+
+		if (pricex100 % 10 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 600; pricex100 < 1000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
+
+		if (pricex100 % 20 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 1000; pricex100 < 2000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
+
+		if (pricex100 % 50 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 2000; pricex100 < 3000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
+
+		if (pricex100 % 100 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 3000; pricex100 < 5000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
+
+		if (pricex100 % 200 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 5000; pricex100 < 10000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
+
+		if (pricex100 % 500 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 10000; pricex100 <= 100000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
 		if (pricex100 % 1000 == 0)
 			i++;
