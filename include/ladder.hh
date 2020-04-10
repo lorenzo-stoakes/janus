@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <utility>
 
 #include "error.hh"
 
@@ -89,6 +90,17 @@ public:
 		return n;
 	}
 
+	// Retrieve the top ATL (back) unmatched price/volume pair,or if none
+	// set (empty ladder), return a 0, 0 pair.
+	auto best_atl() const -> std::pair<uint64_t, double>
+	{
+		uint64_t price_index = 0;
+		double vol = 0;
+
+		best_atl(1, &price_index, &vol);
+		return std::make_pair(price_index, vol);
+	}
+
 	// Retrieve the top N ATB (lay) unmatched price/volume pairs and place
 	// in the specified output buffers.
 	//               n: Number of price/volume pairs to retrieve.
@@ -117,6 +129,17 @@ public:
 		}
 
 		return n;
+	}
+
+	// Retrieve the top ATB (lay) unmatched price/volume pair, or if none
+	// set (empty ladder), return a 0, 0 pair.
+	auto best_atb() const -> std::pair<uint64_t, double>
+	{
+		uint64_t price_index = 0;
+		double vol = 0;
+
+		best_atb(1, &price_index, &vol);
+		return std::make_pair(price_index, vol);
 	}
 
 	// Set the unmatched volume at the specified price index to the

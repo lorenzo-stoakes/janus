@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <gtest/gtest.h>
+#include <utility>
 
 namespace
 {
@@ -342,6 +343,10 @@ TEST(ladder_test, best_atl_atb)
 	EXPECT_EQ(ladder.best_atb(10, prices.data(), vols.data()), 0);
 	EXPECT_EQ(ladder.best_atl(10, prices.data(), vols.data()), 0);
 
+	auto zero_pair = std::make_pair<uint64_t, double>(0, 0);
+	EXPECT_EQ(ladder.best_atb(), zero_pair);
+	EXPECT_EQ(ladder.best_atl(), zero_pair);
+
 	// Fill half of ladder with ATB volume.
 	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES / 2;
 	     price_index++) {
@@ -392,9 +397,14 @@ TEST(ladder_test, best_atl_atb)
 
 		for (uint64_t j = 0; j < i; j++) {
 			uint64_t price_index = janus::betfair::NUM_PRICES / 2 + j;
+			double vol = price_index * 100;
 
 			ASSERT_EQ(prices[j], price_index);
-			ASSERT_DOUBLE_EQ(vols[j], price_index * 100);
+			ASSERT_DOUBLE_EQ(vols[j], vol);
+
+			if (j == 0) {
+				ASSERT_EQ(ladder.best_atl(), std::make_pair(price_index, vol));
+			}
 		}
 
 		count = ladder.best_atb(i, prices.data(), vols.data());
@@ -407,6 +417,10 @@ TEST(ladder_test, best_atl_atb)
 
 			ASSERT_EQ(prices[j], price_index);
 			ASSERT_DOUBLE_EQ(vols[j], vol);
+
+			if (j == 0) {
+				ASSERT_EQ(ladder.best_atb(), std::make_pair(price_index, vol));
+			}
 		}
 	}
 
