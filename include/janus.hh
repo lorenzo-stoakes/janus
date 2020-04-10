@@ -4,6 +4,7 @@
 
 #include "decimal7.hh"
 #include "dynamic_buffer.hh"
+#include "ladder.hh"
 #include "parse.hh"
 #include "price_range.hh"
 
