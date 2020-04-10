@@ -62,6 +62,63 @@ public:
 		return _total_unmatched_atb;
 	}
 
+	// Retrieve the top N ATL (back) unmatched price/volume pairs and place
+	// in the specified output buffers.
+	//               n: Number of price/volume pairs to retrieve.
+	// price_index_ptr: Output buffer for prices. Assumed to hold at least n values.
+	//         vol_ptr: Output buffer for volumes. Assumed to hold at least n values.
+	//         returns: Number of price/volume pairs retrieved, <= n.
+	auto best_atl(uint64_t n, uint64_t* price_index_ptr, double* vol_ptr) const -> uint64_t
+	{
+		uint64_t index = min_atl_index();
+
+		for (uint64_t i = 0; i < n; i++) {
+			double vol = unmatched(index);
+			if (vol == 0) {
+				return i;
+			}
+
+			price_index_ptr[i] = index;
+			vol_ptr[i] = vol;
+
+			index = get_next_atl_index(index + 1);
+			if (index == NOT_FOUND_INDEX)
+				return i + 1;
+		}
+
+		return n;
+	}
+
+	// Retrieve the top N ATB (lay) unmatched price/volume pairs and place
+	// in the specified output buffers.
+	//               n: Number of price/volume pairs to retrieve.
+	// price_index_ptr: Output buffer for prices. Assumed to hold at least n values.
+	//         vol_ptr: Output buffer for volumes. Assumed to hold at least n values.
+	//         returns: Number of price/volume pairs retrieved, <= n.
+	auto best_atb(uint64_t n, uint64_t* price_index_ptr, double* vol_ptr) const -> uint64_t
+	{
+		uint64_t index = max_atb_index();
+
+		for (uint64_t i = 0; i < n; i++) {
+			double vol = unmatched(index);
+			if (vol == 0)
+				return i;
+
+			price_index_ptr[i] = index;
+			vol_ptr[i] = -vol; // Lay so negative volume.
+
+			// Since index is unsigned we have to explicitly check
+			// for 0.
+			if (index == 0)
+				return i + 1;
+			index = get_next_atb_index(index - 1);
+			if (index == NOT_FOUND_INDEX)
+				return i + 1;
+		}
+
+		return n;
+	}
+
 	// Set the unmatched volume at the specified price index to the
 	// specified volume. If a positive volume is specified, then the volume
 	// is on the back (ATL) side, otherwise if negative then volume is on
@@ -96,6 +153,8 @@ public:
 	}
 
 private:
+	static constexpr uint64_t NOT_FOUND_INDEX = static_cast<uint64_t>(-1);
+
 	uint64_t _min_atl_index;
 	uint64_t _max_atb_index;
 	double _total_unmatched_atl;
@@ -125,8 +184,6 @@ private:
 		if (vol > 0 && i < _max_atb_index)
 			throw invalid_unmatched_update(i, vol, _max_atb_index);
 	}
-
-	static constexpr uint64_t NOT_FOUND_INDEX = static_cast<uint64_t>(-1);
 
 	// Starting from the specified price index, find the first price where
 	// we have back (ATL) available and return its price index.
