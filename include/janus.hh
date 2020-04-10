@@ -5,6 +5,7 @@
 #include "decimal7.hh"
 #include "dynamic_buffer.hh"
 #include "parse.hh"
+#include "price_range.hh"
 
 #include "json.hh"
 #include "meta.hh"
