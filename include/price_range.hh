@@ -88,8 +88,8 @@ public:
 		// Round to price x 10,000, which should help avoid rounding
 		// errors, but divide DOWN to x 100 in order that we maintain
 		// our bias towards the lower pricex100.
-		uint64_t pricex10000 = ::llround(price * 10000.);
-		uint64_t pricex100 = pricex10000 / 100;
+		uint64_t pricex10000 = ::llround(price * 10000.); // NOLINT: Not magical.
+		uint64_t pricex100 = pricex10000 / 100; // NOLINT: Not magical.
 
 		return pricex100_to_nearest_index(pricex100);
 	}
