@@ -16,7 +16,7 @@ static constexpr uint64_t DYN_BUFFER_MAX_SIZE = 500'000'000;
 static void clear_line()
 {
 	std::cout << "\r";
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 100; i++) // NOLINT: Not magical.
 		std::cout << " ";
 	std::cout << "\r" << std::flush;
 }
