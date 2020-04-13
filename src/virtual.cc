@@ -121,4 +121,51 @@ auto calc_virtual_bets(const price_range& range, bool atl,
 
 	return ret;
 }
+
+auto gen_virt_ladder(const janus::betfair::price_range& range, janus::betfair::ladder ladder,
+		     const std::vector<janus::betfair::ladder>& other_ladders)
+	-> janus::betfair::ladder
+{
+	// ATB virtual bets are calculated using the ATL portion of the other ladders.
+	auto atb_virt_bets = calc_virtual_bets(range, true, other_ladders);
+	// ATL virtual bets are calculated using the ATB portion of the other ladders.
+	auto atl_virt_bets = calc_virtual_bets(range, false, other_ladders);
+
+	// Merge generated ATL virtual bets.
+	for (auto [price, vol] : atl_virt_bets) {
+		// Round UP to the nearest price index as this is equivalent of a BACK bet.
+		uint64_t price_index = range.price_to_nearest_index_up(price);
+		double nearest_price = janus::betfair::price_range::index_to_price(price_index);
+
+		// Take into account fact our calculated prices are often not at
+		// a price boundary, so we need to scale accordingly.
+		vol *= (price / nearest_price);
+
+		// For volumes < 1 we assign it to the next price.
+		if (vol < 1 && price_index < janus::betfair::NUM_PRICES - 1)
+			price_index++;
+
+		ladder.set_unmatched_at(price_index, ladder[price_index] + vol);
+	}
+
+	// Merge generated ATB virtual bets.
+	for (auto [price, vol] : atb_virt_bets) {
+		// Round DOWN to the nearest price index as this is equivalent of a LAY bet.
+		uint64_t price_index = range.price_to_nearest_index(price);
+		double nearest_price = janus::betfair::price_range::index_to_price(price_index);
+
+		// Take into account fact our calculated prices are often not at
+		// a price boundary, so we need to scale accordingly.
+		vol *= (price / nearest_price);
+
+		// For volumes < 1 we assign it to the next price.
+		if (vol < 1 && price_index > 0)
+			price_index--;
+
+		// ATB so negative.
+		ladder.set_unmatched_at(price_index, ladder[price_index] - vol);
+	}
+
+	return ladder;
+}
 } // namespace janus::betfair

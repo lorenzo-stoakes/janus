@@ -29,4 +29,16 @@ namespace janus::betfair
 auto calc_virtual_bets(const price_range& range, bool atl,
 		       std::vector<janus::betfair::ladder> ladders)
 	-> std::vector<std::pair<double, double>>;
+
+// Generate a virtual ladder which contains all virtual bets merged with
+// non-virtual, allocated to standard prices in correct proportion. This should
+// generate a ladder exactly equivalent to that which would be observed when
+// using betfair's website or a trading app.
+//          ladder: Ladder we are merging prices with.
+//   other_ladders: Ladders of other runners we wish to generate virtual bets from.
+//           range: Price range object to use to look up prices.
+//         returns: Ladder with all virtual and non-virtual unmatched volume merged.
+auto gen_virt_ladder(const janus::betfair::price_range& range, janus::betfair::ladder ladder,
+		     const std::vector<janus::betfair::ladder>& other_ladders)
+	-> janus::betfair::ladder;
 } // namespace janus::betfair
