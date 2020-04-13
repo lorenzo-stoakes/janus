@@ -683,4 +683,212 @@ TEST(price_range_test, price_to_nearest_pricex100)
 			i++;
 	}
 }
+
+// Test that .pricex100_to_nearest_index_up() returns the index ofthe nearest
+// pricex100 greater than or equal to the one specified.
+TEST(price_range_test, pricex100_to_nearest_index_up)
+{
+	janus::betfair::price_range range;
+
+	// Test each of the tick ranges one-by-one and ensure that we obtain the
+	// index of the nearest pricex100, rounding up.
+
+	// Expect all pricex100's below 101 are invalid.
+	for (uint64_t pricex100 = 0; pricex100 < 101; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100),
+			  janus::betfair::INVALID_PRICE_INDEX);
+	}
+
+	uint64_t i = 0;
+
+	// 101 -> 200 have a tick size of 1, so no fuzzy values to check.
+	for (uint64_t pricex100 = 101; pricex100 < 200; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		i++;
+	}
+
+	for (uint64_t pricex100 = 200; pricex100 < 300; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		if (pricex100 % 2 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 300; pricex100 < 400; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		if (pricex100 % 5 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 400; pricex100 < 600; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		if (pricex100 % 10 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 600; pricex100 < 1000; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		if (pricex100 % 20 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 1000; pricex100 < 2000; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		if (pricex100 % 50 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 2000; pricex100 < 3000; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		if (pricex100 % 100 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 3000; pricex100 < 5000; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		if (pricex100 % 200 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 5000; pricex100 < 10000; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		if (pricex100 % 500 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 10000; pricex100 <= 100000; pricex100++) {
+		ASSERT_EQ(range.pricex100_to_nearest_index_up(pricex100), i);
+
+		if (pricex100 % 1000 == 0)
+			i++;
+	}
+}
+
+// Test that the .price_to_nearest_index_up() method correctly rounds the
+// floating point price and returns the index of the nearest pricex100 greater
+// than or equal to the one specified.
+TEST(price_range_test, price_to_nearest_index_up)
+{
+	janus::betfair::price_range range;
+
+	// Test each of the tick ranges one-by-one and ensure that we obtain the
+	// index of the nearest pricex100, rounding down.
+
+	// Expect all pricex100's below 101 are invalid.
+	for (uint64_t pricex100 = 0; pricex100 < 101; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price),
+			  janus::betfair::INVALID_PRICE_INDEX);
+	}
+
+	uint64_t i = 0;
+
+	// 101 -> 200 have a tick size of 1, so no fuzzy values to check.
+	for (uint64_t pricex100 = 101; pricex100 < 200; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i) << price;
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		i++;
+	}
+
+	for (uint64_t pricex100 = 200; pricex100 < 300; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		if (pricex100 % 2 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 300; pricex100 < 400; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		if (pricex100 % 5 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 400; pricex100 < 600; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		if (pricex100 % 10 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 600; pricex100 < 1000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		if (pricex100 % 20 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 1000; pricex100 < 2000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		if (pricex100 % 50 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 2000; pricex100 < 3000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		if (pricex100 % 100 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 3000; pricex100 < 5000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		if (pricex100 % 200 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 5000; pricex100 < 10000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		if (pricex100 % 500 == 0)
+			i++;
+	}
+
+	for (uint64_t pricex100 = 10000; pricex100 <= 100000; pricex100++) {
+		double price = static_cast<double>(pricex100 / 100.);
+		ASSERT_EQ(range.price_to_nearest_index_up(price), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price - 9.875e-7), i);
+		ASSERT_EQ(range.price_to_nearest_index_up(price + 9.875e-7), i);
+
+		if (pricex100 % 1000 == 0)
+			i++;
+	}
+}
 } // namespace

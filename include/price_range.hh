@@ -53,6 +53,15 @@ public:
 		return _price_map[pricex100];
 	}
 
+	// Obtain the NEAREST price index of the specified pricex100, rounding
+	// UP, e.g. 627 -> index of 640.
+	// Note that the pricex100 is NOT checked, i.e. if it is larger than
+	// MAX_PRICEX100 this will buffer overflow.
+	auto pricex100_to_nearest_index_up(uint64_t pricex100) const -> uint64_t
+	{
+		return _price_map_up[pricex100];
+	}
+
 	// Obtain the PRECISE price index of the specified pricex100, if it is
 	// not a valid price then INVALID_PRICE_INDEX is returned.
 	auto pricex100_to_index(uint64_t pricex100) const -> uint64_t
@@ -92,6 +101,19 @@ public:
 		uint64_t pricex100 = pricex10000 / 100;           // NOLINT: Not magical.
 
 		return pricex100_to_nearest_index(pricex100);
+	}
+
+	// Find the index of the nearest price to the specified price, rounding
+	// the price such that 6.19999 is correctly rounded to 6.2, and rounding
+	// UP such that 6.27 -> index of 6.4.
+	// Note that the price is NOT checked, i.e. if it is larger than 1000
+	// this will buffer overflow.
+	auto price_to_nearest_index_up(double price) const -> uint64_t
+	{
+		uint64_t pricex10000 = price * 10000.;
+		uint64_t pricex100 =
+			::ceil(static_cast<double>(pricex10000) / 100.); // NOLINT: Not magical.
+		return pricex100_to_nearest_index_up(pricex100);
 	}
 
 	// Find the nearest pricex100 to the specified price, rounding the price
@@ -174,6 +196,10 @@ private:
 	// nearest price rounding down, e.g. 627 -> 620.
 	std::array<uint64_t, MAX_PRICEX100 + 1> _price_map;
 
+	// Perfect hash mapping from pricex100 to price index. It maps to the
+	// nearest price rounding up, e.g. 627 -> 640.
+	std::array<uint64_t, MAX_PRICEX100 + 1> _price_map_up;
+
 	// Populate the price map array.
 	void populate_price_map()
 	{
@@ -181,6 +207,7 @@ private:
 		// as invalid.
 		for (uint64_t i = 0; i < MIN_PRICEX100; i++) {
 			_price_map[i] = INVALID_PRICE_INDEX;
+			_price_map_up[i] = INVALID_PRICE_INDEX;
 		}
 
 		// For the rest we map the nearest price less than or equal to
@@ -188,13 +215,18 @@ private:
 		// allowing precise matching by comparing
 		// PRICESX100[price_index] == pricex100.
 		int price_index = 0;
+		int price_index_up = 0;
 		for (uint64_t i = MIN_PRICEX100; i < MAX_PRICEX100; i++) {
 			if (i == PRICESX100[price_index + 1])
 				price_index++;
+			if (i > PRICESX100[price_index_up])
+				price_index_up++;
 
 			_price_map[i] = price_index;
+			_price_map_up[i] = price_index_up;
 		}
 		_price_map[MAX_PRICEX100] = NUM_PRICES - 1;
+		_price_map_up[MAX_PRICEX100] = NUM_PRICES - 1;
 	}
 };
 } // namespace janus::betfair
