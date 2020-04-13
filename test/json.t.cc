@@ -49,17 +49,20 @@ TEST(json_test, remove_outer_array)
 
 	uint64_t size = 0;
 	// Anything less than size 3 should fail.
-	EXPECT_THROW(janus::internal::remove_outer_array(invalid_buf, size), std::runtime_error);
+	EXPECT_THROW(janus::betfair::internal::remove_outer_array(invalid_buf, size),
+		     std::runtime_error);
 	size = 1;
-	EXPECT_THROW(janus::internal::remove_outer_array(invalid_buf, size), std::runtime_error);
+	EXPECT_THROW(janus::betfair::internal::remove_outer_array(invalid_buf, size),
+		     std::runtime_error);
 	size = 2;
-	EXPECT_THROW(janus::internal::remove_outer_array(invalid_buf, size), std::runtime_error);
+	EXPECT_THROW(janus::betfair::internal::remove_outer_array(invalid_buf, size),
+		     std::runtime_error);
 
 	// Now check a normal case.
 	char buf1[] = R"([{"x":3}])";
 	uint64_t buf1_orig_size = sizeof(buf1) - 1;
 	size = buf1_orig_size;
-	char* ret1 = janus::internal::remove_outer_array(buf1, size);
+	char* ret1 = janus::betfair::internal::remove_outer_array(buf1, size);
 	EXPECT_EQ(size, buf1_orig_size - 2);
 	for (uint64_t i = 1; i < buf1_orig_size - 1; i++) {
 		EXPECT_EQ(buf1[i], ret1[i - 1]);
@@ -69,7 +72,7 @@ TEST(json_test, remove_outer_array)
 	char buf2[] = R"([{"x":3}]      )";
 	uint64_t buf2_orig_size = sizeof(buf2) - 1;
 	size = buf2_orig_size;
-	char* ret2 = janus::internal::remove_outer_array(buf2, size);
+	char* ret2 = janus::betfair::internal::remove_outer_array(buf2, size);
 	// Expect [] and trailing whitespace to be removed.
 	EXPECT_EQ(size, buf2_orig_size - 2 - 6);
 	for (uint64_t i = 1; i < 8; i++) {
@@ -80,14 +83,14 @@ TEST(json_test, remove_outer_array)
 	char buf3[] = R"({"x":3, "y": 1.23456, "z": ["ohello!"])";
 	uint64_t buf3_orig_size = sizeof(buf3) - 1;
 	size = buf3_orig_size;
-	char* ret3 = janus::internal::remove_outer_array(buf3, size);
+	char* ret3 = janus::betfair::internal::remove_outer_array(buf3, size);
 	EXPECT_EQ(size, buf3_orig_size);
 	EXPECT_EQ(std::strcmp(buf3, ret3), 0);
 
 	// Invalid JSON without closing brace should raise an error here.
 	char buf4[] = R"([{"x":3})";
 	size = sizeof(buf4) - 1;
-	EXPECT_THROW(janus::internal::remove_outer_array(buf4, size), std::runtime_error);
+	EXPECT_THROW(janus::betfair::internal::remove_outer_array(buf4, size), std::runtime_error);
 }
 
 // Test that we can parse a betfair metadata header correctly.
@@ -109,7 +112,7 @@ TEST(json_test, betfair_extract_meta_header)
 	// Won't be larger than the JSON buffer.
 	auto dyn_buf = janus::dynamic_buffer(size);
 
-	uint64_t count = janus::internal::betfair_extract_meta_header(root, dyn_buf);
+	uint64_t count = janus::betfair::internal::extract_meta_header(root, dyn_buf);
 	// Already a multiple of 8.
 	EXPECT_EQ(count, sizeof(janus::meta_header));
 
@@ -132,7 +135,7 @@ TEST(json_test, betfair_extract_meta_header)
 	sajson::document doc2 = janus::internal::parse_json("", json2, size2);
 	const sajson::value& root2 = doc2.get_root();
 
-	uint64_t count2 = janus::internal::betfair_extract_meta_header(root2, dyn_buf);
+	uint64_t count2 = janus::betfair::internal::extract_meta_header(root2, dyn_buf);
 	EXPECT_EQ(count2, sizeof(janus::meta_header));
 	EXPECT_EQ(dyn_buf.size(), 2 * sizeof(janus::meta_header));
 
@@ -153,7 +156,7 @@ TEST(json_test, betfair_extract_meta_header)
 	sajson::document doc3 = janus::internal::parse_json("", json3, size3);
 	const sajson::value& root3 = doc3.get_root();
 
-	uint64_t count3 = janus::internal::betfair_extract_meta_header(root3, dyn_buf);
+	uint64_t count3 = janus::betfair::internal::extract_meta_header(root3, dyn_buf);
 	EXPECT_EQ(count3, sizeof(janus::meta_header));
 	EXPECT_EQ(dyn_buf.size(), 3 * sizeof(janus::meta_header));
 
@@ -180,7 +183,7 @@ TEST(json_test, betfair_extract_meta_static_strings)
 	// Won't be larger than the JSON buffer.
 	auto dyn_buf = janus::dynamic_buffer(size);
 
-	uint64_t count = janus::internal::betfair_extract_meta_static_strings(root, dyn_buf);
+	uint64_t count = janus::betfair::internal::extract_meta_static_strings(root, dyn_buf);
 	EXPECT_EQ(count, dyn_buf.size());
 
 	std::string_view market_name = dyn_buf.read_string();
@@ -218,7 +221,7 @@ TEST(json_test, betfair_extract_meta_static_strings)
 	// Won't be larger than the JSON buffer.
 	auto dyn_buf2 = janus::dynamic_buffer(size);
 
-	uint64_t count2 = janus::internal::betfair_extract_meta_static_strings(root2, dyn_buf2);
+	uint64_t count2 = janus::betfair::internal::extract_meta_static_strings(root2, dyn_buf2);
 	EXPECT_EQ(count2, dyn_buf2.size());
 
 	std::string_view market_name2 = dyn_buf2.read_string();
@@ -246,8 +249,8 @@ TEST(json_test, betfair_extract_meta_static_strings)
 	EXPECT_EQ(competition_name2, "");
 }
 
-// Test that the internal betfair_extract_meta_runners() function correctly extracts runner
-// metadata.
+// Test that the internal extract_meta_runners() function correctly extracts
+// runner metadata.
 TEST(json_test, betfair_extract_meta_runners)
 {
 	std::string json = janus_test::sample_meta_json;
@@ -260,7 +263,7 @@ TEST(json_test, betfair_extract_meta_runners)
 	auto dyn_buf = janus::dynamic_buffer(json.size());
 
 	// Extract header so we can get a runner count.
-	janus::internal::betfair_extract_meta_header(root, dyn_buf);
+	janus::betfair::internal::extract_meta_header(root, dyn_buf);
 	auto& header = dyn_buf.read<janus::meta_header>();
 	uint64_t num_runners = header.num_runners;
 	EXPECT_EQ(num_runners, 12);
@@ -270,7 +273,7 @@ TEST(json_test, betfair_extract_meta_runners)
 	dyn_buf.reset();
 
 	sajson::value runners_node = root.get_value_of_key(sajson::literal("runners"));
-	uint64_t count = janus::internal::betfair_extract_meta_runners(runners_node, dyn_buf);
+	uint64_t count = janus::betfair::internal::extract_meta_runners(runners_node, dyn_buf);
 	ASSERT_EQ(count, dyn_buf.size());
 
 	for (uint64_t i = 0; i < num_runners; i++) {
@@ -298,7 +301,7 @@ TEST(json_test, betfair_extract_meta_runners)
 	const sajson::value& root2 = doc2.get_root();
 	sajson::value runners_node2 = root2.get_value_of_key(sajson::literal("runners"));
 
-	janus::internal::betfair_extract_meta_runners(runners_node2, dyn_buf);
+	janus::betfair::internal::extract_meta_runners(runners_node2, dyn_buf);
 
 	for (uint64_t i = 0; i < 4; i++) {
 		uint64_t runner_id = dyn_buf.read_uint64();
