@@ -481,4 +481,18 @@ TEST(ladder_test, best_atl_atb)
 	EXPECT_EQ(prices[0], 10);
 	EXPECT_EQ(vols[0], 761);
 }
+
+TEST(ladder_test, list_init_ctor)
+{
+	janus::betfair::ladder ladder = {
+		{123, -456.12}, {210, -99.34}, {620, 597.68}, {640, 999.78}};
+
+	janus::betfair::price_range range;
+
+	EXPECT_DOUBLE_EQ(ladder[range.pricex100_to_index(123)], -456.12);
+	EXPECT_DOUBLE_EQ(ladder[range.pricex100_to_index(210)], -99.34);
+
+	EXPECT_DOUBLE_EQ(ladder[range.pricex100_to_index(620)], 597.68);
+	EXPECT_DOUBLE_EQ(ladder[range.pricex100_to_index(640)], 999.78);
+}
 } // namespace
