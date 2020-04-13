@@ -190,63 +190,63 @@ TEST(price_range_test, pricex100_to_nearest_index)
 	for (uint64_t pricex100 = 200; pricex100 < 300; pricex100++) {
 		ASSERT_EQ(range.pricex100_to_nearest_index(pricex100), i);
 
-		if (pricex100 % 2 == 0)
+		if ((pricex100 + 1) % 2 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 300; pricex100 < 400; pricex100++) {
 		ASSERT_EQ(range.pricex100_to_nearest_index(pricex100), i);
 
-		if (pricex100 % 5 == 0)
+		if ((pricex100 + 1) % 5 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 400; pricex100 < 600; pricex100++) {
 		ASSERT_EQ(range.pricex100_to_nearest_index(pricex100), i);
 
-		if (pricex100 % 10 == 0)
+		if ((pricex100 + 1) % 10 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 600; pricex100 < 1000; pricex100++) {
 		ASSERT_EQ(range.pricex100_to_nearest_index(pricex100), i);
 
-		if (pricex100 % 20 == 0)
+		if ((pricex100 + 1) % 20 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 1000; pricex100 < 2000; pricex100++) {
 		ASSERT_EQ(range.pricex100_to_nearest_index(pricex100), i);
 
-		if (pricex100 % 50 == 0)
+		if ((pricex100 + 1) % 50 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 2000; pricex100 < 3000; pricex100++) {
 		ASSERT_EQ(range.pricex100_to_nearest_index(pricex100), i);
 
-		if (pricex100 % 100 == 0)
+		if ((pricex100 + 1) % 100 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 3000; pricex100 < 5000; pricex100++) {
 		ASSERT_EQ(range.pricex100_to_nearest_index(pricex100), i);
 
-		if (pricex100 % 200 == 0)
+		if ((pricex100 + 1) % 200 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 5000; pricex100 < 10000; pricex100++) {
 		ASSERT_EQ(range.pricex100_to_nearest_index(pricex100), i);
 
-		if (pricex100 % 500 == 0)
+		if ((pricex100 + 1) % 500 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 10000; pricex100 <= 100000; pricex100++) {
 		ASSERT_EQ(range.pricex100_to_nearest_index(pricex100), i);
 
-		if (pricex100 % 1000 == 0)
+		if ((pricex100 + 1) % 1000 == 0)
 			i++;
 	}
 }
@@ -393,63 +393,63 @@ TEST(price_range_test, nearest_pricex100)
 	for (uint64_t pricex100 = 200; pricex100 < 300; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
 
-		if (pricex100 % 2 == 0)
+		if ((pricex100 + 1) % 2 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 300; pricex100 < 400; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
 
-		if (pricex100 % 5 == 0)
+		if ((pricex100 + 1) % 5 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 400; pricex100 < 600; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
 
-		if (pricex100 % 10 == 0)
+		if ((pricex100 + 1) % 10 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 600; pricex100 < 1000; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
 
-		if (pricex100 % 20 == 0)
+		if ((pricex100 + 1) % 20 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 1000; pricex100 < 2000; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
 
-		if (pricex100 % 50 == 0)
+		if ((pricex100 + 1) % 50 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 2000; pricex100 < 3000; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
 
-		if (pricex100 % 100 == 0)
+		if ((pricex100 + 1) % 100 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 3000; pricex100 < 5000; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
 
-		if (pricex100 % 200 == 0)
+		if ((pricex100 + 1) % 200 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 5000; pricex100 < 10000; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
 
-		if (pricex100 % 500 == 0)
+		if ((pricex100 + 1) % 500 == 0)
 			i++;
 	}
 
 	for (uint64_t pricex100 = 10000; pricex100 <= 100000; pricex100++) {
 		ASSERT_EQ(range.nearest_pricex100(pricex100), range[i]);
 
-		if (pricex100 % 1000 == 0)
+		if ((pricex100 + 1) % 1000 == 0)
 			i++;
 	}
 }
@@ -488,7 +488,7 @@ TEST(price_range_test, price_to_nearest_index)
 		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
 		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
 
-		if (pricex100 % 2 == 0)
+		if ((pricex100 + 1) % 2 == 0)
 			i++;
 	}
 
@@ -498,7 +498,7 @@ TEST(price_range_test, price_to_nearest_index)
 		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
 		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
 
-		if (pricex100 % 5 == 0)
+		if ((pricex100 + 1) % 5 == 0)
 			i++;
 	}
 
@@ -508,7 +508,7 @@ TEST(price_range_test, price_to_nearest_index)
 		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
 		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
 
-		if (pricex100 % 10 == 0)
+		if ((pricex100 + 1) % 10 == 0)
 			i++;
 	}
 
@@ -518,7 +518,7 @@ TEST(price_range_test, price_to_nearest_index)
 		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
 		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
 
-		if (pricex100 % 20 == 0)
+		if ((pricex100 + 1) % 20 == 0)
 			i++;
 	}
 
@@ -528,7 +528,7 @@ TEST(price_range_test, price_to_nearest_index)
 		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
 		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
 
-		if (pricex100 % 50 == 0)
+		if ((pricex100 + 1) % 50 == 0)
 			i++;
 	}
 
@@ -538,7 +538,7 @@ TEST(price_range_test, price_to_nearest_index)
 		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
 		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
 
-		if (pricex100 % 100 == 0)
+		if ((pricex100 + 1) % 100 == 0)
 			i++;
 	}
 
@@ -548,7 +548,7 @@ TEST(price_range_test, price_to_nearest_index)
 		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
 		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
 
-		if (pricex100 % 200 == 0)
+		if ((pricex100 + 1) % 200 == 0)
 			i++;
 	}
 
@@ -558,7 +558,7 @@ TEST(price_range_test, price_to_nearest_index)
 		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
 		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
 
-		if (pricex100 % 500 == 0)
+		if ((pricex100 + 1) % 500 == 0)
 			i++;
 	}
 
@@ -568,7 +568,7 @@ TEST(price_range_test, price_to_nearest_index)
 		ASSERT_EQ(range.price_to_nearest_index(price - 9.875e-7), i);
 		ASSERT_EQ(range.price_to_nearest_index(price + 9.875e-7), i);
 
-		if (pricex100 % 1000 == 0)
+		if ((pricex100 + 1) % 1000 == 0)
 			i++;
 	}
 }
@@ -581,7 +581,7 @@ TEST(price_range_test, price_to_nearest_index_rounding)
 
 	EXPECT_EQ(range.price_to_nearest_index(1.009999547), 0);
 	EXPECT_EQ(range.price_to_nearest_index(1.014566667), 0);
-	EXPECT_EQ(range.price_to_nearest_index(6.1999423823), range.pricex100_to_index(620));
+	EXPECT_EQ(range.price_to_nearest_index(6.1999923823), range.pricex100_to_index(620));
 }
 
 // Test that the .price_to_nearest_pricex100() method correctly rounds the
@@ -615,7 +615,7 @@ TEST(price_range_test, price_to_nearest_pricex100)
 		double price = static_cast<double>(pricex100 / 100.);
 		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
-		if (pricex100 % 2 == 0)
+		if ((pricex100 + 1) % 2 == 0)
 			i++;
 	}
 
@@ -623,7 +623,7 @@ TEST(price_range_test, price_to_nearest_pricex100)
 		double price = static_cast<double>(pricex100 / 100.);
 		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
-		if (pricex100 % 5 == 0)
+		if ((pricex100 + 1) % 5 == 0)
 			i++;
 	}
 
@@ -631,7 +631,7 @@ TEST(price_range_test, price_to_nearest_pricex100)
 		double price = static_cast<double>(pricex100 / 100.);
 		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
-		if (pricex100 % 10 == 0)
+		if ((pricex100 + 1) % 10 == 0)
 			i++;
 	}
 
@@ -639,7 +639,7 @@ TEST(price_range_test, price_to_nearest_pricex100)
 		double price = static_cast<double>(pricex100 / 100.);
 		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
-		if (pricex100 % 20 == 0)
+		if ((pricex100 + 1) % 20 == 0)
 			i++;
 	}
 
@@ -647,7 +647,7 @@ TEST(price_range_test, price_to_nearest_pricex100)
 		double price = static_cast<double>(pricex100 / 100.);
 		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
-		if (pricex100 % 50 == 0)
+		if ((pricex100 + 1) % 50 == 0)
 			i++;
 	}
 
@@ -655,7 +655,7 @@ TEST(price_range_test, price_to_nearest_pricex100)
 		double price = static_cast<double>(pricex100 / 100.);
 		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
-		if (pricex100 % 100 == 0)
+		if ((pricex100 + 1) % 100 == 0)
 			i++;
 	}
 
@@ -663,7 +663,7 @@ TEST(price_range_test, price_to_nearest_pricex100)
 		double price = static_cast<double>(pricex100 / 100.);
 		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
-		if (pricex100 % 200 == 0)
+		if ((pricex100 + 1) % 200 == 0)
 			i++;
 	}
 
@@ -671,7 +671,7 @@ TEST(price_range_test, price_to_nearest_pricex100)
 		double price = static_cast<double>(pricex100 / 100.);
 		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
-		if (pricex100 % 500 == 0)
+		if ((pricex100 + 1) % 500 == 0)
 			i++;
 	}
 
@@ -679,7 +679,7 @@ TEST(price_range_test, price_to_nearest_pricex100)
 		double price = static_cast<double>(pricex100 / 100.);
 		ASSERT_EQ(range.price_to_nearest_pricex100(price), range[i]);
 
-		if (pricex100 % 1000 == 0)
+		if ((pricex100 + 1) % 1000 == 0)
 			i++;
 	}
 }
