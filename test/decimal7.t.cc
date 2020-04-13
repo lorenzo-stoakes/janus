@@ -1,4 +1,4 @@
-#include "decimal7.hh"
+#include "janus.hh"
 
 #include <cstdint>
 #include <gtest/gtest.h>

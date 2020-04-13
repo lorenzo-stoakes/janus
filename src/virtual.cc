@@ -1,15 +1,12 @@
 #include "janus.hh"
 
-#include "ladder.hh"
-#include "price_range.hh"
-
 #include <cstdint>
 #include <utility>
 #include <vector>
 
 namespace janus::betfair
 {
-// TODO: This function is pretty unperformant. Needs some serious optimisation.
+// TODO(lorenzo): This function is pretty unperformant. Needs some serious optimisation.
 auto calc_virtual_bets(const price_range& range, bool atl,
 		       std::vector<janus::betfair::ladder> ladders)
 	-> std::vector<std::pair<double, double>>
@@ -20,7 +17,8 @@ auto calc_virtual_bets(const price_range& range, bool atl,
 	{
 		explicit ladder_sorter(bool atl) : _atl{atl} {}
 
-		bool operator()(janus::betfair::ladder& ladder_a, janus::betfair::ladder& ladder_b)
+		auto operator()(janus::betfair::ladder& ladder_a, janus::betfair::ladder& ladder_b)
+			-> bool
 		{
 			uint64_t price_index_a;
 			uint64_t price_index_b;
@@ -88,7 +86,7 @@ auto calc_virtual_bets(const price_range& range, bool atl,
 			}
 		}
 		virt_price = 1. / virt_price;
-		if (virt_price < 1.01)
+		if (virt_price < 1.01) // NOLINT: Not magical.
 			return ret;
 
 		for (uint64_t i = 0; i < ladders.size(); i++) {
@@ -104,15 +102,15 @@ auto calc_virtual_bets(const price_range& range, bool atl,
 
 			// Note that we have COPIED the ladders so this mutation
 			// will not affect the caller.
-			// TODO: Actually store the price index not the price so
-			//       we don't have to convert to and back again.
+			// TODO(lorenzo): Actually store the price index not the price so
+			// we don't have to convert to and back again.
 			ladder.set_unmatched_at(range.price_to_nearest_index(price), new_vol);
 		}
 
 		double virt_vol = pairs[0].second * mult * (pairs[0].first / virt_price);
 		// If the volume is negligible then no need to generate the bet.
-		if (virt_vol > 1e-6)
-			ret.push_back(std::make_pair(virt_price, virt_vol));
+		if (virt_vol > 1e-6) // NOLINT: Not magical.
+			ret.emplace_back(std::make_pair(virt_price, virt_vol));
 		// If the volume is _exactly_ 0 then we have nothing more to
 		// calculate and we're done.
 		else if (virt_vol == 0)

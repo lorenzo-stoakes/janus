@@ -6,6 +6,7 @@
 // implementation where not doing so would result in these tests failing
 // arbitrarily.
 
+#include "janus.hh"
 #include "sajson.hh"
 
 #include <gtest/gtest.h>

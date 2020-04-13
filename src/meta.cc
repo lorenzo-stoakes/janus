@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace janus
+namespace janus::betfair
 {
 namespace internal
 {
@@ -37,15 +37,15 @@ auto remove_outer_array(char* str, uint64_t& size) -> char*
 	return str;
 }
 
-auto betfair_extract_meta_header(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t
+auto extract_meta_header(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t
 {
 	uint64_t prev_size = dyn_buf.size();
 
 	// Each value is required, if one is not found, an error will be raised.
 	meta_header header = {0};
 	sajson::value market_id_node = node.get_value_of_key(sajson::literal("marketId"));
-	header.market_id = internal::parse_market_id(market_id_node.as_cstring(),
-						     market_id_node.get_string_length());
+	header.market_id = janus::internal::parse_market_id(market_id_node.as_cstring(),
+							    market_id_node.get_string_length());
 	sajson::value start_time_node = node.get_value_of_key(sajson::literal("marketStartTime"));
 	header.market_start_timestamp = janus::parse_iso8601(start_time_node.as_cstring(),
 							     start_time_node.get_string_length());
@@ -76,8 +76,7 @@ auto betfair_extract_meta_header(const sajson::value& node, dynamic_buffer& dyn_
 	return dyn_buf.size() - prev_size;
 }
 
-auto betfair_extract_meta_static_strings(const sajson::value& node, dynamic_buffer& dyn_buf)
-	-> uint64_t
+auto extract_meta_static_strings(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t
 {
 	uint64_t prev_size = dyn_buf.size();
 
@@ -111,7 +110,7 @@ auto betfair_extract_meta_static_strings(const sajson::value& node, dynamic_buff
 	return dyn_buf.size() - prev_size;
 }
 
-auto betfair_extract_meta_runners(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t
+auto extract_meta_runners(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t
 {
 	uint64_t prev_size = dyn_buf.size();
 
@@ -153,20 +152,17 @@ auto betfair_extract_meta_runners(const sajson::value& node, dynamic_buffer& dyn
 }
 } // namespace internal
 
-namespace betfair
-{
 auto parse_meta_json(const char* filename, char* str, uint64_t size, dynamic_buffer& dyn_buf)
 	-> uint64_t
 {
 	str = internal::remove_outer_array(str, size);
-	sajson::document doc = internal::parse_json(filename, str, size);
+	sajson::document doc = janus::internal::parse_json(filename, str, size);
 	const sajson::value& root = doc.get_root();
-	uint64_t count = internal::betfair_extract_meta_header(root, dyn_buf);
-	count += internal::betfair_extract_meta_static_strings(root, dyn_buf);
-	count += internal::betfair_extract_meta_runners(
-		root.get_value_of_key(sajson::literal("runners")), dyn_buf);
+	uint64_t count = internal::extract_meta_header(root, dyn_buf);
+	count += internal::extract_meta_static_strings(root, dyn_buf);
+	count += internal::extract_meta_runners(root.get_value_of_key(sajson::literal("runners")),
+						dyn_buf);
 
 	return count;
 }
-} // namespace betfair
-} // namespace janus
+} // namespace janus::betfair

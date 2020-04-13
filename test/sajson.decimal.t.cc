@@ -1,6 +1,5 @@
+#include "janus.hh"
 #include "sajson.hh"
-
-#include "decimal7.hh"
 
 #include <gtest/gtest.h>
 #include <sstream>

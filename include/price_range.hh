@@ -110,7 +110,7 @@ public:
 	// this will buffer overflow.
 	auto price_to_nearest_index_up(double price) const -> uint64_t
 	{
-		uint64_t pricex10000 = price * 10000.;
+		uint64_t pricex10000 = price * 10000.; // NOLINT: Not magical.
 		uint64_t pricex100 =
 			::ceil(static_cast<double>(pricex10000) / 100.); // NOLINT: Not magical.
 		return pricex100_to_nearest_index_up(pricex100);
