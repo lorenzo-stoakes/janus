@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <initializer_list>
 #include <utility>
 
 #include "error.hh"
@@ -19,6 +20,24 @@ public:
 		  _total_unmatched_atb{0},
 		  _unmatched{0}
 	{
+	}
+
+	// Initialise from pricex100, volume pairs. Intentionally make implicit
+	// so we can easily assign to a initialiser list.
+	// cppcheck-suppress noExplicitConstructor
+	ladder(std::initializer_list<std::pair<uint64_t, double>> list) : ladder() // NOLINT
+	{
+		// Inefficient to construct a price range here, but typicaly we
+		// will be invoking this ctor when we are testing or otherwise
+		// not concerned about perforamnce. It is far more convenient
+		// for testing purposes to be able to specify pricex100 values
+		// rather than opaque indexes.
+		price_range range;
+
+		for (auto [pricex100, vol] : list) {
+			uint64_t price_index = range.pricex100_to_index(pricex100);
+			set_unmatched_at(price_index, vol);
+		}
 	}
 
 	// Returns the unmatched volume at the specified price index, positive
