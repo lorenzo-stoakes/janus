@@ -188,12 +188,13 @@ private:
 		// allowing precise matching by comparing
 		// PRICESX100[price_index] == pricex100.
 		int price_index = 0;
-		for (uint64_t i = MIN_PRICEX100; i <= MAX_PRICEX100; i++) {
-			if (i > PRICESX100[price_index])
+		for (uint64_t i = MIN_PRICEX100; i < MAX_PRICEX100; i++) {
+			if (i == PRICESX100[price_index + 1])
 				price_index++;
 
 			_price_map[i] = price_index;
 		}
+		_price_map[MAX_PRICEX100] = NUM_PRICES - 1;
 	}
 };
 } // namespace janus::betfair
