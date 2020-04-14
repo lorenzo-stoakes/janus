@@ -1,25 +1,62 @@
 #include "janus.hh"
 
+#include <cmath>
 #include <gtest/gtest.h>
 #include <stdexcept>
+#include <vector>
 
 namespace
 {
 const static janus::betfair::price_range range;
 
+// Quick and dirty function to round a number to 2 decimal places.
+static double round_2dp(double n)
+{
+	uint64_t nx100 = ::llround(n * 100.);
+	return static_cast<double>(nx100) / 100;
+}
+
 // Quick and dirty helper function to find first instance of the specified
 // update type in a dynamic buffer. Updates dynamic buffer read offset.
 static auto find_first_update_of(janus::update_type type, janus::dynamic_buffer& dyn_buf,
-				 uint64_t num_updates) -> janus::update*
+				 uint64_t num_updates, uint64_t* runner_id_ptr = nullptr)
+	-> janus::update*
 {
 	for (uint64_t i = 0; i < num_updates; i++) {
 		janus::update& update = dyn_buf.read<janus::update>();
+
+		if (runner_id_ptr != nullptr && update.type == janus::update_type::RUNNER_ID)
+			*runner_id_ptr = janus::get_update_runner_id(update);
 
 		if (update.type == type)
 			return &update;
 	}
 
 	return nullptr;
+}
+
+// Quick and dirty helper function to find all instances of the specified update
+// type in a dynamic buffer with last reported runner ID.
+static auto find_all_updates_of(janus::update_type type, janus::dynamic_buffer& dyn_buf,
+				uint64_t num_updates)
+	-> std::vector<std::pair<uint64_t, janus::update>>
+{
+	std::vector<std::pair<uint64_t, janus::update>> ret;
+
+	uint64_t runner_id = 0;
+	for (uint64_t i = 0; i < num_updates; i++) {
+		janus::update& update = dyn_buf.read<janus::update>();
+
+		if (update.type == janus::update_type::RUNNER_ID)
+			runner_id = janus::get_update_runner_id(update);
+
+		if (update.type != type)
+			continue;
+
+		ret.emplace_back(std::make_pair(runner_id, update));
+	}
+
+	return ret;
 }
 
 // Test that we throw if the inputted JSON does not contain "op":"mcm" (market change message).
@@ -277,7 +314,7 @@ TEST(update_test, send_market_traded_vol_update)
 	EXPECT_EQ(update, nullptr);
 }
 
-// test that we correctly send a market open, close, supsend or inplay update
+// Test that we correctly send a market open, close, supsend or inplay update
 // when the update JSON indicates the market status accordingly.
 TEST(update_test, send_market_status_update)
 {
@@ -331,5 +368,76 @@ TEST(update_test, send_market_status_update)
 	num_updates = janus::betfair::parse_update_stream_json(state, json4, size4, dyn_buf);
 	update = find_first_update_of(janus::update_type::MARKET_INPLAY, dyn_buf, num_updates);
 	ASSERT_NE(update, nullptr);
+}
+
+// Test that runner SP, removal and won updates are sent correctly.
+TEST(update_test, send_runner_def_update)
+{
+	char json1[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583932968339,"mc":[{"rc":[],"img":false,"tv":0,"con":false,"marketDefinition":{"venue":"Lingfield","raceType":"Flat","timezone":"Europe/London","regulators":["MR_NJ","MR_INT"],"marketType":"WIN","marketBaseRate":5,"numberOfWinners":1,"countryCode":"GB","inPlay":true,"betDelay":1,"bspMarket":true,"bettingType":"ODDS","numberOfActiveRunners":10,"eventId":"29746086","crossMatching":true,"turnInPlayEnabled":true,"priceLadderDefinition":{"type":"CLASSIC"},"suspendTime":"2020-03-11T13:20:00Z","discountAllowed":true,"persistenceEnabled":true,"runners":[{"sortPriority":1,"id":13233309,"adjustmentFactor":26.667,"bsp":4.7,"status":"WINNER"},{"sortPriority":2,"id":11622845,"adjustmentFactor":17.554,"bsp":4.1977740716207315,"status":"ACTIVE"},{"sortPriority":3,"id":15062473,"adjustmentFactor":13.514,"bsp":8.8,"status":"ACTIVE"},{"sortPriority":4,"id":17247906,"adjustmentFactor":10.417,"bsp":11.716258968405892,"status":"ACTIVE"},{"sortPriority":5,"id":12635885,"adjustmentFactor":9.615,"bsp":8.896559078420763,"status":"ACTIVE"},{"sortPriority":6,"id":10220888,"adjustmentFactor":6.667,"bsp":15.5,"status":"ACTIVE"},{"sortPriority":7,"id":24270884,"adjustmentFactor":6.25,"bsp":17.006234472860235,"status":"ACTIVE"},{"sortPriority":8,"id":18889965,"adjustmentFactor":4.348,"bsp":13.5,"status":"ACTIVE"},{"sortPriority":9,"id":22109331,"adjustmentFactor":3.704,"bsp":29.661771640139044,"status":"ACTIVE"},{"sortPriority":10,"id":10322409,"adjustmentFactor":1.266,"bsp":100,"status":"ACTIVE"},{"sortPriority":11,"removalDate":"2020-03-10T18:58:19Z","id":12481874,"adjustmentFactor":0.2,"status":"REMOVED"},{"sortPriority":12,"removalDate":"2020-03-11T07:57:17Z","id":13229196,"adjustmentFactor":2.632,"status":"REMOVED"}],"version":3224121565,"eventTypeId":"7","complete":true,"openDate":"2020-03-11T13:20:00Z","marketTime":"2020-03-11T13:20:00Z","bspReconciled":true,"status":"OPEN"},"id":"1.170020941"}],"status":0})";
+	uint64_t size1 = sizeof(json1) - 1;
+	janus::dynamic_buffer dyn_buf(10'000'000);
+	janus::betfair::update_state state = {
+		.range = &range,
+		.filename = "",
+		.line = 1,
+	};
+
+	// Runner SP.
+
+	// 10 of 12 runners have an SP, the others are removed.
+	uint64_t num_updates =
+		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	auto pairs = find_all_updates_of(janus::update_type::RUNNER_SP, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 10);
+
+	EXPECT_EQ(pairs[0].first, 13233309);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[0].second)), 4.7);
+
+	EXPECT_EQ(pairs[1].first, 11622845);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[1].second)), 4.20);
+
+	EXPECT_EQ(pairs[2].first, 15062473);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[2].second)), 8.8);
+
+	EXPECT_EQ(pairs[3].first, 17247906);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[3].second)), 11.72);
+
+	EXPECT_EQ(pairs[4].first, 12635885);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[4].second)), 8.9);
+
+	EXPECT_EQ(pairs[5].first, 10220888);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[5].second)), 15.5);
+
+	EXPECT_EQ(pairs[6].first, 24270884);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[6].second)), 17.01);
+
+	EXPECT_EQ(pairs[7].first, 18889965);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[7].second)), 13.5);
+
+	EXPECT_EQ(pairs[8].first, 22109331);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[8].second)), 29.66);
+
+	EXPECT_EQ(pairs[9].first, 10322409);
+	EXPECT_DOUBLE_EQ(round_2dp(janus::get_update_runner_sp(pairs[9].second)), 100);
+
+	// Runner removals.
+
+	dyn_buf.reset_read();
+	pairs = find_all_updates_of(janus::update_type::RUNNER_REMOVAL, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 2);
+
+	EXPECT_EQ(pairs[0].first, 12481874);
+	EXPECT_DOUBLE_EQ(round_2dp(get_update_runner_adj_factor(pairs[0].second)), 0.2);
+
+	EXPECT_EQ(pairs[1].first, 13229196);
+	EXPECT_DOUBLE_EQ(round_2dp(get_update_runner_adj_factor(pairs[1].second)), 2.63);
+
+	// Runner won.
+
+	dyn_buf.reset_read();
+	pairs = find_all_updates_of(janus::update_type::RUNNER_WON, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 1);
+	EXPECT_EQ(pairs[0].first, 13233309);
 }
 } // namespace

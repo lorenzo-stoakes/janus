@@ -20,15 +20,15 @@ enum class update_type : uint32_t
 	// Market data.
 	MARKET_TRADED_VOL,
 
+	// Runner actions.
+	RUNNER_REMOVAL,
+
 	// Runner data.
 	RUNNER_TRADED_VOL,
 	RUNNER_LTP,
 	RUNNER_MATCHED,
 	RUNNER_UNMATCHED_ATL,
 	RUNNER_UNMATCHED_ATB,
-
-	// Runner actions.
-	RUNNER_REMOVAL,
 
 	// Outcome.
 	RUNNER_SP,
@@ -79,6 +79,23 @@ static inline auto make_market_id_update(uint64_t market_id) -> const update
 // Note that we don't assert the type is correct, we assume the caller has done
 // this already.
 static inline auto get_update_market_id(const update& update) -> uint64_t
+{
+	return update.value.u;
+}
+
+// Generate a new runner ID update object.
+static inline auto make_runner_id_update(uint64_t runner_id) -> const update
+{
+	return update{
+		.type = update_type::RUNNER_ID,
+		.value = {.u = runner_id},
+	};
+}
+
+// Retrieve the runner ID from a runner ID update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_runner_id(const update& update) -> uint64_t
 {
 	return update.value.u;
 }
@@ -137,6 +154,48 @@ static inline auto make_market_inplay_update() -> const update
 {
 	return update{
 		.type = update_type::MARKET_INPLAY,
+	};
+}
+
+// Generate a new market traded volume update object.
+static inline auto make_runner_sp_update(double sp) -> const update
+{
+	return update{
+		.type = update_type::RUNNER_SP,
+		.value = {.d = sp},
+	};
+}
+
+// Retrieve runner SP from a runner SP update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_runner_sp(const update& update) -> double
+{
+	return update.value.d;
+}
+
+// Generate a new runner removal update object.
+static inline auto make_runner_removal_update(double adj_factor) -> const update
+{
+	return update{
+		.type = update_type::RUNNER_REMOVAL,
+		.value = {.d = adj_factor},
+	};
+}
+
+// Retrieve runner adjustment factor from a runner removal update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_runner_adj_factor(const update& update) -> double
+{
+	return update.value.d;
+}
+
+// Generate a new runner won update object.
+static inline auto make_runner_won_update() -> const update
+{
+	return update{
+		.type = update_type::RUNNER_WON,
 	};
 }
 

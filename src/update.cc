@@ -31,6 +31,66 @@ static void check_op(const update_state& state, const sajson::value& root)
 					 op_str + "', expect 'mcm'");
 }
 
+// Parse runner definition in order to extract any non-runner or runner BSP data.
+static auto parse_runner_definition(update_state& state, const sajson::value& runner_def,
+				    dynamic_buffer& dyn_buf) -> uint64_t
+{
+	// We may duplicate data sent from here, again the reciever of this data
+	// should be able to handle it being sent more than once for a runner.
+
+	uint64_t num_updates = 0;
+
+	// Nothing to do.
+	if (runner_def.get_type() != sajson::TYPE_OBJECT)
+		return 0;
+
+	sajson::value id = runner_def.get_value_of_key(sajson::literal("id"));
+	uint64_t runner_id = id.get_integer_value();
+
+	auto send_runner_id = [&]() {
+		if (state.runner_id != runner_id) {
+			dyn_buf.add(make_runner_id_update(runner_id));
+			num_updates++;
+			state.runner_id = runner_id;
+		}
+	};
+
+	sajson::value bsp = runner_def.get_value_of_key(sajson::literal("bsp"));
+	if (bsp.get_type() != sajson::TYPE_NULL) {
+		send_runner_id();
+
+		double bsp_val = bsp.get_number_value();
+		dyn_buf.add(make_runner_sp_update(bsp_val));
+		num_updates++;
+	}
+
+	sajson::value status = runner_def.get_value_of_key(sajson::literal("status"));
+	const char* status_str = "";
+	uint64_t size = 0;
+	if (status.get_type() != sajson::TYPE_NULL) {
+		status_str = status.as_cstring();
+		size = status.get_string_length();
+	}
+
+	if (size == sizeof("REMOVED") - 1 &&
+	    ::strncmp(status_str, "REMOVED", sizeof("REMOVED") - 1) == 0) {
+		sajson::value adj_factor =
+			runner_def.get_value_of_key(sajson::literal("adjustmentFactor"));
+		double adj_factor_val = adj_factor.get_number_value();
+
+		send_runner_id();
+		dyn_buf.add(make_runner_removal_update(adj_factor_val));
+		num_updates++;
+	} else if (size == sizeof("WINNER") - 1 &&
+		   ::strncmp(status_str, "WINNER", sizeof("WINNER") - 1) == 0) {
+		send_runner_id();
+		dyn_buf.add(make_runner_won_update());
+		num_updates++;
+	}
+
+	return num_updates;
+}
+
 // Parse market definition node and generate updates as required.
 static auto parse_market_definition(update_state& state, const sajson::value& market_def,
 				    dynamic_buffer& dyn_buf) -> uint64_t
@@ -71,6 +131,16 @@ static auto parse_market_definition(update_state& state, const sajson::value& ma
 	if (inplay.get_type() == sajson::TYPE_TRUE) {
 		dyn_buf.add(make_market_inplay_update());
 		num_updates++;
+	}
+
+	sajson::value runner_defs = market_def.get_value_of_key(sajson::literal("runners"));
+	if (runner_defs.get_type() != sajson::TYPE_ARRAY)
+		return num_updates;
+
+	uint64_t num_runner_defs = runner_defs.get_length();
+	for (uint64_t i = 0; i < num_runner_defs; i++) {
+		sajson::value runner_def = runner_defs.get_array_element(i);
+		num_updates += parse_runner_definition(state, runner_def, dyn_buf);
 	}
 
 	return num_updates;
