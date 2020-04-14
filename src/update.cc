@@ -56,6 +56,17 @@ static uint64_t parse_mc(update_state& state, const sajson::value& mc, dynamic_b
 		num_updates++;
 	}
 
+	// Now send a market traded volume update.
+	sajson::value tv = mc.get_value_of_key(sajson::literal("tv"));
+	double traded_vol = 0;
+	if (tv.get_type() != sajson::TYPE_NULL)
+		traded_vol = tv.get_number_value();
+	// If traded volume is reported as 0 this indicates no change.
+	if (traded_vol > 0) {
+		dyn_buf.add(make_market_traded_vol_update(traded_vol));
+		num_updates++;
+	}
+
 	return num_updates;
 }
 

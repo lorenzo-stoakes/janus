@@ -91,6 +91,23 @@ static inline auto make_market_clear_update() -> const update
 	};
 }
 
+// Generate a new market traded volume update object.
+static inline auto make_market_traded_vol_update(double vol) -> const update
+{
+	return update{
+		.type = update_type::MARKET_TRADED_VOL,
+		.value = {.d = vol},
+	};
+}
+
+// Retrieve market traded volume from a market traded volume update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_market_traded_vol(const update& update) -> double
+{
+	return update.value.d;
+}
+
 // Stores the ongoing update state so we can determine if the update we're
 // parsing is for a different market, runner and/or timestamp and generate
 // update messages accordingly. We also store the filename for error-reporting
