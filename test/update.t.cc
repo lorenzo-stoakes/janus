@@ -5,6 +5,8 @@
 
 namespace
 {
+const static janus::betfair::price_range range;
+
 // Quick and dirty helper function to find first instance of the specified
 // update type in a dynamic buffer. Updates dynamic buffer read offset.
 static auto find_first_update_of(janus::update_type type, janus::dynamic_buffer& dyn_buf,
@@ -29,6 +31,7 @@ TEST(update_test, op_must_be_mcm)
 	// Won't be larger than the JSON buffer.
 	janus::dynamic_buffer dyn_buf(size);
 	janus::betfair::update_state state = {
+		.range = &range,
 		.filename = "",
 		.line = 1,
 	};
@@ -54,6 +57,7 @@ TEST(update_test, line_increments)
 	// Won't be larger than the JSON buffer.
 	janus::dynamic_buffer dyn_buf(size);
 	janus::betfair::update_state state = {
+		.range = &range,
 		.filename = "",
 		.line = 1,
 	};
@@ -78,6 +82,7 @@ TEST(update_test, do_nothing_on_empty_mc)
 	// Won't be larger than the JSON buffer.
 	janus::dynamic_buffer dyn_buf(size1);
 	janus::betfair::update_state state = {
+		.range = &range,
 		.filename = "",
 		.line = 1,
 	};
@@ -102,6 +107,7 @@ TEST(update_test, send_timestamp_update)
 	uint64_t size1 = sizeof(json1) - 1;
 	janus::dynamic_buffer dyn_buf(10'000'000);
 	janus::betfair::update_state state = {
+		.range = &range,
 		.filename = "",
 		.line = 1,
 	};
@@ -141,6 +147,7 @@ TEST(update_test, send_market_id_update)
 	uint64_t size1 = sizeof(json1) - 1;
 	janus::dynamic_buffer dyn_buf(10'000'000);
 	janus::betfair::update_state state = {
+		.range = &range,
 		.filename = "",
 		.line = 1,
 	};
@@ -183,6 +190,7 @@ TEST(update_test, send_market_clear_update)
 	uint64_t size1 = sizeof(json1) - 1;
 	janus::dynamic_buffer dyn_buf(10'000'000);
 	janus::betfair::update_state state = {
+		.range = &range,
 		.filename = "",
 		.line = 1,
 	};
@@ -230,6 +238,7 @@ TEST(update_test, send_market_traded_vol_update)
 	uint64_t size1 = sizeof(json1) - 1;
 	janus::dynamic_buffer dyn_buf(10'000'000);
 	janus::betfair::update_state state = {
+		.range = &range,
 		.filename = "",
 		.line = 1,
 	};

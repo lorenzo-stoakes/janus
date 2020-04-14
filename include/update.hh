@@ -116,6 +116,7 @@ namespace betfair
 // purposes.
 struct update_state
 {
+	const price_range* range;
 	const char* filename;
 	uint64_t line;
 
