@@ -89,14 +89,26 @@ TEST(dynamic_buffer_test, add_uint64)
 {
 	auto buf = janus::dynamic_buffer(16);
 
-	buf.add_uint64(123456);
+	uint64_t& n1 = buf.add_uint64(123456);
 	EXPECT_EQ(buf.size(), 8);
 
-	buf.add_uint64(654321);
+	uint64_t& n2 = buf.add_uint64(654321);
 	EXPECT_EQ(buf.size(), 16);
 
 	EXPECT_EQ(buf.data()[0], 123456);
 	EXPECT_EQ(buf.data()[1], 654321);
+
+	EXPECT_EQ(n1, 123456);
+	EXPECT_EQ(n2, 654321);
+
+	n1 = 999;
+	n2 = 888;
+
+	EXPECT_EQ(buf.data()[0], 999);
+	EXPECT_EQ(buf.data()[1], 888);
+
+	EXPECT_EQ(n1, 999);
+	EXPECT_EQ(n2, 888);
 }
 
 // Assert that .reset() correctly empties the buffer.
