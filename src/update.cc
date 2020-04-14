@@ -18,7 +18,7 @@ static std::string get_error_prefix(const update_state& state)
 
 // Check that the JSON contains an "op":"mcm" k/v pair, indicating a market
 // change message.
-static void check_op(update_state& state, const sajson::value& root)
+static void check_op(const update_state& state, const sajson::value& root)
 {
 	sajson::value op = root.get_value_of_key(sajson::literal("op"));
 	if (op.get_type() != sajson::TYPE_STRING)
