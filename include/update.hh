@@ -62,6 +62,14 @@ static inline auto get_update_market_id(const update& update) -> uint64_t
 	return update.value;
 }
 
+// Generate a new market clear update object.
+static inline auto make_market_clear_update() -> const update
+{
+	return update{
+		.type = update_type::MARKET_CLEAR,
+	};
+}
+
 // Stores the ongoing update state so we can determine if the update we're
 // parsing is for a different market, runner and/or timestamp and generate
 // update messages accordingly. We also store the filename for error-reporting

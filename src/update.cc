@@ -49,6 +49,14 @@ static uint64_t parse_mc(update_state& state, uint64_t timestamp, const sajson::
 		state.market_id = market_id;
 	}
 
+	// "img": true indicates this is a snapshot update not a delta, so we
+	// need to clear down market data cache.
+	sajson::value img = mc.get_value_of_key(sajson::literal("img"));
+	if (img.get_type() == sajson::TYPE_TRUE) {
+		dyn_buf.add(make_market_clear_update());
+		num_updates++;
+	}
+
 	return num_updates;
 }
 

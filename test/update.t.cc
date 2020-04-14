@@ -133,4 +133,50 @@ TEST(update_test, send_market_id_update)
 	update = find_first_update_of(janus::update_type::MARKET_ID, dyn_buf, num_updates);
 	EXPECT_EQ(update, nullptr);
 }
+
+// Test that we correctly send a market clear update when "img": true is sent in
+// an MC update.
+TEST(update_test, send_market_clear_update)
+{
+	// If "img" is set false, then we don't expect to see a market clear message.
+
+	char json1[] =
+		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size1 = sizeof(json1) - 1;
+	janus::dynamic_buffer dyn_buf(10'000'000);
+	janus::update_state state = {
+		.filename = "",
+		.line = 1,
+	};
+
+	uint64_t num_updates =
+		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+
+	janus::update* update =
+		find_first_update_of(janus::update_type::MARKET_CLEAR, dyn_buf, num_updates);
+	EXPECT_EQ(update, nullptr);
+
+	// If set true, we should expect to see a market clear message.
+
+	dyn_buf.reset();
+	char json2[] =
+		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":true,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+
+	// We expect to see the market clear message FIRST or only after a market ID message.
+
+	bool found = false;
+	for (uint64_t i = 0; i < num_updates; i++) {
+		janus::update& curr_update = dyn_buf.read<janus::update>();
+		ASSERT_TRUE(curr_update.type == janus::update_type::MARKET_ID ||
+			    curr_update.type == janus::update_type::MARKET_CLEAR);
+		if (curr_update.type == janus::update_type::MARKET_CLEAR) {
+			found = true;
+			break;
+		}
+	}
+	EXPECT_TRUE(found);
+}
 } // namespace
