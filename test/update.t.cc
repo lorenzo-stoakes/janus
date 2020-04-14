@@ -51,4 +51,31 @@ TEST(update_test, line_increments)
 	janus::betfair::parse_update_stream_json(state, json2, size, dyn_buf);
 	EXPECT_EQ(state.line, 3);
 }
+
+// Test that empty "mc" key results in nothing - in the case of no market change
+// updates, we have nothing to do.
+TEST(update_test, do_nothing_on_empty_mc)
+{
+	// Firstly check empty array.
+
+	char json1[] = R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[],"status":0})";
+	uint64_t size1 = sizeof(json1) - 1;
+	// Won't be larger than the JSON buffer.
+	janus::dynamic_buffer dyn_buf(size1);
+	janus::update_state state = {
+		.filename = "",
+		.line = 1,
+	};
+
+	EXPECT_EQ(janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf), 0);
+	EXPECT_EQ(state.line, 1);
+
+	// Then a missing "mc" altogether.
+
+	char json2[] = R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"status":0})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	EXPECT_EQ(janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf), 0);
+	EXPECT_EQ(state.line, 1);
+}
 } // namespace

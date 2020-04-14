@@ -39,6 +39,16 @@ auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 
 	check_op(state, root);
 
+	sajson::value mcs = root.get_value_of_key(sajson::literal("mc"));
+	// If there is no market change update key at all, then we have nothing to do.
+	if (mcs.get_type() == sajson::TYPE_NULL)
+		return 0;
+
+	uint64_t num_mcs = mcs.get_length();
+	// If there are no market change updates then we have nothing to do.
+	if (num_mcs == 0)
+		return 0;
+
 	state.line++;
 	return 0;
 }
