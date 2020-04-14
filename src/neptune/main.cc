@@ -7,6 +7,8 @@
 #include <iostream>
 #include <string>
 
+#include <snappy.h>
+
 // Neptune is a tool for converting existing JSON files to a binary format for
 // processing by janus.
 
@@ -74,8 +76,15 @@ static bool parse_update_stream(const janus::betfair::price_range& range, const 
 
 static bool save_data(const std::string& output_filename, const janus::dynamic_buffer& dyn_buf)
 {
+	// Note that we are saving and appending at arbitrary points so this
+	// compression is useless, however since we are implementing this for
+	// benchmark and test purposes at this stage it's fine.
+
+	std::string compressed;
+	snappy::Compress(reinterpret_cast<char*>(dyn_buf.data()), dyn_buf.size(), &compressed);
+
 	if (auto file = std::ofstream(output_filename, std::ios::binary | std::ios::app)) {
-		file.write(reinterpret_cast<const char*>(dyn_buf.data()), dyn_buf.size());
+		file << compressed;
 	} else {
 		std::cerr << "Couldn't open " << output_filename << " for reading" << std::endl;
 		return false;

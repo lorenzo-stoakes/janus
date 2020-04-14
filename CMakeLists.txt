@@ -29,6 +29,7 @@ target_compile_options(neptune
 
 target_link_libraries(neptune
 	m
+	snappy
 )
 
 # Tests
