@@ -56,7 +56,8 @@ static auto parse_runner_definition(update_state& state, const sajson::value& ru
 	};
 
 	sajson::value bsp = runner_def.get_value_of_key(sajson::literal("bsp"));
-	if (bsp.get_type() != sajson::TYPE_NULL) {
+	// Sometimes betfair sends BSP of "NaN" (!)
+	if (bsp.get_type() != sajson::TYPE_NULL && bsp.get_type() != sajson::TYPE_STRING) {
 		send_runner_id();
 
 		double bsp_val = bsp.get_number_value();
