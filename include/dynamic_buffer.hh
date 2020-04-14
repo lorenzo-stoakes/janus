@@ -123,11 +123,15 @@ public:
 		return std::string_view(str, count);
 	}
 
-	// Add a uint64 value to the buffer.
-	void add_uint64(uint64_t n)
+	// Add a uint64 value to the buffer. Returns a reference to the newly
+	// added value.
+	auto add_uint64(uint64_t n) -> uint64_t&
 	{
 		check_write_overflow(1);
-		_buf[_write_offset++] = n;
+
+		uint64_t& ret = _buf[_write_offset++];
+		ret = n;
+		return ret;
 	}
 
 	// Add raw data to the buffer. It will be aligned to word size with
