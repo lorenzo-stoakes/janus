@@ -76,7 +76,9 @@ static auto parse_runner_definition(update_state& state, const sajson::value& ru
 	    ::strncmp(status_str, "REMOVED", sizeof("REMOVED") - 1) == 0) {
 		sajson::value adj_factor =
 			runner_def.get_value_of_key(sajson::literal("adjustmentFactor"));
-		double adj_factor_val = adj_factor.get_number_value();
+		double adj_factor_val = 0;
+		if (adj_factor.get_type() != sajson::TYPE_NULL)
+			adj_factor_val = adj_factor.get_number_value();
 
 		send_runner_id();
 		dyn_buf.add(make_runner_removal_update(adj_factor_val));
