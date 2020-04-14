@@ -32,7 +32,8 @@ static void check_op(const update_state& state, const sajson::value& root)
 }
 
 // Process market change update.
-static uint64_t parse_mc(update_state& state, const sajson::value& mc, dynamic_buffer& dyn_buf)
+static auto parse_mc(update_state& state, const sajson::value& mc, dynamic_buffer& dyn_buf)
+	-> uint64_t
 {
 	sajson::value id = mc.get_value_of_key(sajson::literal("id"));
 	uint64_t market_id =
