@@ -1,5 +1,6 @@
 #include "janus.hh"
 
+#include "unistd.h"
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -71,11 +72,9 @@ static bool parse_update_stream(const janus::betfair::price_range& range, const 
 	return true;
 }
 
-static bool save_data(const janus::dynamic_buffer& dyn_buf)
+static bool save_data(const std::string& output_filename, const janus::dynamic_buffer& dyn_buf)
 {
-	// Default to out.jan to avoid fat fingers causing JSON files to get corrupted...
-	std::string output_filename = "out.jan";
-	if (auto file = std::fstream(output_filename, std::ios::out | std::ios::binary)) {
+	if (auto file = std::ofstream(output_filename, std::ios::binary | std::ios::app)) {
 		file.write(reinterpret_cast<const char*>(dyn_buf.data()), dyn_buf.size());
 	} else {
 		std::cerr << "Couldn't open " << output_filename << " for reading" << std::endl;
@@ -96,18 +95,20 @@ auto main(int argc, char** argv) -> int
 	janus::dynamic_buffer dyn_buf(DYN_BUFFER_MAX_SIZE);
 	janus::betfair::price_range range;
 
-	uint64_t& num_updates = dyn_buf.add_uint64(0);
-
 	int arg_offset = 0;
 	bool meta = false;
 	if (::strncmp(argv[1], "--meta", sizeof("--meta") - 1) == 0) {
-		// We don't need the num_updates header if we are just parsing
-		// metadata.
-		dyn_buf.reset();
-
 		meta = true;
 		arg_offset = 1;
 	}
+
+	// Default to out.jan to avoid fat fingers causing JSON files to get corrupted...
+	std::string output_filename = "out.jan";
+
+	// Delete output file if exists so we can append to it.
+	::unlink(output_filename.c_str());
+
+	uint64_t num_updates = 0;
 
 	for (int i = 1 + arg_offset; i < argc; i++) {
 		const char* filename = argv[i];
@@ -119,10 +120,20 @@ auto main(int argc, char** argv) -> int
 		if ((meta && !parse_meta(filename, dyn_buf)) ||
 		    (!meta && !parse_update_stream(range, filename, dyn_buf, num_updates)))
 			return 1;
+
+		// If we've used more than 90% of available buffer space, save it.
+		if (dyn_buf.size() > 0.9 * DYN_BUFFER_MAX_SIZE) {
+			save_data(output_filename, dyn_buf);
+			dyn_buf.reset();
+		}
 	}
 
-	save_data(dyn_buf);
+	save_data(output_filename, dyn_buf);
 
 	std::cout << std::endl;
+
+	if (!meta)
+		std::cout << num_updates << " updates" << std::endl;
+
 	return 0;
 }
