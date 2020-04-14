@@ -12,10 +12,10 @@ enum class update_type : uint32_t
 
 	// Market actions.
 	MARKET_CLEAR,
-	MARKET_INPLAY,
-	MARKET_SUSPEND,
-	MARKET_UNSUSPEND,
+	MARKET_OPEN,
 	MARKET_CLOSE,
+	MARKET_SUSPEND,
+	MARKET_INPLAY,
 
 	// Market data.
 	MARKET_TRADED_VOL,
@@ -106,6 +106,38 @@ static inline auto make_market_traded_vol_update(double vol) -> const update
 static inline auto get_update_market_traded_vol(const update& update) -> double
 {
 	return update.value.d;
+}
+
+// Generate a new market open update object.
+static inline auto make_market_open_update() -> const update
+{
+	return update{
+		.type = update_type::MARKET_OPEN,
+	};
+}
+
+// Generate a new market close update object.
+static inline auto make_market_close_update() -> const update
+{
+	return update{
+		.type = update_type::MARKET_CLOSE,
+	};
+}
+
+// Generate a new market suspend update object.
+static inline auto make_market_suspend_update() -> const update
+{
+	return update{
+		.type = update_type::MARKET_SUSPEND,
+	};
+}
+
+// Generate a new market inplay update object.
+static inline auto make_market_inplay_update() -> const update
+{
+	return update{
+		.type = update_type::MARKET_INPLAY,
+	};
 }
 
 namespace betfair

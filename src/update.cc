@@ -41,6 +41,38 @@ static auto parse_market_definition(update_state& state, const sajson::value& ma
 
 	uint64_t num_updates = 0;
 
+	// Handle market status updates - open/close/suspend. We may duplicate
+	// status reports here (due to multiple market definition updates being
+	// sent) but the receiver should be able to handle this.
+	sajson::value status = market_def.get_value_of_key(sajson::literal("status"));
+	if (status.get_type() == sajson::TYPE_STRING) {
+		const char* status_str = status.as_cstring();
+		uint64_t size = status.get_string_length();
+
+		if (size == sizeof("OPEN") - 1 &&
+		    ::strncmp(status_str, "OPEN", sizeof("OPEN") - 1) == 0) {
+			dyn_buf.add(make_market_open_update());
+			num_updates++;
+		} else if (size == sizeof("CLOSED") - 1 &&
+			   ::strncmp(status_str, "CLOSED", sizeof("CLOSED") - 1) == 0) {
+			dyn_buf.add(make_market_close_update());
+			num_updates++;
+		} else if (size == sizeof("SUSPENDED") - 1 &&
+			   ::strncmp(status_str, "SUSPENDED", sizeof("SUSPENDED") - 1) == 0) {
+			dyn_buf.add(make_market_suspend_update());
+			num_updates++;
+		}
+	}
+
+	// Handle inplay notification. Again there might be duplicate updates
+	// sent here, but the receiver should understand that inplay being sent
+	// again should be ignored.
+	sajson::value inplay = market_def.get_value_of_key(sajson::literal("inPlay"));
+	if (inplay.get_type() == sajson::TYPE_TRUE) {
+		dyn_buf.add(make_market_inplay_update());
+		num_updates++;
+	}
+
 	return num_updates;
 }
 

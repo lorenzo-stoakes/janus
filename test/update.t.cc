@@ -276,4 +276,60 @@ TEST(update_test, send_market_traded_vol_update)
 	update = find_first_update_of(janus::update_type::MARKET_TRADED_VOL, dyn_buf, num_updates);
 	EXPECT_EQ(update, nullptr);
 }
+
+// test that we correctly send a market open, close, supsend or inplay update
+// when the update JSON indicates the market status accordingly.
+TEST(update_test, send_market_status_update)
+{
+	// Market OPEN.
+
+	char json1[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583932968339,"mc":[{"rc":[],"img":false,"tv":0,"con":false,"marketDefinition":{"venue":"Lingfield","raceType":"Flat","timezone":"Europe/London","regulators":["MR_NJ","MR_INT"],"marketType":"WIN","marketBaseRate":5,"numberOfWinners":1,"countryCode":"GB","inPlay":true,"betDelay":1,"bspMarket":true,"bettingType":"ODDS","numberOfActiveRunners":10,"eventId":"29746086","crossMatching":true,"turnInPlayEnabled":true,"priceLadderDefinition":{"type":"CLASSIC"},"suspendTime":"2020-03-11T13:20:00Z","discountAllowed":true,"persistenceEnabled":true,"runners":[{"sortPriority":1,"id":13233309,"adjustmentFactor":26.667,"bsp":4.7,"status":"ACTIVE"},{"sortPriority":2,"id":11622845,"adjustmentFactor":17.554,"bsp":4.1977740716207315,"status":"ACTIVE"},{"sortPriority":3,"id":15062473,"adjustmentFactor":13.514,"bsp":8.8,"status":"ACTIVE"},{"sortPriority":4,"id":17247906,"adjustmentFactor":10.417,"bsp":11.716258968405892,"status":"ACTIVE"},{"sortPriority":5,"id":12635885,"adjustmentFactor":9.615,"bsp":8.896559078420763,"status":"ACTIVE"},{"sortPriority":6,"id":10220888,"adjustmentFactor":6.667,"bsp":15.5,"status":"ACTIVE"},{"sortPriority":7,"id":24270884,"adjustmentFactor":6.25,"bsp":17.006234472860235,"status":"ACTIVE"},{"sortPriority":8,"id":18889965,"adjustmentFactor":4.348,"bsp":13.5,"status":"ACTIVE"},{"sortPriority":9,"id":22109331,"adjustmentFactor":3.704,"bsp":29.661771640139044,"status":"ACTIVE"},{"sortPriority":10,"id":10322409,"adjustmentFactor":1.266,"bsp":100,"status":"ACTIVE"},{"sortPriority":11,"removalDate":"2020-03-10T18:58:19Z","id":12481874,"adjustmentFactor":0.2,"status":"REMOVED"},{"sortPriority":12,"removalDate":"2020-03-11T07:57:17Z","id":13229196,"adjustmentFactor":2.632,"status":"REMOVED"}],"version":3224121565,"eventTypeId":"7","complete":true,"openDate":"2020-03-11T13:20:00Z","marketTime":"2020-03-11T13:20:00Z","bspReconciled":true,"status":"OPEN"},"id":"1.170020941"}],"status":0})";
+	uint64_t size1 = sizeof(json1) - 1;
+	janus::dynamic_buffer dyn_buf(10'000'000);
+	janus::betfair::update_state state = {
+		.range = &range,
+		.filename = "",
+		.line = 1,
+	};
+
+	uint64_t num_updates =
+		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	janus::update* update =
+		find_first_update_of(janus::update_type::MARKET_OPEN, dyn_buf, num_updates);
+	ASSERT_NE(update, nullptr);
+
+	// Market CLOSED.
+
+	dyn_buf.reset();
+	char json2[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583932968339,"mc":[{"rc":[],"img":false,"tv":0,"con":false,"marketDefinition":{"venue":"Lingfield","raceType":"Flat","timezone":"Europe/London","regulators":["MR_NJ","MR_INT"],"marketType":"WIN","marketBaseRate":5,"numberOfWinners":1,"countryCode":"GB","inPlay":true,"betDelay":1,"bspMarket":true,"bettingType":"ODDS","numberOfActiveRunners":10,"eventId":"29746086","crossMatching":true,"turnInPlayEnabled":true,"priceLadderDefinition":{"type":"CLASSIC"},"suspendTime":"2020-03-11T13:20:00Z","discountAllowed":true,"persistenceEnabled":true,"runners":[{"sortPriority":1,"id":13233309,"adjustmentFactor":26.667,"bsp":4.7,"status":"ACTIVE"},{"sortPriority":2,"id":11622845,"adjustmentFactor":17.554,"bsp":4.1977740716207315,"status":"ACTIVE"},{"sortPriority":3,"id":15062473,"adjustmentFactor":13.514,"bsp":8.8,"status":"ACTIVE"},{"sortPriority":4,"id":17247906,"adjustmentFactor":10.417,"bsp":11.716258968405892,"status":"ACTIVE"},{"sortPriority":5,"id":12635885,"adjustmentFactor":9.615,"bsp":8.896559078420763,"status":"ACTIVE"},{"sortPriority":6,"id":10220888,"adjustmentFactor":6.667,"bsp":15.5,"status":"ACTIVE"},{"sortPriority":7,"id":24270884,"adjustmentFactor":6.25,"bsp":17.006234472860235,"status":"ACTIVE"},{"sortPriority":8,"id":18889965,"adjustmentFactor":4.348,"bsp":13.5,"status":"ACTIVE"},{"sortPriority":9,"id":22109331,"adjustmentFactor":3.704,"bsp":29.661771640139044,"status":"ACTIVE"},{"sortPriority":10,"id":10322409,"adjustmentFactor":1.266,"bsp":100,"status":"ACTIVE"},{"sortPriority":11,"removalDate":"2020-03-10T18:58:19Z","id":12481874,"adjustmentFactor":0.2,"status":"REMOVED"},{"sortPriority":12,"removalDate":"2020-03-11T07:57:17Z","id":13229196,"adjustmentFactor":2.632,"status":"REMOVED"}],"version":3224121565,"eventTypeId":"7","complete":true,"openDate":"2020-03-11T13:20:00Z","marketTime":"2020-03-11T13:20:00Z","bspReconciled":true,"status":"CLOSED"},"id":"1.170020941"}],"status":0})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+	update = find_first_update_of(janus::update_type::MARKET_CLOSE, dyn_buf, num_updates);
+	ASSERT_NE(update, nullptr);
+
+	// Market SUSPENDED.
+
+	dyn_buf.reset();
+	char json3[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583932968339,"mc":[{"rc":[],"img":false,"tv":0,"con":false,"marketDefinition":{"venue":"Lingfield","raceType":"Flat","timezone":"Europe/London","regulators":["MR_NJ","MR_INT"],"marketType":"WIN","marketBaseRate":5,"numberOfWinners":1,"countryCode":"GB","inPlay":true,"betDelay":1,"bspMarket":true,"bettingType":"ODDS","numberOfActiveRunners":10,"eventId":"29746086","crossMatching":true,"turnInPlayEnabled":true,"priceLadderDefinition":{"type":"CLASSIC"},"suspendTime":"2020-03-11T13:20:00Z","discountAllowed":true,"persistenceEnabled":true,"runners":[{"sortPriority":1,"id":13233309,"adjustmentFactor":26.667,"bsp":4.7,"status":"ACTIVE"},{"sortPriority":2,"id":11622845,"adjustmentFactor":17.554,"bsp":4.1977740716207315,"status":"ACTIVE"},{"sortPriority":3,"id":15062473,"adjustmentFactor":13.514,"bsp":8.8,"status":"ACTIVE"},{"sortPriority":4,"id":17247906,"adjustmentFactor":10.417,"bsp":11.716258968405892,"status":"ACTIVE"},{"sortPriority":5,"id":12635885,"adjustmentFactor":9.615,"bsp":8.896559078420763,"status":"ACTIVE"},{"sortPriority":6,"id":10220888,"adjustmentFactor":6.667,"bsp":15.5,"status":"ACTIVE"},{"sortPriority":7,"id":24270884,"adjustmentFactor":6.25,"bsp":17.006234472860235,"status":"ACTIVE"},{"sortPriority":8,"id":18889965,"adjustmentFactor":4.348,"bsp":13.5,"status":"ACTIVE"},{"sortPriority":9,"id":22109331,"adjustmentFactor":3.704,"bsp":29.661771640139044,"status":"ACTIVE"},{"sortPriority":10,"id":10322409,"adjustmentFactor":1.266,"bsp":100,"status":"ACTIVE"},{"sortPriority":11,"removalDate":"2020-03-10T18:58:19Z","id":12481874,"adjustmentFactor":0.2,"status":"REMOVED"},{"sortPriority":12,"removalDate":"2020-03-11T07:57:17Z","id":13229196,"adjustmentFactor":2.632,"status":"REMOVED"}],"version":3224121565,"eventTypeId":"7","complete":true,"openDate":"2020-03-11T13:20:00Z","marketTime":"2020-03-11T13:20:00Z","bspReconciled":true,"status":"SUSPENDED"},"id":"1.170020941"}],"status":0})";
+	uint64_t size3 = sizeof(json3) - 1;
+
+	num_updates = janus::betfair::parse_update_stream_json(state, json3, size3, dyn_buf);
+	update = find_first_update_of(janus::update_type::MARKET_SUSPEND, dyn_buf, num_updates);
+	ASSERT_NE(update, nullptr);
+
+	// Market INPLAY.
+
+	dyn_buf.reset();
+	char json4[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583932968339,"mc":[{"rc":[],"img":false,"tv":0,"con":false,"marketDefinition":{"venue":"Lingfield","raceType":"Flat","timezone":"Europe/London","regulators":["MR_NJ","MR_INT"],"marketType":"WIN","marketBaseRate":5,"numberOfWinners":1,"countryCode":"GB","inPlay":true,"betDelay":1,"bspMarket":true,"bettingType":"ODDS","numberOfActiveRunners":10,"eventId":"29746086","crossMatching":true,"turnInPlayEnabled":true,"priceLadderDefinition":{"type":"CLASSIC"},"suspendTime":"2020-03-11T13:20:00Z","discountAllowed":true,"persistenceEnabled":true,"runners":[{"sortPriority":1,"id":13233309,"adjustmentFactor":26.667,"bsp":4.7,"status":"ACTIVE"},{"sortPriority":2,"id":11622845,"adjustmentFactor":17.554,"bsp":4.1977740716207315,"status":"ACTIVE"},{"sortPriority":3,"id":15062473,"adjustmentFactor":13.514,"bsp":8.8,"status":"ACTIVE"},{"sortPriority":4,"id":17247906,"adjustmentFactor":10.417,"bsp":11.716258968405892,"status":"ACTIVE"},{"sortPriority":5,"id":12635885,"adjustmentFactor":9.615,"bsp":8.896559078420763,"status":"ACTIVE"},{"sortPriority":6,"id":10220888,"adjustmentFactor":6.667,"bsp":15.5,"status":"ACTIVE"},{"sortPriority":7,"id":24270884,"adjustmentFactor":6.25,"bsp":17.006234472860235,"status":"ACTIVE"},{"sortPriority":8,"id":18889965,"adjustmentFactor":4.348,"bsp":13.5,"status":"ACTIVE"},{"sortPriority":9,"id":22109331,"adjustmentFactor":3.704,"bsp":29.661771640139044,"status":"ACTIVE"},{"sortPriority":10,"id":10322409,"adjustmentFactor":1.266,"bsp":100,"status":"ACTIVE"},{"sortPriority":11,"removalDate":"2020-03-10T18:58:19Z","id":12481874,"adjustmentFactor":0.2,"status":"REMOVED"},{"sortPriority":12,"removalDate":"2020-03-11T07:57:17Z","id":13229196,"adjustmentFactor":2.632,"status":"REMOVED"}],"version":3224121565,"eventTypeId":"7","complete":true,"openDate":"2020-03-11T13:20:00Z","marketTime":"2020-03-11T13:20:00Z","bspReconciled":true,"status":"OPEN"},"id":"1.170020941"}],"status":0})";
+	uint64_t size4 = sizeof(json4) - 1;
+
+	num_updates = janus::betfair::parse_update_stream_json(state, json4, size4, dyn_buf);
+	update = find_first_update_of(janus::update_type::MARKET_INPLAY, dyn_buf, num_updates);
+	ASSERT_NE(update, nullptr);
+}
 } // namespace
