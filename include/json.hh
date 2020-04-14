@@ -9,17 +9,19 @@
 namespace janus::internal
 {
 // Parse JSON into an sajson document file and check that it contains no errors.
-//   filename: Filename to refer to in error messages.
-//        str: Char buffer containing JSON to parse. WILL BE MUTATED.
-//       size: Size of char buffer.
-//    returns: sajson document object.
-static inline auto parse_json(const char* filename, char* str, uint64_t size) -> sajson::document
+//    filename: Filename to refer to in error messages.
+//         str: Char buffer containing JSON to parse. WILL BE MUTATED.
+//        size: Size of char buffer.
+// line_offset: Number of lines to offset reported line number by.
+//     returns: sajson document object.
+static inline auto parse_json(const char* filename, char* str, uint64_t size, int line_offset = 0)
+	-> sajson::document
 {
 	sajson::document doc =
 		sajson::parse(sajson::single_allocation(), sajson::mutable_string_view(size, str));
 
 	if (!doc.is_valid()) {
-		int line = doc.get_error_line();
+		int line = doc.get_error_line() + line_offset;
 		int col = doc.get_error_column();
 		const char* error = doc.get_error_message_as_cstring();
 

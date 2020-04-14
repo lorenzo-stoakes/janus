@@ -34,4 +34,25 @@ TEST(json_test, parse_json)
 			  .get_integer_value(),
 		  3);
 }
+
+// Test that errors generated with a line offset specified correctly update the
+// error message.
+TEST(json_test, parse_json_line_offset_error)
+{
+	char buf[] = "[[({";
+
+	// First without line offset.
+	try {
+		janus::internal::parse_json("foo", buf, sizeof(buf) - 1);
+	} catch (janus::json_parse_error& e) {
+		EXPECT_STREQ(e.what(), "JSON parse error: foo:1:3: expected value");
+	}
+
+	// And now with a 3 line offset.
+	try {
+		janus::internal::parse_json("foo", buf, sizeof(buf) - 1, 3);
+	} catch (janus::json_parse_error& e) {
+		EXPECT_STREQ(e.what(), "JSON parse error: foo:4:3: expected value");
+	}
+}
 } // namespace
