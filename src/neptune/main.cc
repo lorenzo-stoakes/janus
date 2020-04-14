@@ -21,6 +21,32 @@ static void clear_line()
 	std::cout << "\r" << std::flush;
 }
 
+static bool parse_meta(const char* filename, janus::dynamic_buffer& dyn_buf)
+{
+	std::string json;
+	uint64_t size;
+
+	if (auto file = std::ifstream(filename, std::ios::ate)) {
+		size = file.tellg();
+
+		json = std::string(size, '\0');
+		file.seekg(0);
+
+		if (!file.read(&json[0], size)) {
+			std::cerr << "Couldn't read " << filename << std::endl;
+			return false;
+		}
+	} else {
+		std::cerr << "Couldn't open " << filename << std::endl;
+		return false;
+	}
+
+	janus::betfair::parse_meta_json(filename, reinterpret_cast<char*>(json.data()), size,
+					dyn_buf);
+
+	return true;
+}
+
 auto main(int argc, char** argv) -> int
 {
 	if (argc < 3) {
@@ -33,30 +59,13 @@ auto main(int argc, char** argv) -> int
 
 	for (int i = 2; i < argc; i++) {
 		const char* filename = argv[i];
-		std::string json;
-		uint64_t size;
 
 		clear_line();
 		std::cout << std::to_string(i - 1) << "/" << std::to_string(argc - 2) << ": "
 			  << filename << std::flush;
 
-		if (auto file = std::ifstream(filename, std::ios::ate)) {
-			size = file.tellg();
-
-			json = std::string(size, '\0');
-			file.seekg(0);
-
-			if (!file.read(&json[0], size)) {
-				std::cerr << "Couldn't read " << filename << std::endl;
-				return 1;
-			}
-		} else {
-			std::cerr << "Couldn't open " << filename << std::endl;
+		if (!parse_meta(filename, dyn_buf))
 			return 1;
-		}
-
-		janus::betfair::parse_meta_json(filename, reinterpret_cast<char*>(json.data()),
-						size, dyn_buf);
 	}
 
 	std::string output_filename = argv[1];
