@@ -28,7 +28,7 @@ TEST(update_test, op_must_be_mcm)
 	uint64_t size = sizeof(json) - 1;
 	// Won't be larger than the JSON buffer.
 	janus::dynamic_buffer dyn_buf(size);
-	janus::update_state state = {
+	janus::betfair::update_state state = {
 		.filename = "",
 		.line = 1,
 	};
@@ -53,7 +53,7 @@ TEST(update_test, line_increments)
 	uint64_t size = sizeof(json) - 1;
 	// Won't be larger than the JSON buffer.
 	janus::dynamic_buffer dyn_buf(size);
-	janus::update_state state = {
+	janus::betfair::update_state state = {
 		.filename = "",
 		.line = 1,
 	};
@@ -77,7 +77,7 @@ TEST(update_test, do_nothing_on_empty_mc)
 	uint64_t size1 = sizeof(json1) - 1;
 	// Won't be larger than the JSON buffer.
 	janus::dynamic_buffer dyn_buf(size1);
-	janus::update_state state = {
+	janus::betfair::update_state state = {
 		.filename = "",
 		.line = 1,
 	};
@@ -101,7 +101,7 @@ TEST(update_test, send_timestamp_update)
 		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
 	uint64_t size1 = sizeof(json1) - 1;
 	janus::dynamic_buffer dyn_buf(10'000'000);
-	janus::update_state state = {
+	janus::betfair::update_state state = {
 		.filename = "",
 		.line = 1,
 	};
@@ -140,7 +140,7 @@ TEST(update_test, send_market_id_update)
 		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
 	uint64_t size1 = sizeof(json1) - 1;
 	janus::dynamic_buffer dyn_buf(10'000'000);
-	janus::update_state state = {
+	janus::betfair::update_state state = {
 		.filename = "",
 		.line = 1,
 	};
@@ -182,7 +182,7 @@ TEST(update_test, send_market_clear_update)
 		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
 	uint64_t size1 = sizeof(json1) - 1;
 	janus::dynamic_buffer dyn_buf(10'000'000);
-	janus::update_state state = {
+	janus::betfair::update_state state = {
 		.filename = "",
 		.line = 1,
 	};
@@ -229,7 +229,7 @@ TEST(update_test, send_market_traded_vol_update)
 		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":false,"tv":123.456,"con":false,"id":"1.170020941"}],"status":0})";
 	uint64_t size1 = sizeof(json1) - 1;
 	janus::dynamic_buffer dyn_buf(10'000'000);
-	janus::update_state state = {
+	janus::betfair::update_state state = {
 		.filename = "",
 		.line = 1,
 	};

@@ -108,6 +108,8 @@ static inline auto get_update_market_traded_vol(const update& update) -> double
 	return update.value.d;
 }
 
+namespace betfair
+{
 // Stores the ongoing update state so we can determine if the update we're
 // parsing is for a different market, runner and/or timestamp and generate
 // update messages accordingly. We also store the filename for error-reporting
@@ -122,8 +124,6 @@ struct update_state
 	uint64_t timestamp;
 };
 
-namespace betfair
-{
 // Parse betfair raw stream update data and update the specified dynamic buffer
 // to store the data in binary file format.
 //     state: State object which should be shared between invocations.
