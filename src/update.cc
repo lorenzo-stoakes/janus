@@ -31,6 +31,27 @@ static void check_op(const update_state& state, const sajson::value& root)
 					 op_str + "', expect 'mcm'");
 }
 
+// Process market change update.
+static uint64_t parse_mc(update_state& state, uint64_t timestamp, const sajson::value& mc,
+			 dynamic_buffer& dyn_buf)
+{
+	sajson::value id = mc.get_value_of_key(sajson::literal("id"));
+	uint64_t market_id =
+		janus::internal::parse_market_id(id.as_cstring(), id.get_string_length());
+
+	uint64_t num_updates = 0;
+
+	// If the market ID has changed from the last market ID update sent, we
+	// need to send + update.
+	if (state.market_id != market_id) {
+		dyn_buf.add(make_market_id_update(market_id));
+		num_updates++;
+		state.market_id = market_id;
+	}
+
+	return num_updates;
+}
+
 auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 			      dynamic_buffer& dyn_buf) -> uint64_t
 {
@@ -49,7 +70,16 @@ auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 	if (num_mcs == 0)
 		return 0;
 
+	uint64_t num_updates = 0;
+
+	// Now process the market change updates.
+	uint64_t timestamp = root.get_value_of_key(sajson::literal("pt")).get_integer_value();
+	for (uint64_t i = 0; i < num_mcs; i++) {
+		sajson::value mc = mcs.get_array_element(i);
+		num_updates += parse_mc(state, timestamp, mc, dyn_buf);
+	}
+
 	state.line++;
-	return 0;
+	return num_updates;
 }
 } // namespace janus::betfair

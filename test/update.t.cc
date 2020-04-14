@@ -5,6 +5,21 @@
 
 namespace
 {
+// Quick and dirty helper function to find first instance of the specified
+// update type in a dynamic buffer. Updates dynamic buffer read offset.
+static auto find_first_update_of(janus::update_type type, janus::dynamic_buffer& dyn_buf,
+				 uint64_t num_updates) -> janus::update*
+{
+	for (uint64_t i = 0; i < num_updates; i++) {
+		janus::update& update = dyn_buf.read<janus::update>();
+
+		if (update.type == type)
+			return &update;
+	}
+
+	return nullptr;
+}
+
 // Test that we throw if the inputted JSON does not contain "op":"mcm" (market change message).
 TEST(update_test, op_must_be_mcm)
 {
@@ -77,5 +92,45 @@ TEST(update_test, do_nothing_on_empty_mc)
 
 	EXPECT_EQ(janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf), 0);
 	EXPECT_EQ(state.line, 1);
+}
+
+// Test that we correctly send a new market ID update when the market ID changes
+// and update state accordingly.
+TEST(update_test, send_market_id_update)
+{
+	char json1[] =
+		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size1 = sizeof(json1) - 1;
+	janus::dynamic_buffer dyn_buf(10'000'000);
+	janus::update_state state = {
+		.filename = "",
+		.line = 1,
+	};
+
+	uint64_t num_updates =
+		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	// We should receive at least 1 update as the market ID has changed from
+	// unset to 170020941.
+	EXPECT_GT(num_updates, 0);
+	// State should be updated.
+	EXPECT_EQ(state.market_id, 170020941);
+	// We should have a market ID update in the dynamic buffer too.
+	janus::update* update =
+		find_first_update_of(janus::update_type::MARKET_ID, dyn_buf, num_updates);
+	ASSERT_NE(update, nullptr);
+	uint64_t market_id = janus::get_update_market_id(*update);
+	EXPECT_EQ(market_id, 170020941);
+
+	// Now the state has the market ID set, we shouldn't expect re-processing of this JSON
+	// should emit a market ID update.
+
+	dyn_buf.reset();
+	char json2[] =
+		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+	update = find_first_update_of(janus::update_type::MARKET_ID, dyn_buf, num_updates);
+	EXPECT_EQ(update, nullptr);
 }
 } // namespace

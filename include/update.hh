@@ -45,13 +45,21 @@ struct update
 };
 static_assert(sizeof(update) == 16);
 
-// Generate a new update object
+// Generate a new market ID update object.
 static inline auto make_market_id_update(uint64_t market_id) -> const update
 {
 	return update{
 		.type = update_type::MARKET_ID,
 		.value = market_id,
 	};
+}
+
+// Retrieve the market ID from a market ID update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_market_id(const update& update) -> uint64_t
+{
+	return update.value;
 }
 
 // Stores the ongoing update state so we can determine if the update we're
