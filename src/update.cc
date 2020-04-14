@@ -73,7 +73,8 @@ static uint64_t parse_mc(update_state& state, const sajson::value& mc, dynamic_b
 auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 			      dynamic_buffer& dyn_buf) -> uint64_t
 {
-	sajson::document doc = janus::internal::parse_json(state.filename, str, size);
+	sajson::document doc =
+		janus::internal::parse_json(state.filename, str, size, state.line - 1);
 	const sajson::value& root = doc.get_root();
 
 	check_op(state, root);
