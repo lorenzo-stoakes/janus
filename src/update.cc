@@ -239,11 +239,12 @@ static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffe
 	sajson::value ltp = rc.get_value_of_key(sajson::literal("ltp"));
 	if (ltp.get_type() != sajson::TYPE_NULL) {
 		decimal7 ltp_val = ltp.get_decimal_value();
-		uint64_t price_index = range->pricex100_to_index(ltp_val.mult100());
-		if (price_index == INVALID_PRICE_INDEX)
-			throw std::runtime_error(
-				get_error_prefix(state) + std::to_string(runner_id) + ": LTP of " +
-				std::to_string(ltp_val.to_double()) + " is invalid");
+
+		// Sometimes after a runner removal the LTP will be invalid as
+		// it will have been scaled by the adjustment factor. We work
+		// around this by rounding down.
+		// TODO(lorenzo): Review.
+		uint32_t price_index = range->pricex100_to_nearest_index(ltp_val.mult100());
 
 		dyn_buf.add(make_runner_ltp_update(price_index));
 		num_updates++;

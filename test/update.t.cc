@@ -582,7 +582,7 @@ TEST(update_test, send_runner_update)
 
 	dyn_buf.reset();
 	char json3[] =
-		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924323577,"mc":[{"rc":[{"tv":1882.61,"trd":[[8.65,220.32]],"atl":[[8.6,8.18],[9.6,13.12]],"id":17247906},{"tv":874.24,"trd":[[14.539,94.73]],"ltp":14.5,"atl":[[14.5,10.61]],"id":18889965},{"tv":402.81,"trd":[[23.777,29.64]],"ltp":23,"atb":[[23,0]],"id":22109331}],"img":false,"tv":25130.72,"con":true,"id":"1.170020941"}],"status":0})";
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924323577,"mc":[{"rc":[{"tv":1882.61,"trd":[[8.65,220.32]],"atl":[[8.6,8.18],[9.6,13.12]],"id":17247906},{"tv":874.24,"trd":[[14.539,94.73]],"ltp":14.56,"atl":[[14.5,10.61]],"id":18889965},{"tv":402.81,"trd":[[23.777,29.64]],"ltp":23.9,"atb":[[23,0]],"id":22109331}],"img":false,"tv":25130.72,"con":true,"id":"1.170020941"}],"status":0})";
 	uint64_t size3 = sizeof(json3) - 1;
 
 	num_updates = janus::betfair::parse_update_stream_json(state, json3, size3, dyn_buf);
@@ -605,5 +605,17 @@ TEST(update_test, send_runner_update)
 	std::tie(price_index, vol) = janus::get_update_runner_matched(pairs[2].second);
 	EXPECT_EQ(price_index, range.pricex100_to_index(2300));
 	EXPECT_DOUBLE_EQ(vol, 29.64);
+
+	// LTP, price offset from valid prices.
+
+	dyn_buf.reset_read();
+	pairs = find_all_updates_of(janus::update_type::RUNNER_LTP, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 2);
+
+	EXPECT_EQ(pairs[0].first, 18889965);
+	EXPECT_DOUBLE_EQ(get_update_runner_ltp(pairs[0].second), range.pricex100_to_index(1450));
+
+	EXPECT_EQ(pairs[1].first, 22109331);
+	EXPECT_DOUBLE_EQ(get_update_runner_ltp(pairs[1].second), range.pricex100_to_index(2300));
 }
 } // namespace
