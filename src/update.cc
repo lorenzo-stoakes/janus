@@ -32,8 +32,7 @@ static void check_op(const update_state& state, const sajson::value& root)
 }
 
 // Process market change update.
-static uint64_t parse_mc(update_state& state, uint64_t timestamp, const sajson::value& mc,
-			 dynamic_buffer& dyn_buf)
+static uint64_t parse_mc(update_state& state, const sajson::value& mc, dynamic_buffer& dyn_buf)
 {
 	sajson::value id = mc.get_value_of_key(sajson::literal("id"));
 	uint64_t market_id =
@@ -80,11 +79,18 @@ auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 
 	uint64_t num_updates = 0;
 
-	// Now process the market change updates.
 	uint64_t timestamp = root.get_value_of_key(sajson::literal("pt")).get_integer_value();
+	// Check whether we need to send a timestamp update.
+	if (timestamp != state.timestamp) {
+		dyn_buf.add(make_timestamp_update(timestamp));
+		num_updates++;
+		state.timestamp = timestamp;
+	}
+
+	// Now process the market change updates.
 	for (uint64_t i = 0; i < num_mcs; i++) {
 		sajson::value mc = mcs.get_array_element(i);
-		num_updates += parse_mc(state, timestamp, mc, dyn_buf);
+		num_updates += parse_mc(state, mc, dyn_buf);
 	}
 
 	state.line++;

@@ -94,6 +94,44 @@ TEST(update_test, do_nothing_on_empty_mc)
 	EXPECT_EQ(state.line, 1);
 }
 
+// Test that a change in timestamp correctly results in a timestamp update being sent.
+TEST(update_test, send_timestamp_update)
+{
+	char json1[] =
+		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size1 = sizeof(json1) - 1;
+	janus::dynamic_buffer dyn_buf(10'000'000);
+	janus::update_state state = {
+		.filename = "",
+		.line = 1,
+	};
+
+	uint64_t num_updates =
+		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	EXPECT_GT(num_updates, 0);
+
+	// The first update should be a timestamp update, and since it was not
+	// previously set it should be updated.
+	auto& update = dyn_buf.read<janus::update>();
+	EXPECT_EQ(update.type, janus::update_type::TIMESTAMP);
+	EXPECT_EQ(state.timestamp, 1583884814303ULL);
+
+	// Now we have timestamp set, re-processing the JSON should NOT result
+	// in a timestamp update.
+
+	dyn_buf.reset();
+	char json2[] =
+		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+
+	janus::update* next_update =
+		find_first_update_of(janus::update_type::TIMESTAMP, dyn_buf, num_updates);
+	EXPECT_EQ(next_update, nullptr);
+	EXPECT_EQ(state.timestamp, 1583884814303ULL);
+}
+
 // Test that we correctly send a new market ID update when the market ID changes
 // and update state accordingly.
 TEST(update_test, send_market_id_update)
@@ -170,7 +208,8 @@ TEST(update_test, send_market_clear_update)
 	bool found = false;
 	for (uint64_t i = 0; i < num_updates; i++) {
 		janus::update& curr_update = dyn_buf.read<janus::update>();
-		ASSERT_TRUE(curr_update.type == janus::update_type::MARKET_ID ||
+		ASSERT_TRUE(curr_update.type == janus::update_type::TIMESTAMP ||
+			    curr_update.type == janus::update_type::MARKET_ID ||
 			    curr_update.type == janus::update_type::MARKET_CLEAR);
 		if (curr_update.type == janus::update_type::MARKET_CLEAR) {
 			found = true;

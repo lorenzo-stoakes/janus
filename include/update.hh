@@ -6,9 +6,9 @@ namespace janus
 enum class update_type : uint32_t
 {
 	// Declarations.
+	TIMESTAMP,
 	MARKET_ID,
 	RUNNER_ID,
-	TIMESTAMP,
 
 	// Market actions.
 	MARKET_CLEAR,
@@ -44,6 +44,23 @@ struct update
 	uint64_t value;
 };
 static_assert(sizeof(update) == 16);
+
+// Generate a new timestamp update object.
+static inline auto make_timestamp_update(uint64_t timestamp) -> const update
+{
+	return update{
+		.type = update_type::TIMESTAMP,
+		.value = timestamp,
+	};
+}
+
+// Retrieve timestamp from a timestamp update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_timestamp(const update& update) -> uint64_t
+{
+	return update.value;
+}
 
 // Generate a new market ID update object.
 static inline auto make_market_id_update(uint64_t market_id) -> const update
