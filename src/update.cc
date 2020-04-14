@@ -39,6 +39,7 @@ auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 
 	check_op(state, root);
 
+	state.line++;
 	return 0;
 }
 } // namespace janus::betfair
