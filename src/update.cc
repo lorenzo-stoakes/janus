@@ -35,6 +35,10 @@ static void check_op(const update_state& state, const sajson::value& root)
 static auto parse_market_definition(update_state& state, const sajson::value& market_def,
 				    dynamic_buffer& dyn_buf) -> uint64_t
 {
+	// Nothing to do.
+	if (market_def.get_type() != sajson::TYPE_OBJECT)
+		return 0;
+
 	uint64_t num_updates = 0;
 
 	return num_updates;
