@@ -1,6 +1,7 @@
 #include "janus.hh"
 
 #include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -50,25 +51,32 @@ static bool parse_meta(const char* filename, janus::dynamic_buffer& dyn_buf)
 auto main(int argc, char** argv) -> int
 {
 	if (argc < 3) {
-		std::cerr << "usage: " << argv[0] << " [output file] [meta json file(s)]..."
-			  << std::endl;
+		std::cerr << "usage: " << argv[0]
+			  << " [--meta] [output file] [meta json file(s)]..." << std::endl;
 		return 1;
+	}
+
+	int arg_offset = 0;
+	bool meta = false;
+	if (::strncmp(argv[1], "--meta", sizeof("--meta") - 1) == 0) {
+		meta = true;
+		arg_offset = 1;
 	}
 
 	janus::dynamic_buffer dyn_buf(DYN_BUFFER_MAX_SIZE);
 
-	for (int i = 2; i < argc; i++) {
+	for (int i = 2 + arg_offset; i < argc; i++) {
 		const char* filename = argv[i];
 
 		clear_line();
 		std::cout << std::to_string(i - 1) << "/" << std::to_string(argc - 2) << ": "
 			  << filename << std::flush;
 
-		if (!parse_meta(filename, dyn_buf))
+		if (meta && !parse_meta(filename, dyn_buf))
 			return 1;
 	}
 
-	std::string output_filename = argv[1];
+	std::string output_filename = argv[1 + arg_offset];
 	if (auto file = std::fstream(output_filename, std::ios::out | std::ios::binary)) {
 		file.write(reinterpret_cast<const char*>(dyn_buf.data()), dyn_buf.size());
 	} else {
