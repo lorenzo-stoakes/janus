@@ -41,7 +41,11 @@ struct update
 {
 	update_type type;
 	uint32_t key;
-	uint64_t value;
+	union
+	{
+		uint64_t u;
+		double d;
+	} value;
 };
 static_assert(sizeof(update) == 16);
 
@@ -50,7 +54,7 @@ static inline auto make_timestamp_update(uint64_t timestamp) -> const update
 {
 	return update{
 		.type = update_type::TIMESTAMP,
-		.value = timestamp,
+		.value = {.u = timestamp},
 	};
 }
 
@@ -59,7 +63,7 @@ static inline auto make_timestamp_update(uint64_t timestamp) -> const update
 // this already.
 static inline auto get_update_timestamp(const update& update) -> uint64_t
 {
-	return update.value;
+	return update.value.u;
 }
 
 // Generate a new market ID update object.
@@ -67,7 +71,7 @@ static inline auto make_market_id_update(uint64_t market_id) -> const update
 {
 	return update{
 		.type = update_type::MARKET_ID,
-		.value = market_id,
+		.value = {.u = market_id},
 	};
 }
 
@@ -76,7 +80,7 @@ static inline auto make_market_id_update(uint64_t market_id) -> const update
 // this already.
 static inline auto get_update_market_id(const update& update) -> uint64_t
 {
-	return update.value;
+	return update.value.u;
 }
 
 // Generate a new market clear update object.
