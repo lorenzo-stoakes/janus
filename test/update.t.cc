@@ -454,4 +454,156 @@ TEST(update_test, send_runner_def_update)
 	EXPECT_EQ(pairs.size(), 1);
 	EXPECT_EQ(pairs[0].first, 13233309);
 }
+
+// Test that we can receive runner data updates - ATL, ATB, LTP, TV, matched volume.
+TEST(update_test, send_runner_update)
+{
+	// No LTP, no TV, no matched volume.
+
+	char json1[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924274639,"mc":[{"rc":[{"atb":[[14,0.23]],"id":18889965},{"atl":[[25,0]],"id":22109331},{"atb":[[3.65,16.38],[3.55,123.25]],"id":13233309}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size1 = sizeof(json1) - 1;
+	janus::dynamic_buffer dyn_buf(10'000'000);
+	janus::betfair::update_state state = {
+		.range = &range,
+		.filename = "",
+		.line = 1,
+	};
+
+	uint64_t num_updates =
+		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
+
+	// ATL.
+
+	auto pairs =
+		find_all_updates_of(janus::update_type::RUNNER_UNMATCHED_ATL, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 1);
+
+	uint64_t price_index;
+	double vol;
+
+	EXPECT_EQ(pairs[0].first, 22109331);
+	std::tie(price_index, vol) = janus::get_update_runner_unmatched_atl(pairs[0].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(2500));
+	EXPECT_DOUBLE_EQ(vol, 0);
+
+	// ATB.
+
+	dyn_buf.reset_read();
+	pairs = find_all_updates_of(janus::update_type::RUNNER_UNMATCHED_ATB, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 3);
+
+	EXPECT_EQ(pairs[0].first, 18889965);
+	std::tie(price_index, vol) = janus::get_update_runner_unmatched_atb(pairs[0].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(1400));
+	EXPECT_DOUBLE_EQ(vol, 0.23);
+
+	EXPECT_EQ(pairs[1].first, 13233309);
+	std::tie(price_index, vol) = janus::get_update_runner_unmatched_atb(pairs[1].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(365));
+	EXPECT_DOUBLE_EQ(vol, 16.38);
+
+	EXPECT_EQ(pairs[2].first, 13233309);
+	std::tie(price_index, vol) = janus::get_update_runner_unmatched_atb(pairs[2].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(355));
+	EXPECT_DOUBLE_EQ(vol, 123.25);
+
+	dyn_buf.reset_read();
+	pairs = find_all_updates_of(janus::update_type::RUNNER_TRADED_VOL, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 0);
+
+	dyn_buf.reset_read();
+	pairs = find_all_updates_of(janus::update_type::RUNNER_LTP, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 0);
+
+	dyn_buf.reset_read();
+	pairs = find_all_updates_of(janus::update_type::RUNNER_MATCHED, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 0);
+
+	// LTP, TV, matched volume.
+
+	dyn_buf.reset();
+	char json2[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924323577,"mc":[{"rc":[{"tv":1882.61,"trd":[[8.6,220.32]],"atl":[[8.6,8.18],[9.6,13.12]],"id":17247906},{"tv":874.24,"trd":[[14.5,94.73]],"ltp":14.5,"atl":[[14.5,10.61]],"id":18889965},{"tv":402.81,"trd":[[23,29.64]],"ltp":23,"atb":[[23,0]],"id":22109331}],"img":false,"tv":25130.72,"con":true,"id":"1.170020941"}],"status":0})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
+
+	// Runner TV.
+
+	pairs = find_all_updates_of(janus::update_type::RUNNER_TRADED_VOL, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 3);
+
+	EXPECT_EQ(pairs[0].first, 17247906);
+	EXPECT_DOUBLE_EQ(get_update_runner_traded_vol(pairs[0].second), 1882.61);
+
+	EXPECT_EQ(pairs[1].first, 18889965);
+	EXPECT_DOUBLE_EQ(get_update_runner_traded_vol(pairs[1].second), 874.24);
+
+	EXPECT_EQ(pairs[2].first, 22109331);
+	EXPECT_DOUBLE_EQ(get_update_runner_traded_vol(pairs[2].second), 402.81);
+
+	// Runner LTP.
+
+	dyn_buf.reset_read();
+	pairs = find_all_updates_of(janus::update_type::RUNNER_LTP, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 2);
+
+	EXPECT_EQ(pairs[0].first, 18889965);
+	EXPECT_DOUBLE_EQ(get_update_runner_ltp(pairs[0].second), range.pricex100_to_index(1450));
+
+	EXPECT_EQ(pairs[1].first, 22109331);
+	EXPECT_DOUBLE_EQ(get_update_runner_ltp(pairs[1].second), range.pricex100_to_index(2300));
+
+	// Matched volume.
+
+	dyn_buf.reset_read();
+	pairs = find_all_updates_of(janus::update_type::RUNNER_MATCHED, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 3);
+
+	EXPECT_EQ(pairs[0].first, 17247906);
+	std::tie(price_index, vol) = janus::get_update_runner_matched(pairs[0].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(860));
+	EXPECT_DOUBLE_EQ(vol, 220.32);
+
+	EXPECT_EQ(pairs[1].first, 18889965);
+	std::tie(price_index, vol) = janus::get_update_runner_matched(pairs[1].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(1450));
+	EXPECT_DOUBLE_EQ(vol, 94.73);
+
+	EXPECT_EQ(pairs[2].first, 22109331);
+	std::tie(price_index, vol) = janus::get_update_runner_matched(pairs[2].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(2300));
+	EXPECT_DOUBLE_EQ(vol, 29.64);
+
+	// Matched volume, prices offset from valid prices.
+
+	dyn_buf.reset();
+	char json3[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924323577,"mc":[{"rc":[{"tv":1882.61,"trd":[[8.65,220.32]],"atl":[[8.6,8.18],[9.6,13.12]],"id":17247906},{"tv":874.24,"trd":[[14.539,94.73]],"ltp":14.5,"atl":[[14.5,10.61]],"id":18889965},{"tv":402.81,"trd":[[23.777,29.64]],"ltp":23,"atb":[[23,0]],"id":22109331}],"img":false,"tv":25130.72,"con":true,"id":"1.170020941"}],"status":0})";
+	uint64_t size3 = sizeof(json3) - 1;
+
+	num_updates = janus::betfair::parse_update_stream_json(state, json3, size3, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
+
+	pairs = find_all_updates_of(janus::update_type::RUNNER_MATCHED, dyn_buf, num_updates);
+	EXPECT_EQ(pairs.size(), 3);
+
+	EXPECT_EQ(pairs[0].first, 17247906);
+	std::tie(price_index, vol) = janus::get_update_runner_matched(pairs[0].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(860));
+	EXPECT_DOUBLE_EQ(vol, 220.32);
+
+	EXPECT_EQ(pairs[1].first, 18889965);
+	std::tie(price_index, vol) = janus::get_update_runner_matched(pairs[1].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(1450));
+	EXPECT_DOUBLE_EQ(vol, 94.73);
+
+	EXPECT_EQ(pairs[2].first, 22109331);
+	std::tie(price_index, vol) = janus::get_update_runner_matched(pairs[2].second);
+	EXPECT_EQ(price_index, range.pricex100_to_index(2300));
+	EXPECT_DOUBLE_EQ(vol, 29.64);
+}
 } // namespace

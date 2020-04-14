@@ -146,11 +146,141 @@ static auto parse_market_definition(update_state& state, const sajson::value& ma
 	return num_updates;
 }
 
+// Parse matched volume [ price, vol ] pair.
+static auto parse_trd(const update_state& state, const sajson::value& trd, dynamic_buffer& dyn_buf)
+	-> uint64_t
+{
+	const price_range* range = state.range;
+
+	// We assume the data is in the correct format.
+	decimal7 price = trd.get_array_element(0).get_decimal_value();
+	// Sometimes after a runner removal the matched volume prices will be
+	// all over the place as they have been scaled by the adjustment factor.
+	// Really we should assign to the surrounding price levels weighted by
+	// how close they are to them, however for now we simply round down.
+	// TODO(lorenzo): Review.
+	uint32_t price_index = range->pricex100_to_nearest_index(price.mult100());
+	double vol = trd.get_array_element(1).get_number_value();
+
+	dyn_buf.add(make_runner_matched_update(price_index, vol));
+	return 1;
+}
+
+// Parse ATL [ price, vol ] pair.
+static auto parse_atl(const update_state& state, const sajson::value& atl, dynamic_buffer& dyn_buf)
+	-> uint64_t
+{
+	const price_range* range = state.range;
+
+	// We assume the data is in the correct format.
+	decimal7 price = atl.get_array_element(0).get_decimal_value();
+	uint32_t price_index = range->pricex100_to_index(price.mult100());
+	if (price_index == INVALID_PRICE_INDEX)
+		throw std::runtime_error(get_error_prefix(state) + std::to_string(state.runner_id) +
+					 ": ATL of " + std::to_string(price.to_double()) +
+					 " is invalid");
+	double vol = atl.get_array_element(1).get_number_value();
+
+	dyn_buf.add(make_runner_unmatched_atl_update(price_index, vol));
+	return 1;
+}
+
+// Parse ATB [ price, vol ] pair.
+static auto parse_atb(const update_state& state, const sajson::value& atb, dynamic_buffer& dyn_buf)
+	-> uint64_t
+{
+	const price_range* range = state.range;
+
+	// We assume the data is in the correct format.
+	decimal7 price = atb.get_array_element(0).get_decimal_value();
+	uint32_t price_index = range->pricex100_to_index(price.mult100());
+	if (price_index == INVALID_PRICE_INDEX)
+		throw std::runtime_error(get_error_prefix(state) + std::to_string(state.runner_id) +
+					 ": ATB of " + std::to_string(price.to_double()) +
+					 " is invalid");
+	double vol = atb.get_array_element(1).get_number_value();
+
+	dyn_buf.add(make_runner_unmatched_atb_update(price_index, vol));
+	return 1;
+}
+
 // Parse runner change update.
 static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffer& dyn_buf)
 	-> uint64_t
 {
 	uint64_t num_updates = 0;
+
+	const price_range* range = state.range;
+
+	// Send runner ID if needed.
+
+	sajson::value id = rc.get_value_of_key(sajson::literal("id"));
+	uint64_t runner_id = id.get_integer_value();
+	if (state.runner_id != runner_id) {
+		dyn_buf.add(make_runner_id_update(runner_id));
+		num_updates++;
+		state.runner_id = runner_id;
+	}
+
+	// Traded volume.
+
+	sajson::value tv = rc.get_value_of_key(sajson::literal("tv"));
+	if (tv.get_type() != sajson::TYPE_NULL) {
+		double tv_vol = tv.get_number_value();
+		// TV of 0 means no change.
+		if (tv_vol > 0) {
+			dyn_buf.add(make_runner_traded_vol_update(tv_vol));
+			num_updates++;
+		}
+	}
+
+	// LTP.
+
+	sajson::value ltp = rc.get_value_of_key(sajson::literal("ltp"));
+	if (ltp.get_type() != sajson::TYPE_NULL) {
+		decimal7 ltp_val = ltp.get_decimal_value();
+		uint64_t price_index = range->pricex100_to_index(ltp_val.mult100());
+		if (price_index == INVALID_PRICE_INDEX)
+			throw std::runtime_error(
+				get_error_prefix(state) + std::to_string(runner_id) + ": LTP of " +
+				std::to_string(ltp_val.to_double()) + " is invalid");
+
+		dyn_buf.add(make_runner_ltp_update(price_index));
+		num_updates++;
+	}
+
+	// Matched volume.
+
+	sajson::value trds = rc.get_value_of_key(sajson::literal("trd"));
+	uint64_t num_trds = 0;
+	if (trds.get_type() == sajson::TYPE_ARRAY)
+		num_trds = trds.get_length();
+	for (uint64_t i = 0; i < num_trds; i++) {
+		sajson::value trd = trds.get_array_element(i);
+		num_updates += parse_trd(state, trd, dyn_buf);
+	}
+
+	// ATL.
+
+	sajson::value atls = rc.get_value_of_key(sajson::literal("atl"));
+	uint64_t num_atls = 0;
+	if (atls.get_type() == sajson::TYPE_ARRAY)
+		num_atls = atls.get_length();
+	for (uint64_t i = 0; i < num_atls; i++) {
+		sajson::value atl = atls.get_array_element(i);
+		num_updates += parse_atl(state, atl, dyn_buf);
+	}
+
+	// ATB.
+
+	sajson::value atbs = rc.get_value_of_key(sajson::literal("atb"));
+	uint64_t num_atbs = 0;
+	if (atbs.get_type() == sajson::TYPE_ARRAY)
+		num_atbs = atbs.get_length();
+	for (uint64_t i = 0; i < num_atbs; i++) {
+		sajson::value atb = atbs.get_array_element(i);
+		num_updates += parse_atb(state, atb, dyn_buf);
+	}
 
 	return num_updates;
 }

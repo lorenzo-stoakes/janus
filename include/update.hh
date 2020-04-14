@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <utility>
+
 namespace janus
 {
 // Types of update we can receive from the market.
@@ -197,6 +200,101 @@ static inline auto make_runner_won_update() -> const update
 	return update{
 		.type = update_type::RUNNER_WON,
 	};
+}
+
+// Generate a new runner traded volume object.
+static inline auto make_runner_traded_vol_update(double traded_vol) -> const update
+{
+	return update{
+		.type = update_type::RUNNER_TRADED_VOL,
+		.value = {.d = traded_vol},
+	};
+}
+
+// Retrieve runner traded volume factor from a runner traded volume update
+// object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_runner_traded_vol(const update& update) -> double
+{
+	return update.value.d;
+}
+
+// Generate a new runner LTP update object.
+static inline auto make_runner_ltp_update(uint64_t price_index) -> const update
+{
+	return update{
+		.type = update_type::RUNNER_LTP,
+		.value = {.u = price_index},
+	};
+}
+
+// Retrieve runner LTP price index from a runner LTP update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_runner_ltp(const update& update) -> uint64_t
+{
+	return update.value.u;
+}
+
+// Generate a new runner matched update object.
+static inline auto make_runner_matched_update(uint32_t price_index, double vol) -> const update
+{
+	return update{
+		.type = update_type::RUNNER_MATCHED,
+		.key = price_index,
+		.value = {.d = vol},
+	};
+}
+
+// Retrieve runner matched price index, volume from a runner matched update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_runner_matched(const update& update) -> std::pair<uint64_t, double>
+{
+	return std::make_pair(update.key, update.value.d);
+}
+
+// Generate a new runner unmatched ATL update object.
+static inline auto make_runner_unmatched_atl_update(uint32_t price_index, double vol)
+	-> const update
+{
+	return update{
+		.type = update_type::RUNNER_UNMATCHED_ATL,
+		.key = price_index,
+		.value = {.d = vol},
+	};
+}
+
+// Retrieve runner unmatched ATL price index, volume from a runner unmatched ATL
+// update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_runner_unmatched_atl(const update& update)
+	-> std::pair<uint64_t, double>
+{
+	return std::make_pair(update.key, update.value.d);
+}
+
+// Generate a new runner unmatched ATB update object.
+static inline auto make_runner_unmatched_atb_update(uint32_t price_index, double vol)
+	-> const update
+{
+	return update{
+		.type = update_type::RUNNER_UNMATCHED_ATB,
+		.key = price_index,
+		.value = {.d = vol},
+	};
+}
+
+// Retrieve runner unmatched ATB price index, volume from a runner unmatched ATB
+// update object.
+// Note that we don't assert the type is correct, we assume the caller has done
+// this already.
+static inline auto get_update_runner_unmatched_atb(const update& update)
+	-> std::pair<uint64_t, double>
+{
+	return std::make_pair(update.key, update.value.d);
 }
 
 namespace betfair
