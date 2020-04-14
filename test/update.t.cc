@@ -152,6 +152,7 @@ TEST(update_test, send_timestamp_update)
 	uint64_t num_updates =
 		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
 	EXPECT_GT(num_updates, 0);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 
 	// The first update should be a timestamp update, and since it was not
 	// previously set it should be updated.
@@ -168,6 +169,7 @@ TEST(update_test, send_timestamp_update)
 	uint64_t size2 = sizeof(json2) - 1;
 
 	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 
 	janus::update* next_update =
 		find_first_update_of(janus::update_type::TIMESTAMP, dyn_buf, num_updates);
@@ -194,6 +196,7 @@ TEST(update_test, send_market_id_update)
 	// We should receive at least 1 update as the market ID has changed from
 	// unset to 170020941.
 	EXPECT_GT(num_updates, 0);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 	// State should be updated.
 	EXPECT_EQ(state.market_id, 170020941);
 	// We should have a market ID update in the dynamic buffer too.
@@ -212,6 +215,7 @@ TEST(update_test, send_market_id_update)
 	uint64_t size2 = sizeof(json2) - 1;
 
 	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 	update = find_first_update_of(janus::update_type::MARKET_ID, dyn_buf, num_updates);
 	EXPECT_EQ(update, nullptr);
 }
@@ -234,6 +238,7 @@ TEST(update_test, send_market_clear_update)
 
 	uint64_t num_updates =
 		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 
 	janus::update* update =
 		find_first_update_of(janus::update_type::MARKET_CLEAR, dyn_buf, num_updates);
@@ -247,6 +252,7 @@ TEST(update_test, send_market_clear_update)
 	uint64_t size2 = sizeof(json2) - 1;
 
 	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 
 	// We expect to see the market clear message FIRST or only after a market ID message.
 
@@ -282,6 +288,7 @@ TEST(update_test, send_market_traded_vol_update)
 
 	uint64_t num_updates =
 		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 
 	janus::update* update =
 		find_first_update_of(janus::update_type::MARKET_TRADED_VOL, dyn_buf, num_updates);
@@ -297,6 +304,7 @@ TEST(update_test, send_market_traded_vol_update)
 
 	// Should not have any market traded volume updates.
 	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 	update = find_first_update_of(janus::update_type::MARKET_TRADED_VOL, dyn_buf, num_updates);
 	EXPECT_EQ(update, nullptr);
 
@@ -310,6 +318,7 @@ TEST(update_test, send_market_traded_vol_update)
 
 	// Should not have any market traded volume updates.
 	num_updates = janus::betfair::parse_update_stream_json(state, json3, size3, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 	update = find_first_update_of(janus::update_type::MARKET_TRADED_VOL, dyn_buf, num_updates);
 	EXPECT_EQ(update, nullptr);
 }
@@ -332,6 +341,7 @@ TEST(update_test, send_market_status_update)
 
 	uint64_t num_updates =
 		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 	janus::update* update =
 		find_first_update_of(janus::update_type::MARKET_OPEN, dyn_buf, num_updates);
 	ASSERT_NE(update, nullptr);
@@ -344,6 +354,7 @@ TEST(update_test, send_market_status_update)
 	uint64_t size2 = sizeof(json2) - 1;
 
 	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 	update = find_first_update_of(janus::update_type::MARKET_CLOSE, dyn_buf, num_updates);
 	ASSERT_NE(update, nullptr);
 
@@ -355,6 +366,7 @@ TEST(update_test, send_market_status_update)
 	uint64_t size3 = sizeof(json3) - 1;
 
 	num_updates = janus::betfair::parse_update_stream_json(state, json3, size3, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 	update = find_first_update_of(janus::update_type::MARKET_SUSPEND, dyn_buf, num_updates);
 	ASSERT_NE(update, nullptr);
 
@@ -366,6 +378,7 @@ TEST(update_test, send_market_status_update)
 	uint64_t size4 = sizeof(json4) - 1;
 
 	num_updates = janus::betfair::parse_update_stream_json(state, json4, size4, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 	update = find_first_update_of(janus::update_type::MARKET_INPLAY, dyn_buf, num_updates);
 	ASSERT_NE(update, nullptr);
 }
@@ -388,6 +401,7 @@ TEST(update_test, send_runner_def_update)
 	// 10 of 12 runners have an SP, the others are removed.
 	uint64_t num_updates =
 		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
 	auto pairs = find_all_updates_of(janus::update_type::RUNNER_SP, dyn_buf, num_updates);
 	EXPECT_EQ(pairs.size(), 10);
 
