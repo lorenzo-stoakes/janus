@@ -29,3 +29,15 @@ Per-runner:
 * runner_name             (string)
 * jockey_name             (string) [optional]
 * trainer_name            (string) [optional]
+
+## Updates
+
+Stored data will be compressed with [snappy](https://github.com/google/snappy).
+
+### Header
+* magic_number            (uint64)
+* num_updates             (uint64)
+
+### Data
+Per update:
+* update struct           (16 bytes)
