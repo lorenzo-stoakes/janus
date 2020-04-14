@@ -12,8 +12,9 @@
 // Neptune is a tool for converting existing JSON files to a binary format for
 // processing by janus.
 
-// In its initial, skeleton, implementation the tool will process only meta JSON
-// files.
+// This version is a hacky, terrible and over-allocating jumble designed for
+// testing out the parsing logic of janus and getting an idea of performance,
+// compression ratio and correctness when parsing real data.
 
 static constexpr uint64_t DYN_BUFFER_MAX_SIZE = 500'000'000;
 
