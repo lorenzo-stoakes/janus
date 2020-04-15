@@ -27,8 +27,7 @@ TEST(ladder_test, unmatched)
 	// Fill the other half with ATL volume.
 	for (uint64_t price_index = janus::betfair::NUM_PRICES / 2;
 	     price_index < janus::betfair::NUM_PRICES; price_index++) {
-		double vol = price_index;
-		vol *= 100;
+		double vol = price_index * 100;
 
 		ladder.set_unmatched_at(price_index, vol);
 		EXPECT_DOUBLE_EQ(ladder.unmatched(price_index), vol);
@@ -85,8 +84,7 @@ TEST(ladder_test, limit_indexes)
 	// Fill the other half with ATL volume.
 	for (uint64_t price_index = janus::betfair::NUM_PRICES / 2;
 	     price_index < janus::betfair::NUM_PRICES; price_index++) {
-		double vol = price_index;
-		vol *= 100;
+		double vol = price_index * 100;
 
 		ladder.set_unmatched_at(price_index, vol);
 	}
@@ -246,8 +244,7 @@ TEST(ladder_test, total_unmatched)
 	// Fill the other half with ATL volume.
 	for (uint64_t price_index = janus::betfair::NUM_PRICES / 2;
 	     price_index < janus::betfair::NUM_PRICES; price_index++) {
-		double vol = price_index;
-		vol *= 100;
+		double vol = price_index * 100;
 		expected_total_atl += vol;
 
 		ladder.set_unmatched_at(price_index, vol);
@@ -310,8 +307,7 @@ TEST(ladder_test, clear)
 	// Fill the other half with ATL volume.
 	for (uint64_t price_index = janus::betfair::NUM_PRICES / 2;
 	     price_index < janus::betfair::NUM_PRICES; price_index++) {
-		double vol = price_index;
-		vol *= 100;
+		double vol = price_index * 100;
 		expected_total_atl += vol;
 
 		ladder.set_unmatched_at(price_index, vol);
@@ -319,8 +315,7 @@ TEST(ladder_test, clear)
 
 	double expected_total_matched = 0;
 	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
-		double vol = price_index;
-		vol *= 100;
+		double vol = price_index * 100;
 		expected_total_matched += vol;
 
 		ladder.set_matched_at(price_index, vol);
@@ -387,8 +382,7 @@ TEST(ladder_test, best_atl_atb)
 	// Fill the other half with ATL volume.
 	for (uint64_t price_index = janus::betfair::NUM_PRICES / 2;
 	     price_index < janus::betfair::NUM_PRICES; price_index++) {
-		double vol = price_index;
-		vol *= 100;
+		double vol = price_index * 100;
 
 		ladder.set_unmatched_at(price_index, vol);
 
@@ -398,8 +392,7 @@ TEST(ladder_test, best_atl_atb)
 			  std::min<uint64_t>(price_index - janus::betfair::NUM_PRICES / 2 + 1, 10));
 		for (uint64_t i = 0; i < count; i++) {
 			uint64_t expected_price_index = janus::betfair::NUM_PRICES / 2 + i;
-			double expected_vol = expected_price_index;
-			expected_vol *= 100;
+			double expected_vol = expected_price_index * 100;
 
 			ASSERT_EQ(prices[i], expected_price_index);
 			ASSERT_DOUBLE_EQ(vols[i], expected_vol);
@@ -428,8 +421,7 @@ TEST(ladder_test, best_atl_atb)
 
 		for (uint64_t j = 0; j < i; j++) {
 			uint64_t price_index = janus::betfair::NUM_PRICES / 2 - 1 - j;
-			double vol = price_index;
-			vol *= 100;
+			double vol = price_index * 100;
 
 			ASSERT_EQ(prices[j], price_index);
 			ASSERT_DOUBLE_EQ(vols[j], vol);
@@ -545,7 +537,6 @@ TEST(ladder_test, total_matched)
 	double expected_total_matched = 0;
 	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
 		double vol = price_index * 100;
-		;
 		expected_total_matched += vol;
 
 		ladder.set_matched_at(price_index, vol);

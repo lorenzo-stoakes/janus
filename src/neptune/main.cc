@@ -26,7 +26,7 @@ static void clear_line()
 	std::cout << "\r" << std::flush;
 }
 
-static bool parse_meta(const char* filename, janus::dynamic_buffer& dyn_buf)
+static auto parse_meta(const char* filename, janus::dynamic_buffer& dyn_buf) -> bool
 {
 	std::string json;
 	uint64_t size;
@@ -52,8 +52,8 @@ static bool parse_meta(const char* filename, janus::dynamic_buffer& dyn_buf)
 	return true;
 }
 
-static bool parse_update_stream(const janus::betfair::price_range& range, const char* filename,
-				janus::dynamic_buffer& dyn_buf, uint64_t& num_updates)
+static auto parse_update_stream(const janus::betfair::price_range& range, const char* filename,
+				janus::dynamic_buffer& dyn_buf, uint64_t& num_updates) -> bool
 {
 	janus::betfair::update_state state = {
 		.range = &range,
@@ -65,7 +65,7 @@ static bool parse_update_stream(const janus::betfair::price_range& range, const 
 		std::string line;
 		while (std::getline(file, line)) {
 			// Some lines in 'all' folder contain corrupted data :'( skip these.
-			if (line.size() == 0 || line[0] == '\0')
+			if (line.empty() || line[0] == '\0')
 				continue;
 
 			num_updates += janus::betfair::parse_update_stream_json(
@@ -79,7 +79,8 @@ static bool parse_update_stream(const janus::betfair::price_range& range, const 
 	return true;
 }
 
-static bool save_data(const std::string& output_filename, const janus::dynamic_buffer& dyn_buf)
+static auto save_data(const std::string& output_filename, const janus::dynamic_buffer& dyn_buf)
+	-> bool
 {
 	// Note that we are saving and appending at arbitrary points so this
 	// compression is useless, however since we are implementing this for
@@ -136,7 +137,7 @@ auto main(int argc, char** argv) -> int
 			return 1;
 
 		// If we've used more than 90% of available buffer space, save it.
-		if (dyn_buf.size() > 0.9 * DYN_BUFFER_MAX_SIZE) {
+		if (dyn_buf.size() > 0.9 * DYN_BUFFER_MAX_SIZE) { // NOLINT: Not magical.
 			if (!save_data(output_filename, dyn_buf))
 				return 1;
 			dyn_buf.reset();
