@@ -1,5 +1,5 @@
 ---
-Checks:          'clang-diagnostic-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,readability-*,performance-*,google-*,modernize-*,misc-*,-cppcoreguidelines-pro-bounds-constant-array-index,-readability-braces-around-statements,-google-readability-braces-around-statements,-google-runtime-references,-modernize-use-nodiscard,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-cppcoreguidelines-pro-type-reinterpret-cast,-clang-diagnostic-unused-function,-readability-const-return-type'
+Checks:          'clang-diagnostic-*,bugprone-*,clang-analyzer-*,cppcoreguidelines-*,readability-*,performance-*,google-*,modernize-*,misc-*,-cppcoreguidelines-pro-bounds-constant-array-index,-readability-braces-around-statements,-google-readability-braces-around-statements,-google-runtime-references,-modernize-use-nodiscard,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-cppcoreguidelines-pro-type-reinterpret-cast,-clang-diagnostic-unused-function,-readability-const-return-type,-cppcoreguidelines-pro-type-union-access'
 WarningsAsErrors: '*'
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
