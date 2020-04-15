@@ -94,9 +94,8 @@ public:
 
 		for (uint64_t i = 0; i < n; i++) {
 			double vol = unmatched(index);
-			if (vol == 0) {
+			if (vol == 0)
 				return i;
-			}
 
 			price_index_ptr[i] = index;
 			vol_ptr[i] = vol;
