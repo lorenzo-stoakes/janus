@@ -18,7 +18,9 @@ public:
 		  _max_atb_index{0},
 		  _total_unmatched_atl{0},
 		  _total_unmatched_atb{0},
-		  _unmatched{0}
+		  _total_matched{0},
+		  _unmatched{0},
+		  _matched{0}
 	{
 	}
 
@@ -45,6 +47,12 @@ public:
 	auto unmatched(uint64_t i) const -> double
 	{
 		return _unmatched[i];
+	}
+
+	// Returns the matched volume at the specified price index.
+	auto matched(uint64_t i) const -> double
+	{
+		return _matched[i];
 	}
 
 	// For convenience export the [] operator as unmatched volume at that
@@ -82,6 +90,12 @@ public:
 		return _total_unmatched_atb;
 	}
 
+	// Returns the sum of matched volume for the entire ladder.
+	auto total_matched() const -> double
+	{
+		return _total_matched;
+	}
+
 	// Retrieve the top N ATL (back) unmatched price/volume pairs and place
 	// in the specified output buffers.
 	//               n: Number of price/volume pairs to retrieve.
@@ -94,9 +108,8 @@ public:
 
 		for (uint64_t i = 0; i < n; i++) {
 			double vol = unmatched(index);
-			if (vol == 0) {
+			if (vol == 0)
 				return i;
-			}
 
 			price_index_ptr[i] = index;
 			vol_ptr[i] = vol;
@@ -183,6 +196,21 @@ public:
 		update_limit_indexes_clear(i);
 	}
 
+	// Set the matched volume at the specified price index to the specified
+	// volume.
+	void set_matched_at(uint64_t i, double vol)
+	{
+		_total_matched += vol;
+		_matched[i] = vol;
+	}
+
+	// Clear the matched volume at the specified price index.
+	void clear_matched_at(uint64_t i)
+	{
+		_total_matched -= _matched[i];
+		_matched[i] = 0;
+	}
+
 	// Clear state of ladder.
 	void clear()
 	{
@@ -190,8 +218,10 @@ public:
 		_max_atb_index = 0;
 		_total_unmatched_atl = 0;
 		_total_unmatched_atb = 0;
+		_total_matched = 0;
 
 		_unmatched = {0};
+		_matched = {0};
 	}
 
 private:
@@ -201,9 +231,12 @@ private:
 	uint64_t _max_atb_index;
 	double _total_unmatched_atl;
 	double _total_unmatched_atb;
+	double _total_matched;
 
 	// Negative lay (atb), positive back (atl).
 	std::array<double, NUM_PRICES> _unmatched;
+
+	std::array<double, NUM_PRICES> _matched;
 
 	// Determine if the specified (index, vol) pair proposed to be added to
 	// unmatched inventory is valid, if not throw.
