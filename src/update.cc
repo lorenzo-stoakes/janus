@@ -11,7 +11,7 @@ namespace janus::betfair
 // Obtain a prefix for error messages indicating filename and line for easier
 // debugging. Potentially allocates, but we're ok with that if the exceptional
 // code path is being taken.
-static std::string get_error_prefix(const update_state& state)
+static auto get_error_prefix(const update_state& state) -> std::string
 {
 	return std::string("error: ") + state.filename + ":" + std::to_string(state.line) + ": ";
 }
@@ -177,7 +177,7 @@ static auto parse_atl(const update_state& state, const sajson::value& atl, dynam
 
 	// We assume the data is in the correct format.
 	decimal7 price = atl.get_array_element(0).get_decimal_value();
-	uint32_t price_index = range->pricex100_to_index(price.mult100());
+	uint64_t price_index = range->pricex100_to_index(price.mult100());
 	if (price_index == INVALID_PRICE_INDEX)
 		throw std::runtime_error(get_error_prefix(state) + std::to_string(state.runner_id) +
 					 ": ATL of " + std::to_string(price.to_double()) +
@@ -196,7 +196,7 @@ static auto parse_atb(const update_state& state, const sajson::value& atb, dynam
 
 	// We assume the data is in the correct format.
 	decimal7 price = atb.get_array_element(0).get_decimal_value();
-	uint32_t price_index = range->pricex100_to_index(price.mult100());
+	uint64_t price_index = range->pricex100_to_index(price.mult100());
 	if (price_index == INVALID_PRICE_INDEX)
 		throw std::runtime_error(get_error_prefix(state) + std::to_string(state.runner_id) +
 					 ": ATB of " + std::to_string(price.to_double()) +

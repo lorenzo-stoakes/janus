@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "dynamic_buffer.hh"
 #include "sajson.hh"
 
 namespace janus

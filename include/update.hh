@@ -1,5 +1,8 @@
 #pragma once
 
+#include "dynamic_buffer.hh"
+#include "price_range.hh"
+
 #include <cstdint>
 #include <utility>
 
@@ -50,7 +53,7 @@ struct update
 		double d;
 	} value;
 };
-static_assert(sizeof(update) == 16);
+static_assert(sizeof(update) == 16); // NOLINT: Not magical.
 
 // Generate a new timestamp update object.
 static inline auto make_timestamp_update(uint64_t timestamp) -> const update
