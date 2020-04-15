@@ -317,8 +317,18 @@ TEST(ladder_test, clear)
 		ladder.set_unmatched_at(price_index, vol);
 	}
 
+	double expected_total_matched = 0;
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		double vol = price_index;
+		vol *= 100;
+		expected_total_matched += vol;
+
+		ladder.set_matched_at(price_index, vol);
+	}
+
 	EXPECT_EQ(ladder.total_unmatched_atb(), expected_total_atb);
 	EXPECT_EQ(ladder.total_unmatched_atl(), expected_total_atl);
+	EXPECT_EQ(ladder.total_matched(), expected_total_matched);
 	EXPECT_EQ(ladder.max_atb_index(), janus::betfair::NUM_PRICES / 2 - 1);
 	EXPECT_EQ(ladder.min_atl_index(), janus::betfair::NUM_PRICES / 2);
 
@@ -326,8 +336,14 @@ TEST(ladder_test, clear)
 
 	EXPECT_EQ(ladder.total_unmatched_atb(), 0);
 	EXPECT_EQ(ladder.total_unmatched_atl(), 0);
+	EXPECT_EQ(ladder.total_matched(), 0);
 	EXPECT_EQ(ladder.max_atb_index(), 0);
 	EXPECT_EQ(ladder.min_atl_index(), janus::betfair::NUM_PRICES - 1);
+
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		ASSERT_EQ(ladder[price_index], 0);
+		ASSERT_EQ(ladder.matched(price_index), 0);
+	}
 }
 
 // Test that .best_atl() and .best_atb() correctly retrieves the top N ATL and
@@ -496,5 +512,56 @@ TEST(ladder_test, list_init_ctor)
 
 	EXPECT_DOUBLE_EQ(ladder[range.pricex100_to_index(620)], 597.68);
 	EXPECT_DOUBLE_EQ(ladder[range.pricex100_to_index(640)], 999.78);
+}
+
+// Test that we can add, read and clear matched volume.
+TEST(ladder_test, matched)
+{
+	janus::betfair::ladder ladder;
+
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		double vol = price_index * 100;
+
+		ladder.set_matched_at(price_index, vol);
+	}
+
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		double vol = price_index * 100;
+
+		ASSERT_EQ(ladder.matched(price_index), vol);
+	}
+
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		ladder.clear_matched_at(price_index);
+		ASSERT_EQ(ladder.matched(price_index), 0);
+	}
+}
+
+// Test that .total_matched() correctly tracks totalnmatched volumes.
+TEST(ladder_test, total_matched)
+{
+	janus::betfair::ladder ladder;
+
+	double expected_total_matched = 0;
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		double vol = price_index * 100;
+		;
+		expected_total_matched += vol;
+
+		ladder.set_matched_at(price_index, vol);
+	}
+
+	EXPECT_EQ(ladder.total_matched(), expected_total_matched);
+
+	// Test that clearing at a price level correctly updates total matched volume.
+
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		double vol = price_index * 100;
+		expected_total_matched -= vol;
+
+		ladder.clear_matched_at(price_index);
+		ASSERT_EQ(ladder.total_matched(), expected_total_matched);
+	}
+	ASSERT_EQ(ladder.total_matched(), 0);
 }
 } // namespace
