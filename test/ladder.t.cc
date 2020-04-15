@@ -482,6 +482,8 @@ TEST(ladder_test, best_atl_atb)
 	EXPECT_EQ(vols[0], 761);
 }
 
+// Test that list initialiser constructor works correctly assigning price index,
+// volume pairs.
 TEST(ladder_test, list_init_ctor)
 {
 	janus::betfair::ladder ladder = {
