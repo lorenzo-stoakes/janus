@@ -137,12 +137,14 @@ auto main(int argc, char** argv) -> int
 
 		// If we've used more than 90% of available buffer space, save it.
 		if (dyn_buf.size() > 0.9 * DYN_BUFFER_MAX_SIZE) {
-			save_data(output_filename, dyn_buf);
+			if (!save_data(output_filename, dyn_buf))
+				return 1;
 			dyn_buf.reset();
 		}
 	}
 
-	save_data(output_filename, dyn_buf);
+	if (!save_data(output_filename, dyn_buf))
+		return 1;
 
 	std::cout << std::endl;
 
