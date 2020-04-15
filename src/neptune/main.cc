@@ -64,6 +64,10 @@ static bool parse_update_stream(const janus::betfair::price_range& range, const 
 	if (auto file = std::ifstream(filename)) {
 		std::string line;
 		while (std::getline(file, line)) {
+			// Some lines in 'all' folder contain corrupted data :'( skip these.
+			if (line.size() == 0 || line[0] == '\0')
+				continue;
+
 			num_updates += janus::betfair::parse_update_stream_json(
 				state, reinterpret_cast<char*>(line.data()), line.size(), dyn_buf);
 		}
