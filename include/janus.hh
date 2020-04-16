@@ -13,5 +13,6 @@
 #include "market.hh"
 #include "meta.hh"
 #include "runner.hh"
+#include "universe.hh"
 #include "update.hh"
 #include "virtual.hh"
