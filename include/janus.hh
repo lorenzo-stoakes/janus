@@ -10,6 +10,7 @@
 #include "price_range.hh"
 
 #include "json.hh"
+#include "market.hh"
 #include "meta.hh"
 #include "runner.hh"
 #include "update.hh"

@@ -163,7 +163,7 @@ static inline auto make_market_inplay_update() -> const update
 	};
 }
 
-// Generate a new market traded volume update object.
+// Generate a new market Starting Price (SP) update object.
 static inline auto make_runner_sp_update(double sp) -> const update
 {
 	return update{

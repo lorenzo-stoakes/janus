@@ -41,5 +41,48 @@ TEST(runner_test, basic)
 	uint64_t price_index = range.pricex100_to_index(620);
 	ladder.set_unmatched_at(price_index, 12.345);
 	EXPECT_DOUBLE_EQ(ladder[price_index], 12.345);
+	// Make sure the convenient [] operator returns the same value.
+	EXPECT_DOUBLE_EQ(runner3[price_index], 12.345);
+
+	// Check SP.
+	runner3.set_sp(1.23456);
+	EXPECT_DOUBLE_EQ(runner3.sp(), 1.23456);
+}
+
+// Test that .clear_state() correctly resets MUTABLE state in a runner but
+// leaves the mutable state alone.
+TEST(runner_test, clear_state)
+{
+	// Immutable state.
+	janus::betfair::runner runner(123456);
+	runner.set_sp(4.567);
+	runner.set_removed(17.56);
+
+	// Mutable state.
+	runner.set_traded_vol(456.789);
+	runner.set_ltp(17);
+	runner.ladder().set_unmatched_at(16, 123.45);
+
+	// Immutable.
+	EXPECT_EQ(runner.id(), 123456);
+	EXPECT_DOUBLE_EQ(runner.sp(), 4.567);
+	EXPECT_DOUBLE_EQ(runner.adj_factor(), 17.56);
+
+	// Mutable.
+	EXPECT_DOUBLE_EQ(runner.traded_vol(), 456.789);
+	EXPECT_EQ(runner.ltp(), 17);
+	EXPECT_DOUBLE_EQ(runner[16], 123.45);
+
+	runner.clear_state();
+
+	// Immutable state should remain the same.
+	EXPECT_EQ(runner.id(), 123456);
+	EXPECT_DOUBLE_EQ(runner.sp(), 4.567);
+	EXPECT_DOUBLE_EQ(runner.adj_factor(), 17.56);
+
+	// Mutable.
+	EXPECT_DOUBLE_EQ(runner.traded_vol(), 0);
+	EXPECT_EQ(runner.ltp(), 0);
+	EXPECT_DOUBLE_EQ(runner[16], 0);
 }
 } // namespace
