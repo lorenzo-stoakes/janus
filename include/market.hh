@@ -30,6 +30,7 @@ public:
 		  _state{market_state::OPEN},
 		  _traded_vol{0},
 		  _num_runners{0},
+		  _last_timestamp{0},
 		  _runner_ids{0}
 	{
 	}
@@ -82,6 +83,18 @@ public:
 		return _num_runners;
 	}
 
+	// Get last timestamp market was updated at.
+	auto last_timestamp() -> uint64_t
+	{
+		return _last_timestamp;
+	}
+
+	// Set last timestamp market was updated at.
+	void set_last_timestamp(uint64_t timestamp)
+	{
+		_last_timestamp = timestamp;
+	}
+
 	// Set market state.
 	void set_state(market_state state)
 	{
@@ -131,6 +144,7 @@ private:
 	market_state _state;
 	double _traded_vol;
 	uint64_t _num_runners;
+	uint64_t _last_timestamp;
 	std::array<uint64_t, MAX_RUNNERS> _runner_ids;
 	runners_t _runners;
 

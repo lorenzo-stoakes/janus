@@ -43,6 +43,10 @@ TEST(market_test, basic)
 	EXPECT_TRUE(market2.contains_runner(123));
 	EXPECT_TRUE(market2.contains_runner(456));
 	EXPECT_FALSE(market2.contains_runner(999));
+
+	EXPECT_EQ(market2.last_timestamp(), 0);
+	market2.set_last_timestamp(12345678);
+	EXPECT_EQ(market2.last_timestamp(), 12345678);
 }
 
 // Test that .clear_state() correctly resets MUTABLE state in a marketbut leaves

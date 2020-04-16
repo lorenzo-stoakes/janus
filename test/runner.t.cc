@@ -47,6 +47,10 @@ TEST(runner_test, basic)
 	// Check SP.
 	runner3.set_sp(1.23456);
 	EXPECT_DOUBLE_EQ(runner3.sp(), 1.23456);
+
+	EXPECT_EQ(runner3.last_timestamp(), 0);
+	runner3.set_last_timestamp(12345678);
+	EXPECT_EQ(runner3.last_timestamp(), 12345678);
 }
 
 // Test that .clear_state() correctly resets MUTABLE state in a runner but
