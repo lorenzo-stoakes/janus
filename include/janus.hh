@@ -10,5 +10,6 @@
 
 #include "json.hh"
 #include "meta.hh"
+#include "runner.hh"
 #include "update.hh"
 #include "virtual.hh"

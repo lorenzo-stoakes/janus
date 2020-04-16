@@ -44,22 +44,22 @@ public:
 
 	// Returns the unmatched volume at the specified price index, positive
 	// indicates back (ATL), negative lay (ATB).
-	auto unmatched(uint64_t i) const -> double
+	auto unmatched(uint64_t price_index) const -> double
 	{
-		return _unmatched[i];
+		return _unmatched[price_index];
 	}
 
 	// Returns the matched volume at the specified price index.
-	auto matched(uint64_t i) const -> double
+	auto matched(uint64_t price_index) const -> double
 	{
-		return _matched[i];
+		return _matched[price_index];
 	}
 
 	// For convenience export the [] operator as unmatched volume at that
 	// price index.
-	auto operator[](uint64_t i) const -> double
+	auto operator[](uint64_t price_index) const -> double
 	{
-		return unmatched(i);
+		return unmatched(price_index);
 	}
 
 	// Returns the price index of the minimum back (ATL) price, i.e. the
@@ -179,36 +179,36 @@ public:
 	// is on the back (ATL) side, otherwise if negative then volume is on
 	// the lay (ATB) side.
 	// This additionally updates the top ATL/ATB indexes.
-	void set_unmatched_at(uint64_t i, double vol)
+	void set_unmatched_at(uint64_t price_index, double vol)
 	{
-		check_valid_unmatched(i, vol);
-		update_total_unmatched(i, vol);
-		_unmatched[i] = vol;
-		update_limit_indexes(i, vol);
+		check_valid_unmatched(price_index, vol);
+		update_total_unmatched(price_index, vol);
+		_unmatched[price_index] = vol;
+		update_limit_indexes(price_index, vol);
 	}
 
 	// Clear the unmatched volume at the specified price index.
 	// This additionally updates the top ATL/ATB indexes.
-	void clear_unmatched_at(uint64_t i)
+	void clear_unmatched_at(uint64_t price_index)
 	{
-		update_total_unmatched(i, 0);
-		_unmatched[i] = 0;
-		update_limit_indexes_clear(i);
+		update_total_unmatched(price_index, 0);
+		_unmatched[price_index] = 0;
+		update_limit_indexes_clear(price_index);
 	}
 
 	// Set the matched volume at the specified price index to the specified
 	// volume.
-	void set_matched_at(uint64_t i, double vol)
+	void set_matched_at(uint64_t price_index, double vol)
 	{
 		_total_matched += vol;
-		_matched[i] = vol;
+		_matched[price_index] = vol;
 	}
 
 	// Clear the matched volume at the specified price index.
-	void clear_matched_at(uint64_t i)
+	void clear_matched_at(uint64_t price_index)
 	{
-		_total_matched -= _matched[i];
-		_matched[i] = 0;
+		_total_matched -= _matched[price_index];
+		_matched[price_index] = 0;
 	}
 
 	// Clear state of ladder.
@@ -240,7 +240,7 @@ private:
 
 	// Determine if the specified (index, vol) pair proposed to be added to
 	// unmatched inventory is valid, if not throw.
-	void check_valid_unmatched(uint64_t i, double vol)
+	void check_valid_unmatched(uint64_t price_index, double vol)
 	{
 		// We check whether the proposed unmatched pair would cause a
 		// discontinuity in the unmatched price range, e.g. max ATB 2,
@@ -254,19 +254,19 @@ private:
 		// is because a clear is not capable of creating a
 		// discontinuity.
 
-		if (vol < 0 && i > _min_atl_index)
-			throw invalid_unmatched_update(i, vol, _min_atl_index);
-		if (vol > 0 && i < _max_atb_index)
-			throw invalid_unmatched_update(i, vol, _max_atb_index);
+		if (vol < 0 && price_index > _min_atl_index)
+			throw invalid_unmatched_update(price_index, vol, _min_atl_index);
+		if (vol > 0 && price_index < _max_atb_index)
+			throw invalid_unmatched_update(price_index, vol, _max_atb_index);
 	}
 
 	// Starting from the specified price index, find the first price where
 	// we have back (ATL) available and return its price index.
 	auto get_next_atl_index(uint64_t start_index) const -> uint64_t
 	{
-		for (uint64_t i = start_index; i < NUM_PRICES; i++) {
-			if (_unmatched[i] > 0)
-				return i;
+		for (uint64_t price_index = start_index; price_index < NUM_PRICES; price_index++) {
+			if (_unmatched[price_index] > 0)
+				return price_index;
 		}
 
 		return NOT_FOUND_INDEX;
@@ -276,9 +276,10 @@ private:
 	// we have lay (ATB) available and return its price index.
 	auto get_next_atb_index(uint64_t start_index) const -> uint64_t
 	{
-		for (auto i = static_cast<int64_t>(start_index); i >= 0; i--) {
-			if (_unmatched[i] < 0)
-				return i;
+		auto price_index = static_cast<int64_t>(start_index);
+		for (; price_index >= 0; price_index--) {
+			if (_unmatched[price_index] < 0)
+				return price_index;
 		}
 
 		return NOT_FOUND_INDEX;
@@ -316,18 +317,18 @@ private:
 
 	// Update min/max ATL/ATB indexes when we are _clearing_ unmatched
 	// volume at a specific price index.
-	void update_limit_indexes_clear(uint64_t i)
+	void update_limit_indexes_clear(uint64_t price_index)
 	{
 		// We only need to update if we are clearing precisely the min
 		// ATL/max ATB indexes as otherwise it has no bearing on these.
-		if (i == _min_atl_index)
-			update_min_atl_index(i);
-		else if (i == _max_atb_index)
-			update_max_atb_index(i);
+		if (price_index == _min_atl_index)
+			update_min_atl_index(price_index);
+		else if (price_index == _max_atb_index)
+			update_max_atb_index(price_index);
 	}
 
 	// Update min/max ATL/ATB indexes.
-	void update_limit_indexes(uint64_t i, double vol)
+	void update_limit_indexes(uint64_t price_index, double vol)
 	{
 		// We assume we've already checked that the addition to
 		// unmatched is valid, i.e. we are not trying to put an
@@ -338,33 +339,33 @@ private:
 		// epsilon as when clearing volume we will be strictly setting
 		// to zero.
 		if (vol == 0) {
-			update_limit_indexes_clear(i);
-		} else if (vol < 0 && i > _max_atb_index) {
-			_max_atb_index = i;
+			update_limit_indexes_clear(price_index);
+		} else if (vol < 0 && price_index > _max_atb_index) {
+			_max_atb_index = price_index;
 
-			if (i == _min_atl_index) {
+			if (price_index == _min_atl_index) {
 				// We are REPLACING the min ATL index with our
 				// max ATB one. We therefore need to determine
 				// the new min ATL index.
-				update_min_atl_index(i);
+				update_min_atl_index(price_index);
 			}
-		} else if (vol > 0 && i < _min_atl_index) {
-			_min_atl_index = i;
+		} else if (vol > 0 && price_index < _min_atl_index) {
+			_min_atl_index = price_index;
 
-			if (i == _max_atb_index) {
+			if (price_index == _max_atb_index) {
 				// We are REPLACING the max ATB index with our
 				// min ATL one. We therefore need to determine
 				// the new min ATL index.
-				update_max_atb_index(i);
+				update_max_atb_index(price_index);
 			}
 		}
 	}
 
 	// Update our accruing total unmatched statistics.
-	void update_total_unmatched(uint64_t i, double vol)
+	void update_total_unmatched(uint64_t price_index, double vol)
 	{
 		// Remove previous volume.
-		double prev = _unmatched[i];
+		double prev = _unmatched[price_index];
 		if (prev < 0)
 			_total_unmatched_atb += prev; // Negative.
 		else
