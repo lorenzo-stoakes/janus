@@ -23,7 +23,8 @@ public:
 		  _state{runner_state::ACTIVE},
 		  _traded_vol{0},
 		  _adj_factor{0},
-		  _ltp_price_index{0}
+		  _ltp_price_index{0},
+		  _sp{0}
 	{
 	}
 
@@ -93,6 +94,19 @@ public:
 		_ltp_price_index = price_index;
 	}
 
+	// Get runner Starting Price (SP), or 0 if either removed or not
+	// received an SP yet.
+	auto sp() const -> double
+	{
+		return _sp;
+	}
+
+	// Set runner SP.
+	void set_sp(double sp)
+	{
+		_sp = sp;
+	}
+
 	// Get runner (mutable) underlying ladder.
 	auto ladder() -> ladder&
 	{
@@ -105,6 +119,7 @@ private:
 	double _traded_vol;
 	double _adj_factor;
 	uint64_t _ltp_price_index;
+	double _sp;
 
 	janus::betfair::ladder _ladder;
 };

@@ -41,5 +41,9 @@ TEST(runner_test, basic)
 	uint64_t price_index = range.pricex100_to_index(620);
 	ladder.set_unmatched_at(price_index, 12.345);
 	EXPECT_DOUBLE_EQ(ladder[price_index], 12.345);
+
+	// Check SP.
+	runner3.set_sp(1.23456);
+	EXPECT_DOUBLE_EQ(runner3.sp(), 1.23456);
 }
 } // namespace
