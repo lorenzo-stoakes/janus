@@ -113,6 +113,13 @@ public:
 		return _ladder;
 	}
 
+	// For convenience, the [] operator accesses the unmatched volume in the
+	// underlying ladder at the specified price index.
+	auto operator[](uint64_t price_index) -> double
+	{
+		return _ladder[price_index];
+	}
+
 private:
 	uint64_t _id;
 	runner_state _state;
