@@ -24,7 +24,8 @@ public:
 		  _traded_vol{0},
 		  _adj_factor{0},
 		  _ltp_price_index{0},
-		  _sp{0}
+		  _sp{0},
+		  _last_timestamp{0}
 	{
 	}
 
@@ -128,6 +129,18 @@ public:
 		_ladder.clear();
 	}
 
+	// Get last timestamp market was updated at.
+	auto last_timestamp() -> uint64_t
+	{
+		return _last_timestamp;
+	}
+
+	// Set last timestamp market was updated at.
+	void set_last_timestamp(uint64_t timestamp)
+	{
+		_last_timestamp = timestamp;
+	}
+
 private:
 	uint64_t _id;
 	runner_state _state;
@@ -135,6 +148,7 @@ private:
 	double _adj_factor;
 	uint64_t _ltp_price_index;
 	double _sp;
+	uint64_t _last_timestamp;
 
 	janus::betfair::ladder _ladder;
 };

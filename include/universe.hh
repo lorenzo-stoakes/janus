@@ -18,7 +18,7 @@ class universe
 public:
 	using markets_t = dynamic_array<market, Cap>;
 
-	universe() : _num_markets{0}, _market_ids{0} {}
+	universe() : _num_markets{0}, _last_timestamp{0}, _market_ids{0} {}
 
 	// Get MUTABLE reference to markets in universe.
 	auto markets() -> markets_t&
@@ -52,6 +52,18 @@ public:
 		return _num_markets;
 	}
 
+	// Get last timestamp universe was updated at.
+	auto last_timestamp() -> uint64_t
+	{
+		return _last_timestamp;
+	}
+
+	// Set last timestamp universe was updated at.
+	void set_last_timestamp(uint64_t timestamp)
+	{
+		_last_timestamp = timestamp;
+	}
+
 	// Create a new market with the specific ID.
 	void add_market(uint64_t id)
 	{
@@ -65,6 +77,7 @@ public:
 
 private:
 	uint64_t _num_markets;
+	uint64_t _last_timestamp;
 	std::array<uint64_t, Cap> _market_ids;
 	markets_t _markets;
 

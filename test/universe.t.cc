@@ -24,5 +24,9 @@ TEST(universe_test, basic)
 	EXPECT_EQ(universe.find_market(456), nullptr);
 	EXPECT_TRUE(universe.contains_market(123));
 	EXPECT_FALSE(universe.contains_market(456));
+
+	EXPECT_EQ(universe.last_timestamp(), 0);
+	universe.set_last_timestamp(12345678);
+	EXPECT_EQ(universe.last_timestamp(), 12345678);
 }
 } // namespace
