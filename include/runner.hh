@@ -120,6 +120,14 @@ public:
 		return _ladder[price_index];
 	}
 
+	// Clear mutable runner state, retaining immutable state.
+	void clear_state()
+	{
+		_traded_vol = 0;
+		_ltp_price_index = 0;
+		_ladder.clear();
+	}
+
 private:
 	uint64_t _id;
 	runner_state _state;
