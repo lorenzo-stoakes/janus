@@ -28,6 +28,7 @@ public:
 	explicit market(uint64_t id)
 		: _id{id},
 		  _state{market_state::OPEN},
+		  _inplay{false},
 		  _traded_vol{0},
 		  _num_runners{0},
 		  _last_timestamp{0},
@@ -45,6 +46,12 @@ public:
 	auto state() const -> market_state
 	{
 		return _state;
+	}
+
+	// Is the market inplay?
+	auto inplay() const -> bool
+	{
+		return _inplay;
 	}
 
 	// Get the current market traded volume.
@@ -105,6 +112,15 @@ public:
 		_state = state;
 	}
 
+	// Set inplay state.
+	void set_inplay(bool inplay)
+	{
+		if (!inplay && _inplay)
+			throw std::runtime_error("Trying to make inplay market into pre-off");
+
+		_inplay = inplay;
+	}
+
 	// Set the market traded volume.
 	void set_traded_vol(double vol)
 	{
@@ -142,6 +158,7 @@ public:
 private:
 	uint64_t _id;
 	market_state _state;
+	bool _inplay;
 	double _traded_vol;
 	uint64_t _num_runners;
 	uint64_t _last_timestamp;
