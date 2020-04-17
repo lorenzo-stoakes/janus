@@ -630,8 +630,10 @@ TEST(update_test, is_runner_update)
 	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_SUSPEND));
 	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_INPLAY));
 	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_TRADED_VOL));
+	// A runner ID update is not a runner update but rather a runner
+	// declaration.
+	EXPECT_FALSE(janus::is_runner_update(janus::update_type::RUNNER_ID));
 
-	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_ID));
 	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_REMOVAL));
 	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_TRADED_VOL));
 	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_LTP));

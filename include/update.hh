@@ -88,7 +88,7 @@ static inline auto update_type_str(update_type type) -> const char*
 static inline auto is_runner_update(update_type type) -> bool
 {
 	switch (type) {
-	case update_type::RUNNER_ID:
+	// Note that runner ID is NOT a runner update, rather runne decl.
 	case update_type::RUNNER_REMOVAL:
 	case update_type::RUNNER_TRADED_VOL:
 	case update_type::RUNNER_LTP:
