@@ -618,4 +618,27 @@ TEST(update_test, send_runner_update)
 	EXPECT_EQ(pairs[1].first, 22109331);
 	EXPECT_DOUBLE_EQ(get_update_runner_ltp(pairs[1].second), range.pricex100_to_index(2300));
 }
+
+// Test that is_runner_update() correctly identifies runner-specific update types.
+TEST(update_test, is_runner_update)
+{
+	EXPECT_FALSE(janus::is_runner_update(janus::update_type::TIMESTAMP));
+	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_ID));
+	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_CLEAR));
+	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_OPEN));
+	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_CLOSE));
+	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_SUSPEND));
+	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_INPLAY));
+	EXPECT_FALSE(janus::is_runner_update(janus::update_type::MARKET_TRADED_VOL));
+
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_ID));
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_REMOVAL));
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_TRADED_VOL));
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_LTP));
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_MATCHED));
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_UNMATCHED_ATL));
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_UNMATCHED_ATB));
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_SP));
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_WON));
+}
 } // namespace

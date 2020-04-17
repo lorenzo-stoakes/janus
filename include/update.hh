@@ -84,6 +84,25 @@ static inline auto update_type_str(update_type type) -> const char*
 	return "UNKNOWN UPDATE TYPE??";
 }
 
+// Is the specified update type a runner-specific update?
+static inline auto is_runner_update(update_type type) -> bool
+{
+	switch (type) {
+	case update_type::RUNNER_ID:
+	case update_type::RUNNER_REMOVAL:
+	case update_type::RUNNER_TRADED_VOL:
+	case update_type::RUNNER_LTP:
+	case update_type::RUNNER_MATCHED:
+	case update_type::RUNNER_UNMATCHED_ATL:
+	case update_type::RUNNER_UNMATCHED_ATB:
+	case update_type::RUNNER_SP:
+	case update_type::RUNNER_WON:
+		return true;
+	default:
+		return false;
+	}
+}
+
 // Raw update structure, we keep it the same size for all updates to make it
 // easy to process a number of them in an array.
 struct update
