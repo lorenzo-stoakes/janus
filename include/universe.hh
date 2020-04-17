@@ -58,6 +58,12 @@ public:
 		return _last_timestamp;
 	}
 
+	// Get number of updates this universe has received.
+	auto num_updates() -> uint64_t
+	{
+		return _num_updates;
+	}
+
 	// Set last timestamp universe was updated at.
 	void set_last_timestamp(uint64_t timestamp)
 	{
@@ -78,6 +84,7 @@ public:
 private:
 	uint64_t _num_markets;
 	uint64_t _last_timestamp;
+	uint64_t _num_updates;
 	std::array<uint64_t, Cap> _market_ids;
 	markets_t _markets;
 
