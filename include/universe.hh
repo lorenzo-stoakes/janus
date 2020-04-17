@@ -65,14 +65,14 @@ public:
 	}
 
 	// Create a new market with the specific ID.
-	void add_market(uint64_t id)
+	auto add_market(uint64_t id) -> market&
 	{
 		if (_num_markets == Cap)
 			throw std::runtime_error("Adding market would exceed capacity of " +
 						 std::to_string(Cap));
 
 		_market_ids[_num_markets++] = id;
-		_markets.emplace_back(id);
+		return _markets.emplace_back(id);
 	}
 
 private:

@@ -14,7 +14,8 @@ TEST(universe_test, basic)
 	EXPECT_EQ(universe.num_markets(), 0);
 
 	// Can add and access market.
-	universe.add_market(123);
+	janus::betfair::market& market = universe.add_market(123);
+	EXPECT_EQ(market.id(), 123);
 	EXPECT_EQ(universe.num_markets(), 1);
 	EXPECT_EQ(universe[123].id(), 123);
 	EXPECT_EQ(universe.markets()[0].id(), 123);
