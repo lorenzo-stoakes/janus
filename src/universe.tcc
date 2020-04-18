@@ -1,3 +1,5 @@
+#pragma once
+
 #include "janus.hh"
 
 #include <stdexcept>
