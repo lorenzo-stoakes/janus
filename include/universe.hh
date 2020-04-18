@@ -164,8 +164,6 @@ private:
 	// Apply runner LTP.
 	void apply_runner_ltp(uint64_t price_index);
 
-	// ivg
-
 	// Apply runner SP.
 	void apply_runner_sp(double sp);
 
