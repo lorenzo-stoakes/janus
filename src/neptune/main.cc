@@ -53,7 +53,8 @@ static auto parse_meta(const char* filename, janus::dynamic_buffer& dyn_buf) -> 
 }
 
 static auto parse_update_stream(const janus::betfair::price_range& range, const char* filename,
-				janus::dynamic_buffer& dyn_buf, uint64_t& num_updates) -> bool
+				janus::dynamic_buffer& dyn_buf, uint64_t& num_updates,
+				janus::betfair::universe<50>& universe) -> bool
 {
 	janus::betfair::update_state state = {
 		.range = &range,
@@ -70,6 +71,21 @@ static auto parse_update_stream(const janus::betfair::price_range& range, const 
 
 			num_updates += janus::betfair::parse_update_stream_json(
 				state, reinterpret_cast<char*>(line.data()), line.size(), dyn_buf);
+
+			try {
+				while (dyn_buf.read_offset() != dyn_buf.size()) {
+					const auto update = dyn_buf.read<janus::update>();
+					universe.apply_update(update);
+				}
+			} catch (std::exception& e) {
+				// We would have already updated the line number.
+				uint64_t line_num = state.line - 1;
+
+				std::cerr << "\n"
+					  << filename << ":" << line_num << ": " << e.what()
+					  << std::endl;
+				return false;
+			}
 		}
 	} else {
 		std::cerr << "Couldn't open " << filename << std::endl;
@@ -125,6 +141,9 @@ auto main(int argc, char** argv) -> int
 
 	uint64_t num_updates = 0;
 
+	auto ptr = std::make_unique<janus::betfair::universe<50>>();
+	auto& universe = *ptr;
+
 	for (int i = 1 + arg_offset; i < argc; i++) {
 		const char* filename = argv[i];
 
@@ -133,7 +152,8 @@ auto main(int argc, char** argv) -> int
 			  << filename << std::flush;
 
 		if ((meta && !parse_meta(filename, dyn_buf)) ||
-		    (!meta && !parse_update_stream(range, filename, dyn_buf, num_updates)))
+		    (!meta &&
+		     !parse_update_stream(range, filename, dyn_buf, num_updates, universe)))
 			return 1;
 
 		// If we've used more than 90% of available buffer space, save it.
