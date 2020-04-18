@@ -2,6 +2,8 @@
 
 #include "dynamic_array.hh"
 #include "market.hh"
+#include "runner.hh"
+#include "update.hh"
 
 #include <array>
 #include <cstdint>
@@ -18,7 +20,15 @@ class universe
 public:
 	using markets_t = dynamic_array<market, Cap>;
 
-	universe() : _num_markets{0}, _last_timestamp{0}, _market_ids{0} {}
+	universe()
+		: _num_markets{0},
+		  _last_timestamp{0},
+		  _num_updates{0},
+		  _last_market{nullptr},
+		  _last_runner{nullptr},
+		  _market_ids{0}
+	{
+	}
 
 	// Get MUTABLE reference to markets in universe.
 	auto markets() -> markets_t&
@@ -64,6 +74,20 @@ public:
 		return _num_updates;
 	}
 
+	// Get the last market to have an update applied to it, or nullptr if no
+	// market updated yet.
+	auto last_market() -> market*
+	{
+		return _last_market;
+	}
+
+	// Get the last runner to have an update applied to it, or nullptr if no
+	// runner updated yet.
+	auto last_runner() -> runner*
+	{
+		return _last_runner;
+	}
+
 	// Set last timestamp universe was updated at.
 	void set_last_timestamp(uint64_t timestamp)
 	{
@@ -85,6 +109,8 @@ private:
 	uint64_t _num_markets;
 	uint64_t _last_timestamp;
 	uint64_t _num_updates;
+	market* _last_market;
+	runner* _last_runner;
 	std::array<uint64_t, Cap> _market_ids;
 	markets_t _markets;
 
