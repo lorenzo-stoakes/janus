@@ -139,7 +139,7 @@ private:
 	// Apply runner ID update.
 	void apply_runner_id(uint64_t id);
 
-	// Apply timestamp update.
+	// Apply timestamp update (to universe specifically).
 	void apply_timestamp(uint64_t timestamp);
 
 	// Apply clear of market, clearing mutable values in market, runners and
@@ -178,6 +178,14 @@ private:
 	// Apply runner unmatched data at specified price index, positive volume
 	// indicates ATL, negative ATB.
 	void apply_runner_unmatched(uint64_t price_index, double vol);
+
+	// Set market timestamp to universe timestamp - invoked when
+	// market/runner update occurs.
+	void set_market_timestamp();
+
+	// Set runner timestamp to universe timestamp - invoked when runner
+	// update occurs.
+	void set_runner_timestamp();
 };
 } // namespace janus::betfair
 
