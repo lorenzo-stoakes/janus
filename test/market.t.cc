@@ -25,8 +25,10 @@ TEST(market_test, basic)
 	market1.set_state(janus::betfair::market_state::CLOSED);
 	EXPECT_EQ(market1.state(), janus::betfair::market_state::CLOSED);
 
-	// Once marked closed we cannot change state again.
+	// Once marked closed we cannot change to open again.
 	EXPECT_THROW(market1.set_state(janus::betfair::market_state::OPEN), std::runtime_error);
+	// We CAN move from closed to suspended though.
+	EXPECT_NO_THROW(market1.set_state(janus::betfair::market_state::SUSPENDED));
 
 	// Can we add, find and retrieve a runner?
 	janus::betfair::market market2(123456);
