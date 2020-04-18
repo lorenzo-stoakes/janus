@@ -54,6 +54,15 @@ TEST(ladder_test, unmatched)
 			     janus::betfair::invalid_unmatched_update);
 	}
 
+	// But we can set a trivial volume (nothing will happen).
+	ladder.set_unmatched_at(0, -100);
+	ASSERT_NO_THROW(ladder.set_unmatched_at(0, 0.01));
+	EXPECT_EQ(ladder[0], -100);
+
+	ladder.set_unmatched_at(janus::betfair::NUM_PRICES - 1, 100);
+	ASSERT_NO_THROW(ladder.set_unmatched_at(janus::betfair::NUM_PRICES - 1, -0.01));
+	EXPECT_EQ(ladder[janus::betfair::NUM_PRICES - 1], 100);
+
 	// But we should be able to incrementally increase and decrease the
 	// middle of the ladder by replacing the max ATB/min ATL.
 	for (uint64_t price_index = janus::betfair::NUM_PRICES / 2 - 1; price_index > 0;
