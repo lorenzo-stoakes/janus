@@ -32,7 +32,7 @@ namespace betfair
 class invalid_unmatched_update : public std::exception
 {
 public:
-	invalid_unmatched_update(uint64_t index, double vol, uint64_t limit_index)
+	invalid_unmatched_update(uint64_t index, double vol, uint64_t limit_index, double limit_vol)
 		: _what{"Invalid unmatched update, "}
 	{
 		betfair::price_range range;
@@ -44,12 +44,14 @@ public:
 			_what += "ATB update at price " + std::to_string(price);
 			_what += " of volume " + std::to_string(vol);
 			_what += " is greater than minimum ATL of " + std::to_string(min_atl);
+			_what += " of volume " + std::to_string(limit_vol);
 		} else if (vol > 0) { // ATL
 			double max_atb = betfair::price_range::index_to_price(limit_index);
 
 			_what += "ATL update at price " + std::to_string(price);
 			_what += " of volume " + std::to_string(vol);
 			_what += " is less than maximum ATB of " + std::to_string(max_atb);
+			_what += " of volume " + std::to_string(limit_vol);
 		} else { // Clear?? Shouldn't occur.
 			_what += "Unexpected clear at " + std::to_string(price);
 		}
