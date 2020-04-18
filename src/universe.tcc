@@ -122,7 +122,8 @@ void universe<Cap>::apply_update(const update& update)
 	// Handle market ID.
 
 	// If we haven't set any market ID yet we can't do anything else.
-	if (_last_market == nullptr && type != update_type::MARKET_ID)
+	if (_last_market == nullptr && type != update_type::MARKET_ID &&
+	    type != update_type::TIMESTAMP)
 		throw std::runtime_error(std::string("Received ") + update_type_str(type) +
 					 " update but no market ID received yet?!");
 
@@ -149,16 +150,16 @@ void universe<Cap>::apply_update(const update& update)
 
 	// Handle timestamp.
 
-	// If we haven't seen a timestamp yet we can't apply any non-market ID/runner ID updates.
-	if (_last_timestamp == 0 && type != update_type::TIMESTAMP)
-		throw std::runtime_error(std::string("Received ") + update_type_str(type) +
-					 " update but no timestamp received yet?!");
-
 	if (type == update_type::TIMESTAMP) {
 		apply_timestamp(get_update_timestamp(update));
 		_num_updates++;
 		return;
 	}
+
+	// If we haven't seen a timestamp yet we can't apply any non-market ID/runner ID updates.
+	if (_last_timestamp == 0)
+		throw std::runtime_error(std::string("Received ") + update_type_str(type) +
+					 " update but no timestamp received yet?!");
 
 	// Handle all other updates.
 
