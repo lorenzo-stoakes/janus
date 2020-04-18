@@ -555,4 +555,26 @@ TEST(ladder_test, total_matched)
 	}
 	ASSERT_EQ(ladder.total_matched(), 0);
 }
+
+// Test that clearing an unmatched ATB value at price 1000 when there are no
+// backs (ATLs) wil actually reset the maximum ATB.
+TEST(ladder_test, clear_1000_atb_resets_no_back)
+{
+	// This is a regression test for a bug where the min ATL was 1000 by
+	// default and this was reset in preference to the max ATB.
+
+	janus::betfair::ladder ladder;
+	EXPECT_EQ(ladder.min_atl_index(), janus::betfair::NUM_PRICES - 1);
+	EXPECT_EQ(ladder.max_atb_index(), 0);
+	// Set an ATB at 1000.
+	ladder.set_unmatched_at(janus::betfair::NUM_PRICES - 1, -100);
+	// We should see this reflected in max ATB.
+	EXPECT_EQ(ladder.max_atb_index(), janus::betfair::NUM_PRICES - 1);
+	// Min ATL remains at its default value.
+	EXPECT_EQ(ladder.min_atl_index(), janus::betfair::NUM_PRICES - 1);
+	// Now clear the ATB value.
+	ladder.clear_unmatched_at(janus::betfair::NUM_PRICES - 1);
+	// We should see max ATB cleared too.
+	EXPECT_EQ(ladder.max_atb_index(), 0);
+}
 } // namespace
