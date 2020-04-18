@@ -57,19 +57,19 @@ public:
 	}
 
 	// Get the number of markets contained in the universe.
-	auto num_markets() -> uint64_t
+	auto num_markets() const -> uint64_t
 	{
 		return _num_markets;
 	}
 
 	// Get last timestamp universe was updated at.
-	auto last_timestamp() -> uint64_t
+	auto last_timestamp() const -> uint64_t
 	{
 		return _last_timestamp;
 	}
 
 	// Get number of updates this universe has received.
-	auto num_updates() -> uint64_t
+	auto num_updates() const -> uint64_t
 	{
 		return _num_updates;
 	}
