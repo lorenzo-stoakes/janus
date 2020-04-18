@@ -349,6 +349,7 @@ static auto parse_mc(update_state& state, const sajson::value& mc, dynamic_buffe
 		dyn_buf.add(make_market_id_update(market_id));
 		num_updates++;
 		state.market_id = market_id;
+		state.runner_id = 0;
 	}
 
 	// "img": true indicates this is a snapshot update not a delta, so we
@@ -357,6 +358,7 @@ static auto parse_mc(update_state& state, const sajson::value& mc, dynamic_buffe
 	if (img.get_type() == sajson::TYPE_TRUE) {
 		dyn_buf.add(make_market_clear_update());
 		num_updates++;
+		state.runner_id = 0;
 	}
 
 	// Now send a market traded volume update.

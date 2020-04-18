@@ -248,11 +248,15 @@ TEST(update_test, send_market_clear_update)
 
 	dyn_buf.reset();
 	char json2[] =
-		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"rc":[{"atb":[[1.01,2495.22]],"id":12635885}],"img":true,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"img":true,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
 	uint64_t size2 = sizeof(json2) - 1;
 
+	// Set to something arbitrary so we can ensure runner ID is cleared.
+	state.runner_id = 123;
 	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
 	EXPECT_EQ(dyn_buf.size(), sizeof(janus::update) * num_updates);
+	// Sending a market clear should also clear the runner ID.
+	EXPECT_EQ(state.runner_id, 0);
 
 	// We expect to see the market clear message FIRST or only after a market ID message.
 
@@ -268,6 +272,17 @@ TEST(update_test, send_market_clear_update)
 		}
 	}
 	EXPECT_TRUE(found);
+
+	char json3[] =
+		R"({"op":"mcm","id":1,"clk":"123","pt":1583884814303,"mc":[{"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size3 = sizeof(json3) - 1;
+
+	dyn_buf.reset();
+	state.market_id = 0;
+	state.runner_id = 123;
+	janus::betfair::parse_update_stream_json(state, json3, size3, dyn_buf);
+	EXPECT_EQ(state.market_id, 170020941);
+	EXPECT_EQ(state.runner_id, 0);
 }
 
 // Test that we correctly send a market traded volume update when a new traded

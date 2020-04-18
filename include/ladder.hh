@@ -181,7 +181,11 @@ public:
 	// This additionally updates the top ATL/ATB indexes.
 	void set_unmatched_at(uint64_t price_index, double vol)
 	{
-		check_valid_unmatched(price_index, vol);
+		// This only returns false in cases where the error is
+		// acceptable but we should not apply the unmatched value.
+		if (!check_valid_unmatched(price_index, vol))
+			return;
+
 		update_total_unmatched(price_index, vol);
 		_unmatched[price_index] = vol;
 		update_limit_indexes(price_index, vol);
@@ -226,6 +230,7 @@ public:
 
 private:
 	static constexpr uint64_t NOT_FOUND_INDEX = static_cast<uint64_t>(-1);
+	static constexpr double EPSILON_VOLUME = 0.02;
 
 	uint64_t _min_atl_index;
 	uint64_t _max_atb_index;
@@ -239,8 +244,9 @@ private:
 	std::array<double, NUM_PRICES> _matched;
 
 	// Determine if the specified (index, vol) pair proposed to be added to
-	// unmatched inventory is valid, if not throw.
-	void check_valid_unmatched(uint64_t price_index, double vol)
+	// unmatched inventory is valid, if not either throw if not trivial
+	// volume.
+	auto check_valid_unmatched(uint64_t price_index, double vol) -> bool
 	{
 		// We check whether the proposed unmatched pair would cause a
 		// discontinuity in the unmatched price range, e.g. max ATB 2,
@@ -254,12 +260,23 @@ private:
 		// is because a clear is not capable of creating a
 		// discontinuity.
 
-		if (vol < 0 && price_index > _min_atl_index)
+		if (vol < 0 && price_index > _min_atl_index) {
+			if (-vol <= EPSILON_VOLUME)
+				return false;
+
 			throw invalid_unmatched_update(price_index, vol, _min_atl_index,
 						       _unmatched[_min_atl_index]);
-		if (vol > 0 && price_index < _max_atb_index)
+		}
+
+		if (vol > 0 && price_index < _max_atb_index) {
+			if (vol <= EPSILON_VOLUME)
+				return false;
+
 			throw invalid_unmatched_update(price_index, vol, _max_atb_index,
 						       _unmatched[_max_atb_index]);
+		}
+
+		return true;
 	}
 
 	// Starting from the specified price index, find the first price where

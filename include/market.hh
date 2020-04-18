@@ -105,9 +105,8 @@ public:
 	// Set market state.
 	void set_state(market_state state)
 	{
-		if (_state == market_state::CLOSED && state != market_state::CLOSED)
-			throw std::runtime_error("Cannot move from closed state to " +
-						 std::to_string(static_cast<uint64_t>(state)));
+		if (_state == market_state::CLOSED && state == market_state::OPEN)
+			throw std::runtime_error("Cannot move from closed state to open");
 
 		_state = state;
 	}
