@@ -35,7 +35,7 @@ TEST(universe_test, basic)
 // Test that we can apply updates to a universe correctly.
 TEST(universe_test, apply_update)
 {
-	auto ptr = std::make_unique<janus::betfair::universe<50>>();
+	auto ptr = std::make_unique<janus::betfair::universe<2>>();
 	auto& universe = *ptr;
 
 	// We haven't sent a market ID yet so the universe doesn't know what to
