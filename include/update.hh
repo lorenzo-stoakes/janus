@@ -41,6 +41,68 @@ enum class update_type : uint32_t
 	RUNNER_WON,
 };
 
+// Get name of update type.
+static inline auto update_type_str(update_type type) -> const char*
+{
+	switch (type) {
+	case update_type::TIMESTAMP:
+		return "timestamp";
+	case update_type::MARKET_ID:
+		return "market ID";
+	case update_type::RUNNER_ID:
+		return "runner ID";
+	case update_type::MARKET_CLEAR:
+		return "market clear";
+	case update_type::MARKET_OPEN:
+		return "market open";
+	case update_type::MARKET_CLOSE:
+		return "market close";
+	case update_type::MARKET_SUSPEND:
+		return "market suspend";
+	case update_type::MARKET_INPLAY:
+		return "market inplay";
+	case update_type::MARKET_TRADED_VOL:
+		return "market traded volume";
+	case update_type::RUNNER_REMOVAL:
+		return "runner removal";
+	case update_type::RUNNER_TRADED_VOL:
+		return "runner traded volume";
+	case update_type::RUNNER_LTP:
+		return "runner LTP";
+	case update_type::RUNNER_MATCHED:
+		return "runner matched";
+	case update_type::RUNNER_UNMATCHED_ATL:
+		return "runner unmatched ATL";
+	case update_type::RUNNER_UNMATCHED_ATB:
+		return "runner unmatched ATB";
+	case update_type::RUNNER_SP:
+		return "runner SP";
+	case update_type::RUNNER_WON:
+		return "runner won";
+	}
+
+	return "UNKNOWN UPDATE TYPE??";
+}
+
+// Is the specified update type a runner-specific update?
+static inline auto is_runner_update(update_type type) -> bool
+{
+	switch (type) {
+	// Note that runner ID is NOT a runner update, rather runne decl.
+	case update_type::RUNNER_REMOVAL:
+	case update_type::RUNNER_TRADED_VOL:
+	case update_type::RUNNER_LTP:
+	case update_type::RUNNER_MATCHED:
+	case update_type::RUNNER_UNMATCHED_ATL:
+	case update_type::RUNNER_UNMATCHED_ATB:
+	case update_type::RUNNER_SP:
+	case update_type::RUNNER_WON:
+		return true;
+	default:
+		return false;
+	}
+}
+
 // Raw update structure, we keep it the same size for all updates to make it
 // easy to process a number of them in an array.
 struct update

@@ -47,6 +47,12 @@ TEST(market_test, basic)
 	EXPECT_EQ(market2.last_timestamp(), 0);
 	market2.set_last_timestamp(12345678);
 	EXPECT_EQ(market2.last_timestamp(), 12345678);
+
+	EXPECT_EQ(market2.inplay(), false);
+	market2.set_inplay(true);
+	EXPECT_EQ(market2.inplay(), true);
+	// Cannot go from inplay to pre-off.
+	EXPECT_THROW(market2.set_inplay(false), std::runtime_error);
 }
 
 // Test that .clear_state() correctly resets MUTABLE state in a marketbut leaves
@@ -57,9 +63,11 @@ TEST(market_test, clear_state)
 	janus::betfair::market market(123456);
 	market.add_runner(456);
 	market.set_state(janus::betfair::market_state::SUSPENDED);
+	market.set_inplay(true);
 	EXPECT_EQ(market.id(), 123456);
 	EXPECT_EQ(market.num_runners(), 1);
 	EXPECT_EQ(market.state(), janus::betfair::market_state::SUSPENDED);
+	EXPECT_EQ(market.inplay(), true);
 
 	// Mutable state.
 	market.set_traded_vol(456.789);
@@ -71,6 +79,7 @@ TEST(market_test, clear_state)
 	EXPECT_EQ(market.id(), 123456);
 	EXPECT_EQ(market.num_runners(), 1);
 	EXPECT_EQ(market.state(), janus::betfair::market_state::SUSPENDED);
+	EXPECT_EQ(market.inplay(), true);
 
 	// Mutable.
 	EXPECT_DOUBLE_EQ(market.traded_vol(), 0);
