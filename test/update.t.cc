@@ -643,4 +643,41 @@ TEST(update_test, is_runner_update)
 	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_SP));
 	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_WON));
 }
+
+// Test that clears of ATL/ATB unmatched volume are sent FIRST.
+TEST(update_test, clear_atl_atb_first)
+{
+	char json[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583889112352,"mc":[{"rc":[{"tv":2320.14,"bdatl":[[0,2.38,3.1],[1,2.4,50],[2,2.42,446.7],[3,2.44,57.02],[4,2.5,40],[5,2.66,32.04],[6,2.68,9.02],[7,2.7,10],[8,3,2],[9,3.15,15.5]],"trd":[[2.34,174.55],[2.32,278.55]],"ltp":2.34,"atb":[[2.34,13.18],[1.01,0]],"atl":[[2.34,0],[2.32,0]],"id":26314802,"bdatb":[[0,2.34,13.18],[1,2.24,3],[2,2.22,8.32],[3,2.2,8.18],[4,2.18,7.71],[5,2.12,18.6],[6,2,12],[7,1.96,156.25],[8,1.89,10.46],[9,1.84,183.33]]}],"img":false,"tv":3302.39,"con":false,"id":"1.170020951"}],"status":0})";
+	uint64_t size = sizeof(json) - 1;
+	janus::dynamic_buffer dyn_buf(10'000'000);
+	janus::betfair::update_state state = {
+		.range = &range,
+		.filename = "",
+		.line = 1,
+	};
+
+	bool all_clears = true;
+	uint64_t num_updates = janus::betfair::parse_update_stream_json(state, json, size, dyn_buf);
+	for (uint64_t i = 0; i < num_updates; i++) {
+		janus::update update = dyn_buf.read<janus::update>();
+
+		double vol;
+		if (update.type == janus::update_type::RUNNER_UNMATCHED_ATL)
+			vol = get_update_runner_unmatched_atl(update).second;
+		else if (update.type == janus::update_type::RUNNER_UNMATCHED_ATB)
+			vol = get_update_runner_unmatched_atb(update).second;
+		else
+			continue;
+
+		if (vol != 0)
+			all_clears = false;
+
+		// If we are past the clears, we shouln't see any further clears.
+		if (!all_clears) {
+			EXPECT_NE(vol, 0);
+		}
+	}
+}
+
 } // namespace
