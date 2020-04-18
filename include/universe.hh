@@ -105,6 +105,10 @@ public:
 		return _markets.emplace_back(id);
 	}
 
+	// Apply update to universe, this might create a market, runner, or
+	// update an existing market/runner.
+	void apply_update(const update& update);
+
 private:
 	uint64_t _num_markets;
 	uint64_t _last_timestamp;
@@ -126,5 +130,55 @@ private:
 
 		return nullptr;
 	}
+
+	// Internal functions implementing apply_update().
+
+	// Apply market ID update.
+	void apply_market_id(uint64_t id);
+
+	// Apply runner ID update.
+	void apply_runner_id(uint64_t id);
+
+	// Apply timestamp update.
+	void apply_timestamp(uint64_t timestamp);
+
+	// Apply clear of market, clearing mutable values in market, runners and
+	// ladders.
+	void apply_market_clear();
+
+	// Apply market state.
+	void apply_market_state(market_state state);
+
+	// Apply market inplay, setting market inplay to true.
+	void apply_market_inplay();
+
+	// Apply market traded volume.
+	void apply_market_traded_vol(double vol);
+
+	// Apply runner removal.
+	void apply_runner_removal(double adj_factor);
+
+	// Apply runner removal.
+	void apply_runner_traded_vol(double vol);
+
+	// Apply runner LTP.
+	void apply_runner_ltp(uint64_t price_index);
+
+	// ivg
+
+	// Apply runner SP.
+	void apply_runner_sp(double sp);
+
+	// Apply runner won state - mark it as won.
+	void apply_runner_won();
+
+	// Apply runner matched data at specified price index.
+	void apply_runner_matched(uint64_t price_index, double vol);
+
+	// Apply runner unmatched data at specified price index, positive volume
+	// indicates ATL, negative ATB.
+	void apply_runner_unmatched(uint64_t price_index, double vol);
 };
 } // namespace janus::betfair
+
+#include "universe.tcc"
