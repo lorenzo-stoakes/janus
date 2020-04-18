@@ -207,6 +207,38 @@ static auto parse_atb(const update_state& state, const sajson::value& atb, dynam
 	return 1;
 }
 
+// Reorder ATL/ATB updates in the dynamic buffer such that updates which clear
+// ATL/ATB unmatched volume come FIRST. This is necessary as betfair sends these
+// in an arbitrary order and updates could end up causing invalid state if
+// clears are not processed first.
+static void reorder_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf)
+{
+	// Access last element in buffer.
+	uint8_t* raw = reinterpret_cast<uint8_t*>(dyn_buf.data());
+	raw += dyn_buf.size();
+	// Then rewind to the start of the ATL/ATB updates.
+	auto* ptr = reinterpret_cast<update*>(raw) - delta_updates;
+	auto* write_ptr = ptr;
+
+	for (uint64_t i = 0; i < delta_updates; i++) {
+		update update = ptr[i];
+
+		double vol;
+		if (update.type == update_type::RUNNER_UNMATCHED_ATL)
+			vol = get_update_runner_unmatched_atl(update).second;
+		else
+			vol = get_update_runner_unmatched_atb(update).second;
+
+		if (vol != 0)
+			continue;
+
+		// If we have a clearing update, i.e. volume = 0, swap these
+		// update with the update at the current write offset.
+		ptr[i] = *write_ptr;
+		*write_ptr++ = update;
+	}
+}
+
 // Parse runner change update.
 static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffer& dyn_buf)
 	-> uint64_t
@@ -264,6 +296,8 @@ static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffe
 		num_updates += parse_trd(state, trd, dyn_buf);
 	}
 
+	uint64_t before_atl_atb = num_updates;
+
 	// ATL.
 
 	sajson::value atls = rc.get_value_of_key(sajson::literal("atl"));
@@ -274,6 +308,7 @@ static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffe
 		sajson::value atl = atls.get_array_element(i);
 		num_updates += parse_atl(state, atl, dyn_buf);
 	}
+	bool have_atls = num_atls > 0;
 
 	// ATB.
 
@@ -285,6 +320,15 @@ static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffe
 		sajson::value atb = atbs.get_array_element(i);
 		num_updates += parse_atb(state, atb, dyn_buf);
 	}
+	bool have_atbs = num_atbs > 0;
+
+	// If we have ATL and ATB updates we need to re-order them such that
+	// updates that clear unmatched volume come first.
+
+	// This is because betfair will send these clearing values in any order
+	// they please, which can result in invalid update state when applied.
+	if (have_atls && have_atbs)
+		reorder_atl_atb(num_updates - before_atl_atb, dyn_buf);
 
 	return num_updates;
 }

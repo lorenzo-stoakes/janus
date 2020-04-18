@@ -255,9 +255,11 @@ private:
 		// discontinuity.
 
 		if (vol < 0 && price_index > _min_atl_index)
-			throw invalid_unmatched_update(price_index, vol, _min_atl_index);
+			throw invalid_unmatched_update(price_index, vol, _min_atl_index,
+						       _unmatched[_min_atl_index]);
 		if (vol > 0 && price_index < _max_atb_index)
-			throw invalid_unmatched_update(price_index, vol, _max_atb_index);
+			throw invalid_unmatched_update(price_index, vol, _max_atb_index,
+						       _unmatched[_max_atb_index]);
 	}
 
 	// Starting from the specified price index, find the first price where
@@ -323,7 +325,10 @@ private:
 		// ATL/max ATB indexes as otherwise it has no bearing on these.
 		if (price_index == _min_atl_index)
 			update_min_atl_index(price_index);
-		else if (price_index == _max_atb_index)
+
+		// It's possible for these both to be true in the case that min
+		// ATL = 1000 by default and max ATB = 1000 for real.
+		if (price_index == _max_atb_index)
 			update_max_atb_index(price_index);
 	}
 

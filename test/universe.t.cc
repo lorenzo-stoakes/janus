@@ -35,7 +35,7 @@ TEST(universe_test, basic)
 // Test that we can apply updates to a universe correctly.
 TEST(universe_test, apply_update)
 {
-	auto ptr = std::make_unique<janus::betfair::universe<50>>();
+	auto ptr = std::make_unique<janus::betfair::universe<2>>();
 	auto& universe = *ptr;
 
 	// We haven't sent a market ID yet so the universe doesn't know what to
@@ -207,5 +207,25 @@ TEST(universe_test, apply_update)
 	universe.apply_update(janus::make_runner_won_update());
 	EXPECT_EQ(universe.num_updates(), 24);
 	EXPECT_EQ(universe.last_runner()->state(), janus::betfair::runner_state::WON);
+}
+
+// Test that a universe can receive a timestamp update BEFORE a market ID or
+// runner ID update.
+TEST(universe_test, timestamp_first)
+{
+	// No market ID, runner ID.
+
+	auto ptr1 = std::make_unique<janus::betfair::universe<1>>();
+	auto& universe1 = *ptr1;
+
+	ASSERT_NO_THROW(universe1.apply_update(janus::make_timestamp_update(1234567)));
+
+	// No runner ID.
+
+	auto ptr2 = std::make_unique<janus::betfair::universe<1>>();
+	auto& universe2 = *ptr2;
+
+	universe2.apply_update(janus::make_market_id_update(123456));
+	ASSERT_NO_THROW(universe2.apply_update(janus::make_timestamp_update(1234567)));
 }
 } // namespace
