@@ -44,7 +44,7 @@ public:
 	// Indicate that the event is over and the runner won.
 	void set_won()
 	{
-		if (_state != runner_state::ACTIVE)
+		if (_state != runner_state::ACTIVE && _state != runner_state::WON)
 			throw std::runtime_error("Trying to set runner won when state = " +
 						 std::to_string(static_cast<uint64_t>(_state)) +
 						 " expected ACTIVE");
@@ -55,7 +55,7 @@ public:
 	// Indicate that the runner is removed and set adjustment factor.
 	void set_removed(double adj_factor)
 	{
-		if (_state != runner_state::ACTIVE)
+		if (_state != runner_state::ACTIVE && _state != runner_state::REMOVED)
 			throw std::runtime_error("Trying to set runner removed when state = " +
 						 std::to_string(static_cast<uint64_t>(_state)) +
 						 " expected ACTIVE");

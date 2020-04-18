@@ -89,4 +89,22 @@ TEST(runner_test, clear_state)
 	EXPECT_EQ(runner.ltp(), 0);
 	EXPECT_DOUBLE_EQ(runner[16], 0);
 }
+
+// Test that setting state to the same state again does not result in any
+// errors. Stream data does in fact send duplicate data sometimes (due to
+// marketDefinition repeating data each time it is sent).
+TEST(runner_test, double_state)
+{
+	// This is a regression test.
+
+	// Won state.
+	janus::betfair::runner runner1(123456);
+	runner1.set_won();
+	ASSERT_NO_THROW(runner1.set_won());
+
+	// Removed state.
+	janus::betfair::runner runner2(999);
+	runner2.set_removed(1.234);
+	ASSERT_NO_THROW(runner2.set_removed(1.234));
+}
 } // namespace
