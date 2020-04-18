@@ -74,8 +74,9 @@ TEST(universe_test, apply_update)
 	universe.apply_update(janus::make_timestamp_update(1234567));
 	EXPECT_EQ(universe.num_updates(), 3);
 	EXPECT_EQ(universe.last_timestamp(), 1234567);
-	EXPECT_EQ(universe[123456].last_timestamp(), 1234567);
-	EXPECT_EQ(universe[123456][0].last_timestamp(), 1234567);
+	// The market and runner timestamps should NOT yet be updated.
+	EXPECT_EQ(universe[123456].last_timestamp(), 0);
+	EXPECT_EQ(universe[123456][0].last_timestamp(), 0);
 
 	// We should now be able to send any update we like.
 
@@ -83,6 +84,10 @@ TEST(universe_test, apply_update)
 	universe.apply_update(janus::make_market_traded_vol_update(123.456));
 	EXPECT_EQ(universe.num_updates(), 4);
 	EXPECT_DOUBLE_EQ(universe[123456].traded_vol(), 123.456);
+	// Now we've updated the market we should see the market timestamp get updated.
+	EXPECT_EQ(universe[123456].last_timestamp(), 1234567);
+	// But not the runner timestamp.
+	EXPECT_EQ(universe[123456][0].last_timestamp(), 0);
 
 	// Now add another market to make sure we set traded volume there instead.
 	universe.apply_update(janus::make_market_id_update(999));
@@ -152,9 +157,14 @@ TEST(universe_test, apply_update)
 	EXPECT_EQ(universe.last_runner()->id(), 777);
 
 	// Set runner traded volume.
+
+	// Runner not updated yet so shouldn't have a timestamp set.
+	EXPECT_EQ(universe.last_runner()->last_timestamp(), 0);
 	universe.apply_update(janus::make_runner_traded_vol_update(789.12));
 	EXPECT_EQ(universe.num_updates(), 16);
 	EXPECT_DOUBLE_EQ(universe.last_runner()->traded_vol(), 789.12);
+	// Now we've updated a runner we should see its timestamp updated.
+	EXPECT_EQ(universe.last_runner()->last_timestamp(), 1234567);
 
 	// Add a new runner and make sure we update that runner not the previous.
 	universe.apply_update(janus::make_runner_id_update(654));

@@ -28,8 +28,18 @@ template<uint64_t Cap>
 void universe<Cap>::apply_timestamp(uint64_t timestamp)
 {
 	_last_timestamp = timestamp;
-	_last_market->set_last_timestamp(timestamp);
-	_last_runner->set_last_timestamp(timestamp);
+}
+
+template<uint64_t Cap>
+void universe<Cap>::set_market_timestamp()
+{
+	_last_market->set_last_timestamp(_last_timestamp);
+}
+
+template<uint64_t Cap>
+void universe<Cap>::set_runner_timestamp()
+{
+	_last_runner->set_last_timestamp(_last_timestamp);
 }
 
 template<uint64_t Cap>
@@ -122,8 +132,9 @@ void universe<Cap>::apply_update(const update& update)
 
 	// Handle runner ID.
 
+	bool was_runner_update = is_runner_update(type);
 	// If we haven't set any runner ID yet then we can't apply runner updates.
-	if (_last_runner == nullptr && is_runner_update(type))
+	if (_last_runner == nullptr && was_runner_update)
 		throw std::runtime_error(
 			std::string("Received ") + update_type_str(type) + " update for market " +
 			std::to_string(_last_market->id()) + " but no runner ID received yet?!");
@@ -148,6 +159,12 @@ void universe<Cap>::apply_update(const update& update)
 	}
 
 	// Handle all other updates.
+
+	// This is a market/runner update so market timestamp should be set.
+	set_market_timestamp();
+	// If it's a runner update we set runner timestamp too.
+	if (was_runner_update)
+		set_runner_timestamp();
 
 	switch (type) {
 	case update_type::MARKET_CLEAR:
