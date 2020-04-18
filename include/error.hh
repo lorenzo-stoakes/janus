@@ -42,11 +42,13 @@ public:
 			double min_atl = betfair::price_range::index_to_price(limit_index);
 
 			_what += "ATB update at price " + std::to_string(price);
+			_what += " of volume " + std::to_string(vol);
 			_what += " is greater than minimum ATL of " + std::to_string(min_atl);
 		} else if (vol > 0) { // ATL
 			double max_atb = betfair::price_range::index_to_price(limit_index);
 
 			_what += "ATL update at price " + std::to_string(price);
+			_what += " of volume " + std::to_string(vol);
 			_what += " is less than maximum ATB of " + std::to_string(max_atb);
 		} else { // Clear?? Shouldn't occur.
 			_what += "Unexpected clear at " + std::to_string(price);
