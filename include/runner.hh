@@ -55,6 +55,11 @@ public:
 	// Indicate that the runner is removed and set adjustment factor.
 	void set_removed(double adj_factor)
 	{
+		// Sometimes betfair sets a runner removed AFTER it has
+		// won. Strange but just ignore it.
+		if (_state == runner_state::WON)
+			return;
+
 		if (_state != runner_state::ACTIVE && _state != runner_state::REMOVED)
 			throw std::runtime_error("Trying to set runner removed when state = " +
 						 std::to_string(static_cast<uint64_t>(_state)) +

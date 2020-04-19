@@ -17,8 +17,6 @@ TEST(runner_test, basic)
 	EXPECT_EQ(runner1.state(), janus::betfair::runner_state::ACTIVE);
 	runner1.set_won();
 	EXPECT_EQ(runner1.state(), janus::betfair::runner_state::WON);
-	// We should only be able to go to removed if the runner is active.
-	EXPECT_THROW(runner1.set_removed(0), std::runtime_error);
 
 	janus::betfair::runner runner2(456789);
 	EXPECT_EQ(runner2.id(), 456789);
@@ -106,5 +104,17 @@ TEST(runner_test, double_state)
 	janus::betfair::runner runner2(999);
 	runner2.set_removed(1.234);
 	ASSERT_NO_THROW(runner2.set_removed(1.234));
+}
+
+// Sometimes betfair marks a runner removed after it has won. This is strange,
+// rare, and invalid. Just ignore it. Test that we do.
+TEST(runner_test, winner_removed)
+{
+	// This is a regression test.
+
+	janus::betfair::runner runner(123456);
+	runner.set_won();
+	ASSERT_NO_THROW(runner.set_removed(321.99));
+	EXPECT_EQ(runner.state(), janus::betfair::runner_state::WON);
 }
 } // namespace
