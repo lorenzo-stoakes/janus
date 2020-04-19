@@ -9,6 +9,8 @@
 
 #include <snappy.h>
 
+constexpr uint64_t UNIVERSE_SIZE = 30000;
+
 // Neptune is a tool for converting existing JSON files to a binary format for
 // processing by janus.
 
@@ -54,7 +56,7 @@ static auto parse_meta(const char* filename, janus::dynamic_buffer& dyn_buf) -> 
 
 static auto parse_update_stream(const janus::betfair::price_range& range, const char* filename,
 				janus::dynamic_buffer& dyn_buf, uint64_t& num_updates,
-				janus::betfair::universe<50>& universe) -> bool
+				janus::betfair::universe<UNIVERSE_SIZE>& universe) -> bool
 {
 	janus::betfair::update_state state = {
 		.range = &range,
@@ -141,7 +143,7 @@ auto main(int argc, char** argv) -> int
 
 	uint64_t num_updates = 0;
 
-	auto ptr = std::make_unique<janus::betfair::universe<50>>();
+	auto ptr = std::make_unique<janus::betfair::universe<UNIVERSE_SIZE>>();
 	auto& universe = *ptr;
 
 	for (int i = 1 + arg_offset; i < argc; i++) {
