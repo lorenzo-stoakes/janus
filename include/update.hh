@@ -28,6 +28,7 @@ enum class update_type : uint32_t
 
 	// Runner actions.
 	RUNNER_REMOVAL,
+	RUNNER_CLEAR_UNMATCHED,
 
 	// Runner data.
 	RUNNER_TRADED_VOL,
@@ -65,6 +66,8 @@ static inline auto update_type_str(update_type type) -> const char*
 		return "market traded volume";
 	case update_type::RUNNER_REMOVAL:
 		return "runner removal";
+	case update_type::RUNNER_CLEAR_UNMATCHED:
+		return "runner clear unmatched";
 	case update_type::RUNNER_TRADED_VOL:
 		return "runner traded volume";
 	case update_type::RUNNER_LTP:
@@ -90,6 +93,7 @@ static inline auto is_runner_update(update_type type) -> bool
 	switch (type) {
 	// Note that runner ID is NOT a runner update, rather runne decl.
 	case update_type::RUNNER_REMOVAL:
+	case update_type::RUNNER_CLEAR_UNMATCHED:
 	case update_type::RUNNER_TRADED_VOL:
 	case update_type::RUNNER_LTP:
 	case update_type::RUNNER_MATCHED:
@@ -248,6 +252,14 @@ static inline auto make_runner_removal_update(double adj_factor) -> const update
 	return update{
 		.type = update_type::RUNNER_REMOVAL,
 		.value = {.d = adj_factor},
+	};
+}
+
+// Generate a new runner clear unmatched update.
+static inline auto make_runner_clear_unmatched() -> const update
+{
+	return update{
+		.type = update_type::RUNNER_CLEAR_UNMATCHED,
 	};
 }
 

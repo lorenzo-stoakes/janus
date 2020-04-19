@@ -78,6 +78,12 @@ void universe<Cap>::apply_runner_removal(double adj_factor)
 }
 
 template<uint64_t Cap>
+void universe<Cap>::apply_runner_clear_unmatched()
+{
+	_last_runner->ladder().clear_unmatched();
+}
+
+template<uint64_t Cap>
 void universe<Cap>::apply_runner_traded_vol(double vol)
 {
 	_last_runner->set_traded_vol(vol);
@@ -190,6 +196,9 @@ void universe<Cap>::apply_update(const update& update)
 		break;
 	case update_type::RUNNER_REMOVAL:
 		apply_runner_removal(get_update_runner_adj_factor(update));
+		break;
+	case update_type::RUNNER_CLEAR_UNMATCHED:
+		apply_runner_clear_unmatched();
 		break;
 	case update_type::RUNNER_TRADED_VOL:
 		apply_runner_traded_vol(get_update_runner_traded_vol(update));

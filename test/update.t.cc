@@ -650,6 +650,7 @@ TEST(update_test, is_runner_update)
 	EXPECT_FALSE(janus::is_runner_update(janus::update_type::RUNNER_ID));
 
 	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_REMOVAL));
+	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_CLEAR_UNMATCHED));
 	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_TRADED_VOL));
 	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_LTP));
 	EXPECT_TRUE(janus::is_runner_update(janus::update_type::RUNNER_MATCHED));

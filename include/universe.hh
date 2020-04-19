@@ -158,7 +158,10 @@ private:
 	// Apply runner removal.
 	void apply_runner_removal(double adj_factor);
 
-	// Apply runner removal.
+	// Apply runner clear unmatched.
+	void apply_runner_clear_unmatched();
+
+	// Apply runner traded volume.
 	void apply_runner_traded_vol(double vol);
 
 	// Apply runner LTP.

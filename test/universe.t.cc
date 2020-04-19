@@ -203,9 +203,15 @@ TEST(universe_test, apply_update)
 	// ATB so negative.
 	EXPECT_DOUBLE_EQ(universe.last_runner()->ladder().unmatched(8), -157.9);
 
+	// Clear runner unmatched state.
+	universe.apply_update(janus::make_runner_clear_unmatched());
+	EXPECT_EQ(universe.num_updates(), 24);
+	EXPECT_DOUBLE_EQ(universe.last_runner()->ladder().unmatched(12), 0);
+	EXPECT_DOUBLE_EQ(universe.last_runner()->ladder().unmatched(8), 0);
+
 	// Set runner won.
 	universe.apply_update(janus::make_runner_won_update());
-	EXPECT_EQ(universe.num_updates(), 24);
+	EXPECT_EQ(universe.num_updates(), 25);
 	EXPECT_EQ(universe.last_runner()->state(), janus::betfair::runner_state::WON);
 }
 
