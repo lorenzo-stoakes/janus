@@ -11,6 +11,8 @@
 
 // Set to print each update parsed from files.
 //#define PRINT_UPDATES
+// Set to skip saving altogether.
+#define SKIP_SAVE
 
 constexpr uint64_t UNIVERSE_SIZE = 30000;
 
@@ -121,6 +123,10 @@ static auto parse_update_stream(const janus::betfair::price_range& range, const 
 static auto save_data(const std::string& output_filename, const janus::dynamic_buffer& dyn_buf)
 	-> bool
 {
+#ifdef SKIP_SAVE
+	return true;
+#endif
+
 	// Note that we are saving and appending at arbitrary points so this
 	// compression is useless, however since we are implementing this for
 	// benchmark and test purposes at this stage it's fine.
