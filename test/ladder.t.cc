@@ -350,6 +350,62 @@ TEST(ladder_test, clear)
 	}
 }
 
+// Test that .clear_unmatched() correctly clears down the unmatched state in the
+// ladder.
+TEST(ladder_test, clear_unmatched)
+{
+	janus::betfair::ladder ladder;
+
+	double expected_total_atb = 0;
+	double expected_total_atl = 0;
+
+	// Fill half of ladder with ATB volume.
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES / 2;
+	     price_index++) {
+		double vol = price_index;
+		vol *= -100; // Negative for ATB.
+		expected_total_atb -= vol;
+
+		ladder.set_unmatched_at(price_index, vol);
+	}
+
+	// Fill the other half with ATL volume.
+	for (uint64_t price_index = janus::betfair::NUM_PRICES / 2;
+	     price_index < janus::betfair::NUM_PRICES; price_index++) {
+		double vol = price_index * 100;
+		expected_total_atl += vol;
+
+		ladder.set_unmatched_at(price_index, vol);
+	}
+
+	double expected_total_matched = 0;
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		double vol = price_index * 100;
+		expected_total_matched += vol;
+
+		ladder.set_matched_at(price_index, vol);
+	}
+
+	EXPECT_EQ(ladder.total_unmatched_atb(), expected_total_atb);
+	EXPECT_EQ(ladder.total_unmatched_atl(), expected_total_atl);
+	EXPECT_EQ(ladder.total_matched(), expected_total_matched);
+	EXPECT_EQ(ladder.max_atb_index(), janus::betfair::NUM_PRICES / 2 - 1);
+	EXPECT_EQ(ladder.min_atl_index(), janus::betfair::NUM_PRICES / 2);
+
+	ladder.clear_unmatched();
+
+	EXPECT_EQ(ladder.total_unmatched_atb(), 0);
+	EXPECT_EQ(ladder.total_unmatched_atl(), 0);
+	EXPECT_EQ(ladder.total_matched(), expected_total_matched);
+	EXPECT_EQ(ladder.max_atb_index(), 0);
+	EXPECT_EQ(ladder.min_atl_index(), janus::betfair::NUM_PRICES - 1);
+
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		ASSERT_EQ(ladder[price_index], 0);
+		ASSERT_EQ(ladder.matched(price_index), price_index * 100);
+	}
+}
+
 // Test that .best_atl() and .best_atb() correctly retrieves the top N ATL and
 // ATB unmatched volume available.
 TEST(ladder_test, best_atl_atb)

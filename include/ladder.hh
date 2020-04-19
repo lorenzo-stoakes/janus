@@ -218,14 +218,20 @@ public:
 	// Clear state of ladder.
 	void clear()
 	{
+		_total_matched = 0;
+		_matched = {0};
+
+		clear_unmatched();
+	}
+
+	// Clear unmatched state of ladder.
+	void clear_unmatched()
+	{
 		_min_atl_index = NUM_PRICES - 1;
 		_max_atb_index = 0;
 		_total_unmatched_atl = 0;
 		_total_unmatched_atb = 0;
-		_total_matched = 0;
-
 		_unmatched = {0};
-		_matched = {0};
 	}
 
 private:
