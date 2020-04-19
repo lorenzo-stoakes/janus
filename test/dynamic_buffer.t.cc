@@ -526,4 +526,47 @@ TEST(dynamic_buffer_test, read_string)
 	EXPECT_EQ(ret3.size(), 0);
 	EXPECT_TRUE(ret3.empty());
 }
+
+// Test that we can correctly rewind the buffer and that it doesn't leave the
+// buffer in an invalid state.
+TEST(dynamic_buffer_test, rewind)
+{
+	auto buf = janus::dynamic_buffer(48);
+	for (uint64_t i = 0; i < 6; i++) {
+		buf.add_uint64(i * 100);
+	}
+	EXPECT_EQ(buf.size(), 48);
+
+	// This should do nothing.
+	buf.rewind(0);
+	EXPECT_EQ(buf.size(), 48);
+
+	// Should get rounded up to a word size.
+	buf.rewind(1);
+	EXPECT_EQ(buf.size(), 40);
+
+	// Should get rounded down to buffer size.
+	buf.rewind(1000000);
+	EXPECT_EQ(buf.size(), 0);
+
+	// Reinstate data.
+	for (uint64_t i = 0; i < 6; i++) {
+		buf.add_uint64(i * 100);
+	}
+	EXPECT_EQ(buf.size(), 48);
+
+	// Update read offset to end of buffer.
+	for (uint64_t i = 0; i < 6; i++) {
+		buf.read_uint64();
+	}
+	EXPECT_EQ(buf.read_offset(), 48);
+
+	// Rewind should also update read offset.
+	buf.rewind(8);
+	EXPECT_EQ(buf.size(), 40);
+	EXPECT_EQ(buf.read_offset(), 40);
+	buf.rewind(50);
+	EXPECT_EQ(buf.size(), 0);
+	EXPECT_EQ(buf.read_offset(), 0);
+}
 } // namespace

@@ -191,6 +191,22 @@ public:
 		return add_string(node.as_cstring(), node.get_string_length());
 	}
 
+	// Rewind write offset by specified number of bytes, or to 0 if bytes
+	// exceeds size. Rounds up to word size.
+	void rewind(uint64_t bytes)
+	{
+		uint64_t aligned_bytes = align64(bytes);
+		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
+		if (aligned_words >= _write_offset)
+			_write_offset = 0;
+		else
+			_write_offset -= aligned_words;
+
+		// We cannot allow an illegal state.
+		if (_read_offset > _write_offset)
+			_read_offset = _write_offset;
+	}
+
 	// Clear the buffer but maintain the capacity.
 	void reset()
 	{
