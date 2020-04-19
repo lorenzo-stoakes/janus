@@ -13,6 +13,8 @@
 //#define PRINT_UPDATES
 // Set to skip saving altogether.
 #define SKIP_SAVE
+// Continue running when an error occurs in parsing updates.
+//#define CONTINUE_ON_ERROR
 
 constexpr uint64_t UNIVERSE_SIZE = 30000;
 
@@ -109,7 +111,9 @@ static auto parse_update_stream(const janus::betfair::price_range& range, const 
 				std::cerr << "\n"
 					  << filename << ":" << line_num << ": " << e.what()
 					  << std::endl;
+#ifndef CONTINUE_ON_ERROR
 				return false;
+#endif
 			}
 		}
 	} else {
