@@ -108,8 +108,8 @@ static auto parse_update_stream(const janus::betfair::price_range& range, const 
 				// We would have already updated the line number.
 				uint64_t line_num = state.line - 1;
 
-				std::cerr << filename << ":" << line_num << ": " << e.what()
-					  << std::endl;
+				std::cout << "ERROR: " << filename << ":" << line_num << ": "
+					  << e.what() << std::endl;
 #ifndef CONTINUE_ON_ERROR
 				return false;
 #endif
