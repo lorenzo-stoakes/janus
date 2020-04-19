@@ -9,6 +9,9 @@
 
 #include <snappy.h>
 
+// Set to print each update parsed from files.
+//#define PRINT_UPDATES
+
 constexpr uint64_t UNIVERSE_SIZE = 30000;
 
 // Neptune is a tool for converting existing JSON files to a binary format for
@@ -77,6 +80,24 @@ static auto parse_update_stream(const janus::betfair::price_range& range, const 
 			try {
 				while (dyn_buf.read_offset() != dyn_buf.size()) {
 					const auto update = dyn_buf.read<janus::update>();
+
+#ifdef PRINT_UPDATES
+					std::cout << state.line - 1 << ": "
+						  << update_type_str(update.type);
+					if (update.type ==
+						    janus::update_type::RUNNER_UNMATCHED_ATL ||
+					    update.type ==
+						    janus::update_type::RUNNER_UNMATCHED_ATB) {
+						std::cout << ": key as price = "
+							  << janus::betfair::price_range::
+								     index_to_price(update.key);
+						std::cout << " value as double = "
+							  << update.value.d;
+					} else if (update.type == janus::update_type::RUNNER_ID) {
+						std::cout << ": " << update.value.u;
+					}
+					std::cout << std::endl;
+#endif
 					universe.apply_update(update);
 				}
 			} catch (std::exception& e) {
