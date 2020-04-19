@@ -696,4 +696,38 @@ TEST(update_test, clear_atl_atb_first)
 	}
 }
 
+// Test that impossible situations (i.e. max ATB > min ATL or vice-versa) result
+// in us clearing runner unmatched volume This is to workaround betfair
+// occasionally sending corrupted data.
+TEST(update_test, clear_impossible_atl_atb)
+{
+	char json[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924274639,"mc":[{"rc":[{"atb":[[19,100]],"id":18889965,"atl":[[5,100]]}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size = sizeof(json) - 1;
+	janus::dynamic_buffer dyn_buf(10'000'000);
+	janus::betfair::update_state state = {
+		.range = &range,
+		.filename = "",
+		.line = 1,
+	};
+
+	uint64_t num_updates = janus::betfair::parse_update_stream_json(state, json, size, dyn_buf);
+
+	// We should have no ATL or ATB updates at all.
+	EXPECT_EQ(
+		find_all_updates_of(janus::update_type::RUNNER_UNMATCHED_ATL, dyn_buf, num_updates)
+			.size(),
+		0);
+	dyn_buf.reset_read();
+	EXPECT_EQ(
+		find_all_updates_of(janus::update_type::RUNNER_UNMATCHED_ATB, dyn_buf, num_updates)
+			.size(),
+		0);
+	// We should have a single clear unmatched update.
+	dyn_buf.reset_read();
+	EXPECT_EQ(find_all_updates_of(janus::update_type::RUNNER_CLEAR_UNMATCHED, dyn_buf,
+				      num_updates)
+			  .size(),
+		  1);
+}
 } // namespace

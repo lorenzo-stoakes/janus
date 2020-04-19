@@ -211,7 +211,12 @@ static auto parse_atb(const update_state& state, const sajson::value& atb, dynam
 // ATL/ATB unmatched volume come FIRST. This is necessary as betfair sends these
 // in an arbitrary order and updates could end up causing invalid state if
 // clears are not processed first.
-static void reorder_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf)
+//
+// Also if ATL/ATB updates indicate an IMPOSSIBLE situation i.e. max ATB > min
+// ATL, we remove ATL/ATB updates and send a runner clear unmatched update.
+//
+// Returns number of updates SUBTRACTED from buffer.
+static auto workaround_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf) -> uint64_t
 {
 	// Access last element in buffer.
 	uint8_t* raw = reinterpret_cast<uint8_t*>(dyn_buf.data());
@@ -220,23 +225,55 @@ static void reorder_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf)
 	auto* ptr = reinterpret_cast<update*>(raw) - delta_updates;
 	auto* write_ptr = ptr;
 
+	uint64_t min_atl_price_index = NUM_PRICES - 1;
+	uint64_t max_atb_price_index = 0;
+
 	for (uint64_t i = 0; i < delta_updates; i++) {
 		update update = ptr[i];
 
 		double vol;
-		if (update.type == update_type::RUNNER_UNMATCHED_ATL)
-			vol = get_update_runner_unmatched_atl(update).second;
-		else
-			vol = get_update_runner_unmatched_atb(update).second;
+		if (update.type == update_type::RUNNER_UNMATCHED_ATL) {
+			uint64_t price_index;
+			std::tie(price_index, vol) = get_update_runner_unmatched_atl(update);
 
-		if (vol != 0)
-			continue;
+			if (price_index < min_atl_price_index)
+				min_atl_price_index = price_index;
 
-		// If we have a clearing update, i.e. volume = 0, swap these
-		// update with the update at the current write offset.
-		ptr[i] = *write_ptr;
-		*write_ptr++ = update;
+		} else if (update.type == update_type::RUNNER_UNMATCHED_ATB) {
+			uint64_t price_index;
+			std::tie(price_index, vol) = get_update_runner_unmatched_atb(update);
+
+			if (price_index > max_atb_price_index)
+				max_atb_price_index = price_index;
+		} else {
+			throw std::runtime_error(std::string("Unexpected update type ") +
+						 update_type_str(update.type) +
+						 " on reorder ATL/ATB");
+		}
+
+		if (vol == 0) {
+			// If we have a clearing update, i.e. volume = 0, swap these
+			// update with the update at the current write offset.
+			ptr[i] = *write_ptr;
+			*write_ptr++ = update;
+		}
 	}
+
+	if (max_atb_price_index < min_atl_price_index)
+		return 0;
+
+	// OK we've received an impossible update, this data is clearly
+	// corrupted so simply clear the entire runner unmatched ladder. Looking
+	// at real data I see no more than 0.01% markets with unmatched
+	// corruption issues not handled with the above workaround so this is
+	// hardly a common scenario.
+
+	// Undo ATL/ATB updates other than last one which we will overwrite.
+	dyn_buf.rewind((delta_updates - 1) * sizeof(update));
+	update& update = ptr[0];
+	update = make_runner_clear_unmatched();
+
+	return delta_updates - 1;
 }
 
 // Parse runner change update.
@@ -324,11 +361,13 @@ static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffe
 
 	// If we have ATL and ATB updates we need to re-order them such that
 	// updates that clear unmatched volume come first.
-
 	// This is because betfair will send these clearing values in any order
 	// they please, which can result in invalid update state when applied.
+	//
+	// Additionally, we need to be able to clear runner unmatched state when
+	// corrupted unmatched data is sent (thanks again betfair).
 	if (have_atls && have_atbs)
-		reorder_atl_atb(num_updates - before_atl_atb, dyn_buf);
+		num_updates -= workaround_atl_atb(num_updates - before_atl_atb, dyn_buf);
 
 	return num_updates;
 }
