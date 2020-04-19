@@ -63,6 +63,13 @@ TEST(ladder_test, unmatched)
 	ASSERT_NO_THROW(ladder.set_unmatched_at(janus::betfair::NUM_PRICES - 1, -0.01));
 	EXPECT_EQ(ladder[janus::betfair::NUM_PRICES - 1], 100);
 
+	// Now try to set an invalid ATL with a trivially small max ATB. We
+	// should observe the ATB get cleared and this succeed.
+	uint64_t max_atb_index = ladder.max_atb_index();
+	ladder.set_unmatched_at(max_atb_index, -0.01);
+	ASSERT_NO_THROW(ladder.set_unmatched_at(max_atb_index - 1, 3));
+	EXPECT_EQ(ladder.max_atb_index(), max_atb_index - 2);
+
 	// But we should be able to incrementally increase and decrease the
 	// middle of the ladder by replacing the max ATB/min ATL.
 	for (uint64_t price_index = janus::betfair::NUM_PRICES / 2 - 1; price_index > 0;
