@@ -31,14 +31,58 @@ static void check_op(const update_state& state, const sajson::value& root)
 					 op_str + "', expect 'mcm'");
 }
 
+// Remove all runner ID updates from the end of the dynamic buffer. This is used
+// to, immediately prior to adding a runner ID, remove any existing defunct
+// runner ID updates (switching from 1 runner ID to another back-to-back
+// achieves nothing).
+static auto strip_runner_ids(dynamic_buffer& dyn_buf) -> int64_t
+{
+	if (dyn_buf.size() < sizeof(update))
+		return 0;
+
+	// Rewind to the last update.
+	update* ptr = reinterpret_cast<update*>(dyn_buf.data());
+	uint64_t num_updates = dyn_buf.size() / sizeof(update);
+
+	int64_t offset = 0;
+	for (int64_t i = num_updates - 1; i >= 0; i--) {
+		update& update = ptr[i];
+
+		if (update.type != update_type::RUNNER_ID)
+			break;
+
+		offset++;
+	}
+
+	// Remove discovered runner IDs.
+	dyn_buf.rewind(offset * sizeof(update));
+	return -offset;
+}
+
+// Emit runner ID update if needed.
+static auto send_runner_id(update_state& state, dynamic_buffer& dyn_buf, uint64_t runner_id)
+	-> int64_t
+{
+	if (state.runner_id == runner_id)
+		return 0;
+
+	int64_t num_updates = strip_runner_ids(dyn_buf);
+
+	dyn_buf.add(make_runner_id_update(runner_id));
+	state.runner_id = runner_id;
+	num_updates++;
+
+	return num_updates;
+}
+
 // Parse runner definition in order to extract any non-runner or runner BSP data.
 static auto parse_runner_definition(update_state& state, const sajson::value& runner_def,
-				    dynamic_buffer& dyn_buf) -> uint64_t
+				    dynamic_buffer& dyn_buf) -> int64_t
 {
 	// We may duplicate data sent from here, again the reciever of this data
 	// should be able to handle it being sent more than once for a runner.
 
-	uint64_t num_updates = 0;
+	int64_t num_updates = 0;
 
 	// Nothing to do.
 	if (runner_def.get_type() != sajson::TYPE_OBJECT)
@@ -47,18 +91,10 @@ static auto parse_runner_definition(update_state& state, const sajson::value& ru
 	sajson::value id = runner_def.get_value_of_key(sajson::literal("id"));
 	uint64_t runner_id = id.get_integer_value();
 
-	auto send_runner_id = [&]() {
-		if (state.runner_id != runner_id) {
-			dyn_buf.add(make_runner_id_update(runner_id));
-			num_updates++;
-			state.runner_id = runner_id;
-		}
-	};
-
 	sajson::value bsp = runner_def.get_value_of_key(sajson::literal("bsp"));
 	// Sometimes betfair sends BSP of "NaN" (!)
 	if (bsp.get_type() != sajson::TYPE_NULL && bsp.get_type() != sajson::TYPE_STRING) {
-		send_runner_id();
+		num_updates += send_runner_id(state, dyn_buf, runner_id);
 
 		double bsp_val = bsp.get_number_value();
 		dyn_buf.add(make_runner_sp_update(bsp_val));
@@ -81,12 +117,12 @@ static auto parse_runner_definition(update_state& state, const sajson::value& ru
 		if (adj_factor.get_type() != sajson::TYPE_NULL)
 			adj_factor_val = adj_factor.get_number_value();
 
-		send_runner_id();
+		num_updates += send_runner_id(state, dyn_buf, runner_id);
 		dyn_buf.add(make_runner_removal_update(adj_factor_val));
 		num_updates++;
 	} else if (size == sizeof("WINNER") - 1 &&
 		   ::strncmp(status_str, "WINNER", sizeof("WINNER") - 1) == 0) {
-		send_runner_id();
+		num_updates += send_runner_id(state, dyn_buf, runner_id);
 		dyn_buf.add(make_runner_won_update());
 		num_updates++;
 	}
@@ -96,13 +132,13 @@ static auto parse_runner_definition(update_state& state, const sajson::value& ru
 
 // Parse market definition node and generate updates as required.
 static auto parse_market_definition(update_state& state, const sajson::value& market_def,
-				    dynamic_buffer& dyn_buf) -> uint64_t
+				    dynamic_buffer& dyn_buf) -> int64_t
 {
 	// Nothing to do.
 	if (market_def.get_type() != sajson::TYPE_OBJECT)
 		return 0;
 
-	uint64_t num_updates = 0;
+	int64_t num_updates = 0;
 
 	// Handle market status updates - open/close/suspend. We may duplicate
 	// status reports here (due to multiple market definition updates being
@@ -151,7 +187,7 @@ static auto parse_market_definition(update_state& state, const sajson::value& ma
 
 // Parse matched volume [ price, vol ] pair.
 static auto parse_trd(const update_state& state, const sajson::value& trd, dynamic_buffer& dyn_buf)
-	-> uint64_t
+	-> int64_t
 {
 	const price_range* range = state.range;
 
@@ -171,7 +207,7 @@ static auto parse_trd(const update_state& state, const sajson::value& trd, dynam
 
 // Parse ATL [ price, vol ] pair.
 static auto parse_atl(const update_state& state, const sajson::value& atl, dynamic_buffer& dyn_buf)
-	-> uint64_t
+	-> int64_t
 {
 	const price_range* range = state.range;
 
@@ -190,7 +226,7 @@ static auto parse_atl(const update_state& state, const sajson::value& atl, dynam
 
 // Parse ATB [ price, vol ] pair.
 static auto parse_atb(const update_state& state, const sajson::value& atb, dynamic_buffer& dyn_buf)
-	-> uint64_t
+	-> int64_t
 {
 	const price_range* range = state.range;
 
@@ -216,7 +252,7 @@ static auto parse_atb(const update_state& state, const sajson::value& atb, dynam
 // ATL, we remove ATL/ATB updates and send a runner clear unmatched update.
 //
 // Returns number of updates SUBTRACTED from buffer.
-static auto workaround_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf) -> uint64_t
+static auto workaround_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf) -> int64_t
 {
 	// Access last element in buffer.
 	uint8_t* raw = reinterpret_cast<uint8_t*>(dyn_buf.data());
@@ -278,9 +314,9 @@ static auto workaround_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf) 
 
 // Parse runner change update.
 static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffer& dyn_buf)
-	-> uint64_t
+	-> int64_t
 {
-	uint64_t num_updates = 0;
+	int64_t num_updates = 0;
 
 	const price_range* range = state.range;
 
@@ -288,11 +324,7 @@ static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffe
 
 	sajson::value id = rc.get_value_of_key(sajson::literal("id"));
 	uint64_t runner_id = id.get_integer_value();
-	if (state.runner_id != runner_id) {
-		dyn_buf.add(make_runner_id_update(runner_id));
-		num_updates++;
-		state.runner_id = runner_id;
-	}
+	num_updates += send_runner_id(state, dyn_buf, runner_id);
 
 	// Traded volume.
 
@@ -374,13 +406,13 @@ static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffe
 
 // Process market change update.
 static auto parse_mc(update_state& state, const sajson::value& mc, dynamic_buffer& dyn_buf)
-	-> uint64_t
+	-> int64_t
 {
 	sajson::value id = mc.get_value_of_key(sajson::literal("id"));
 	uint64_t market_id =
 		janus::internal::parse_market_id(id.as_cstring(), id.get_string_length());
 
-	uint64_t num_updates = 0;
+	int64_t num_updates = 0;
 
 	// If the market ID has changed from the last market ID update sent, we
 	// need to send + update.
@@ -449,7 +481,7 @@ auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 	if (num_mcs == 0)
 		return 0;
 
-	uint64_t num_updates = 0;
+	int64_t num_updates = 0;
 
 	uint64_t timestamp = root.get_value_of_key(sajson::literal("pt")).get_integer_value();
 	// Check whether we need to send a timestamp update.
@@ -466,6 +498,6 @@ auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 	}
 
 	state.line++;
-	return num_updates;
+	return static_cast<uint64_t>(num_updates);
 }
 } // namespace janus::betfair
