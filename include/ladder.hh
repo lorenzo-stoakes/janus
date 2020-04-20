@@ -295,7 +295,7 @@ private:
 				max_atb_vol = -_unmatched[_max_atb_index];
 
 				// Now try again - if we pass then carry on,
-				// otherwise we throw
+				// otherwise we throw.
 				if (price_index >= _max_atb_index)
 					return true;
 			}
