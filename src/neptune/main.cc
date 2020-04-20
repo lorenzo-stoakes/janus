@@ -35,10 +35,10 @@ static constexpr uint64_t DYN_BUFFER_MAX_SIZE = 500'000'000;
 #ifdef SHOW_PROGRESS
 static void clear_line()
 {
-	std::cout << "\r";
+	std::cerr << "\r";
 	for (int i = 0; i < 100; i++) // NOLINT: Not magical.
-		std::cout << " ";
-	std::cout << "\r" << std::flush;
+		std::cerr << " ";
+	std::cerr << "\r" << std::flush;
 }
 #endif
 
@@ -188,7 +188,7 @@ auto main(int argc, char** argv) -> int
 
 #ifdef SHOW_PROGRESS
 		clear_line();
-		std::cout << std::to_string(i) << "/" << std::to_string(argc - 1) << ": "
+		std::cerr << std::to_string(i) << "/" << std::to_string(argc - 1) << ": "
 			  << filename << std::flush;
 #endif
 
@@ -209,7 +209,7 @@ auto main(int argc, char** argv) -> int
 		return 1;
 
 #ifdef SHOW_PROGRESS
-	std::cout << std::endl;
+	std::cerr << std::endl;
 #endif
 
 #ifdef SHOW_NUM_UPDATES
