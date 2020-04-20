@@ -18,6 +18,8 @@
 
 // Show progress as updating by updating the same output line.
 #define SHOW_PROGRESS
+// Show number of updates on exit.
+#define SHOW_NUM_UPDATES
 
 constexpr uint64_t UNIVERSE_SIZE = 30000;
 
@@ -210,8 +212,10 @@ auto main(int argc, char** argv) -> int
 	std::cout << std::endl;
 #endif
 
+#ifdef SHOW_NUM_UPDATES
 	if (!meta)
 		std::cout << num_updates << " updates" << std::endl;
+#endif
 
 	return 0;
 }
