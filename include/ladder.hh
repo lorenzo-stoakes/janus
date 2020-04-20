@@ -236,7 +236,7 @@ public:
 
 private:
 	static constexpr uint64_t NOT_FOUND_INDEX = static_cast<uint64_t>(-1);
-	static constexpr double EPSILON_VOLUME = 10;
+	static constexpr double EPSILON_VOLUME = 50;
 
 	uint64_t _min_atl_index;
 	uint64_t _max_atb_index;
