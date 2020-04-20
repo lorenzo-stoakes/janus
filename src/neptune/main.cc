@@ -79,6 +79,8 @@ static auto parse_update_stream(const janus::betfair::price_range& range, const 
 	};
 
 	if (auto file = std::ifstream(filename)) {
+		universe.set_last_timestamp(0);
+
 		std::string line;
 		while (std::getline(file, line)) {
 			// Some lines in 'all' folder contain corrupted data :'( skip these.
