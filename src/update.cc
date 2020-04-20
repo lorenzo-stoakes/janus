@@ -31,6 +31,34 @@ static void check_op(const update_state& state, const sajson::value& root)
 					 op_str + "', expect 'mcm'");
 }
 
+// Remove all runner ID updates from the end of the dynamic buffer. This is used
+// to, immediately prior to adding a runner ID, remove any existing defunct
+// runner ID updates (switching from 1 runner ID to another back-to-back
+// achieves nothing).
+static auto strip_runner_ids(dynamic_buffer& dyn_buf) -> int64_t
+{
+	if (dyn_buf.size() < sizeof(update))
+		return 0;
+
+	// Rewind to the last update.
+	update* ptr = reinterpret_cast<update*>(dyn_buf.data());
+	uint64_t num_updates = dyn_buf.size() / sizeof(update);
+
+	int64_t offset = 0;
+	for (int64_t i = num_updates - 1; i >= 0; i--) {
+		update& update = ptr[i];
+
+		if (update.type != update_type::RUNNER_ID)
+			break;
+
+		offset++;
+	}
+
+	// Remove discovered runner IDs.
+	dyn_buf.rewind(offset * sizeof(update));
+	return -offset;
+}
+
 // Emit runner ID update if needed.
 static auto send_runner_id(update_state& state, dynamic_buffer& dyn_buf, uint64_t runner_id)
 	-> int64_t
@@ -38,10 +66,13 @@ static auto send_runner_id(update_state& state, dynamic_buffer& dyn_buf, uint64_
 	if (state.runner_id == runner_id)
 		return 0;
 
+	int64_t num_updates = strip_runner_ids(dyn_buf);
+
 	dyn_buf.add(make_runner_id_update(runner_id));
 	state.runner_id = runner_id;
+	num_updates++;
 
-	return 1;
+	return num_updates;
 }
 
 // Parse runner definition in order to extract any non-runner or runner BSP data.

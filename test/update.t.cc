@@ -730,4 +730,32 @@ TEST(update_test, clear_impossible_atl_atb)
 			  .size(),
 		  1);
 }
+
+// Test that when duplicated runner IDs appear in the stream, we squash them into 1.
+TEST(update_test, squash_duplicate_runner_ids)
+{
+	// Just a runner ID.
+	char json1[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924274639,"mc":[{"rc":[{"id":18889965}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size1 = sizeof(json1) - 1;
+	janus::dynamic_buffer dyn_buf(10'000'000);
+	janus::betfair::update_state state = {
+		.range = &range,
+		.filename = "",
+		.line = 1,
+	};
+
+	uint64_t num_updates =
+		janus::betfair::parse_update_stream_json(state, json1, size1, dyn_buf);
+	EXPECT_EQ(find_all_updates_of(janus::update_type::RUNNER_ID, dyn_buf, num_updates).size(),
+		  1);
+
+	// Just another runner ID.
+	char json2[] =
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924274639,"mc":[{"rc":[{"id":18889964}],"img":false,"tv":0,"con":false,"id":"1.170020941"}],"status":0})";
+	uint64_t size2 = sizeof(json2) - 1;
+
+	// We expect this to have its runner ID stripped so to provide no further updates.
+	EXPECT_EQ(janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf), 0);
+}
 } // namespace
