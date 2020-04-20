@@ -234,4 +234,15 @@ TEST(universe_test, timestamp_first)
 	universe2.apply_update(janus::make_market_id_update(123456));
 	ASSERT_NO_THROW(universe2.apply_update(janus::make_timestamp_update(1234567)));
 }
+
+// Ensure that timestamps cannot go backwards.
+TEST(universe_test, dont_time_travel)
+{
+	auto ptr1 = std::make_unique<janus::betfair::universe<1>>();
+	auto& universe1 = *ptr1;
+
+	universe1.apply_update(janus::make_timestamp_update(1234567));
+	ASSERT_THROW(universe1.apply_update(janus::make_timestamp_update(234567)),
+		     std::runtime_error);
+}
 } // namespace

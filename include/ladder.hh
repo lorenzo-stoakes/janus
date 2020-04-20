@@ -236,7 +236,7 @@ public:
 
 private:
 	static constexpr uint64_t NOT_FOUND_INDEX = static_cast<uint64_t>(-1);
-	static constexpr double EPSILON_VOLUME = 0.5;
+	static constexpr double EPSILON_VOLUME = 50;
 
 	uint64_t _min_atl_index;
 	uint64_t _max_atb_index;
@@ -271,8 +271,10 @@ private:
 				return false;
 
 			double min_atl_vol = _unmatched[_min_atl_index];
-			if (min_atl_vol <= EPSILON_VOLUME) {
+			while (min_atl_vol > 0 && min_atl_vol <= EPSILON_VOLUME) {
 				clear_unmatched_at(_min_atl_index);
+				min_atl_vol = _unmatched[_min_atl_index];
+
 				// Now try again - if we pass then carry on,
 				// otherwise we throw.
 				if (price_index <= _min_atl_index)
@@ -288,10 +290,12 @@ private:
 				return false;
 
 			double max_atb_vol = -_unmatched[_max_atb_index];
-			if (max_atb_vol <= EPSILON_VOLUME) {
+			while (max_atb_vol > 0 && max_atb_vol <= EPSILON_VOLUME) {
 				clear_unmatched_at(_max_atb_index);
+				max_atb_vol = -_unmatched[_max_atb_index];
+
 				// Now try again - if we pass then carry on,
-				// otherwise we throw
+				// otherwise we throw.
 				if (price_index >= _max_atb_index)
 					return true;
 			}

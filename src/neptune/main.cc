@@ -16,6 +16,11 @@
 // Continue running when an error occurs in parsing updates.
 //#define CONTINUE_ON_ERROR
 
+// Show progress as updating by updating the same output line.
+#define SHOW_PROGRESS
+// Show number of updates on exit.
+#define SHOW_NUM_UPDATES
+
 constexpr uint64_t UNIVERSE_SIZE = 30000;
 
 // Neptune is a tool for converting existing JSON files to a binary format for
@@ -27,13 +32,15 @@ constexpr uint64_t UNIVERSE_SIZE = 30000;
 
 static constexpr uint64_t DYN_BUFFER_MAX_SIZE = 500'000'000;
 
+#ifdef SHOW_PROGRESS
 static void clear_line()
 {
-	std::cout << "\r";
+	std::cerr << "\r";
 	for (int i = 0; i < 100; i++) // NOLINT: Not magical.
-		std::cout << " ";
-	std::cout << "\r" << std::flush;
+		std::cerr << " ";
+	std::cerr << "\r" << std::flush;
 }
+#endif
 
 static auto parse_meta(const char* filename, janus::dynamic_buffer& dyn_buf) -> bool
 {
@@ -72,6 +79,8 @@ static auto parse_update_stream(const janus::betfair::price_range& range, const 
 	};
 
 	if (auto file = std::ifstream(filename)) {
+		universe.set_last_timestamp(0);
+
 		std::string line;
 		while (std::getline(file, line)) {
 			// Some lines in 'all' folder contain corrupted data :'( skip these.
@@ -179,9 +188,11 @@ auto main(int argc, char** argv) -> int
 	for (int i = 1 + arg_offset; i < argc; i++) {
 		const char* filename = argv[i];
 
+#ifdef SHOW_PROGRESS
 		clear_line();
-		std::cout << std::to_string(i) << "/" << std::to_string(argc - 1) << ": "
+		std::cerr << std::to_string(i) << "/" << std::to_string(argc - 1) << ": "
 			  << filename << std::flush;
+#endif
 
 		if ((meta && !parse_meta(filename, dyn_buf)) ||
 		    (!meta &&
@@ -199,10 +210,14 @@ auto main(int argc, char** argv) -> int
 	if (!save_data(output_filename, dyn_buf))
 		return 1;
 
-	std::cout << std::endl;
+#ifdef SHOW_PROGRESS
+	std::cerr << std::endl;
+#endif
 
+#ifdef SHOW_NUM_UPDATES
 	if (!meta)
 		std::cout << num_updates << " updates" << std::endl;
+#endif
 
 	return 0;
 }
