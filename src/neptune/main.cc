@@ -16,6 +16,9 @@
 // Continue running when an error occurs in parsing updates.
 //#define CONTINUE_ON_ERROR
 
+// Show progress as updating by updating the same output line.
+#define SHOW_PROGRESS
+
 constexpr uint64_t UNIVERSE_SIZE = 30000;
 
 // Neptune is a tool for converting existing JSON files to a binary format for
@@ -27,6 +30,7 @@ constexpr uint64_t UNIVERSE_SIZE = 30000;
 
 static constexpr uint64_t DYN_BUFFER_MAX_SIZE = 500'000'000;
 
+#ifdef SHOW_PROGRESS
 static void clear_line()
 {
 	std::cout << "\r";
@@ -34,6 +38,7 @@ static void clear_line()
 		std::cout << " ";
 	std::cout << "\r" << std::flush;
 }
+#endif
 
 static auto parse_meta(const char* filename, janus::dynamic_buffer& dyn_buf) -> bool
 {
@@ -179,9 +184,11 @@ auto main(int argc, char** argv) -> int
 	for (int i = 1 + arg_offset; i < argc; i++) {
 		const char* filename = argv[i];
 
+#ifdef SHOW_PROGRESS
 		clear_line();
 		std::cout << std::to_string(i) << "/" << std::to_string(argc - 1) << ": "
 			  << filename << std::flush;
+#endif
 
 		if ((meta && !parse_meta(filename, dyn_buf)) ||
 		    (!meta &&
@@ -199,7 +206,9 @@ auto main(int argc, char** argv) -> int
 	if (!save_data(output_filename, dyn_buf))
 		return 1;
 
+#ifdef SHOW_PROGRESS
 	std::cout << std::endl;
+#endif
 
 	if (!meta)
 		std::cout << num_updates << " updates" << std::endl;
