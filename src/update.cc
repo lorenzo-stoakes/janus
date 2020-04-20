@@ -31,6 +31,19 @@ static void check_op(const update_state& state, const sajson::value& root)
 					 op_str + "', expect 'mcm'");
 }
 
+// Emit runner ID update if needed.
+static auto send_runner_id(update_state& state, dynamic_buffer& dyn_buf, uint64_t runner_id)
+	-> uint64_t
+{
+	if (state.runner_id == runner_id)
+		return 0;
+
+	dyn_buf.add(make_runner_id_update(runner_id));
+	state.runner_id = runner_id;
+
+	return 1;
+}
+
 // Parse runner definition in order to extract any non-runner or runner BSP data.
 static auto parse_runner_definition(update_state& state, const sajson::value& runner_def,
 				    dynamic_buffer& dyn_buf) -> uint64_t
@@ -47,18 +60,10 @@ static auto parse_runner_definition(update_state& state, const sajson::value& ru
 	sajson::value id = runner_def.get_value_of_key(sajson::literal("id"));
 	uint64_t runner_id = id.get_integer_value();
 
-	auto send_runner_id = [&]() {
-		if (state.runner_id != runner_id) {
-			dyn_buf.add(make_runner_id_update(runner_id));
-			num_updates++;
-			state.runner_id = runner_id;
-		}
-	};
-
 	sajson::value bsp = runner_def.get_value_of_key(sajson::literal("bsp"));
 	// Sometimes betfair sends BSP of "NaN" (!)
 	if (bsp.get_type() != sajson::TYPE_NULL && bsp.get_type() != sajson::TYPE_STRING) {
-		send_runner_id();
+		num_updates += send_runner_id(state, dyn_buf, runner_id);
 
 		double bsp_val = bsp.get_number_value();
 		dyn_buf.add(make_runner_sp_update(bsp_val));
@@ -81,12 +86,12 @@ static auto parse_runner_definition(update_state& state, const sajson::value& ru
 		if (adj_factor.get_type() != sajson::TYPE_NULL)
 			adj_factor_val = adj_factor.get_number_value();
 
-		send_runner_id();
+		num_updates += send_runner_id(state, dyn_buf, runner_id);
 		dyn_buf.add(make_runner_removal_update(adj_factor_val));
 		num_updates++;
 	} else if (size == sizeof("WINNER") - 1 &&
 		   ::strncmp(status_str, "WINNER", sizeof("WINNER") - 1) == 0) {
-		send_runner_id();
+		num_updates += send_runner_id(state, dyn_buf, runner_id);
 		dyn_buf.add(make_runner_won_update());
 		num_updates++;
 	}
@@ -288,11 +293,7 @@ static auto parse_rc(update_state& state, const sajson::value& rc, dynamic_buffe
 
 	sajson::value id = rc.get_value_of_key(sajson::literal("id"));
 	uint64_t runner_id = id.get_integer_value();
-	if (state.runner_id != runner_id) {
-		dyn_buf.add(make_runner_id_update(runner_id));
-		num_updates++;
-		state.runner_id = runner_id;
-	}
+	num_updates += send_runner_id(state, dyn_buf, runner_id);
 
 	// Traded volume.
 
