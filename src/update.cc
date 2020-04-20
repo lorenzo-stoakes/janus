@@ -261,6 +261,9 @@ static auto workaround_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf) 
 	auto* ptr = reinterpret_cast<update*>(raw) - delta_updates;
 	auto* write_ptr = ptr;
 
+	bool seen_min_atl = false;
+	bool seen_max_atb = false;
+
 	uint64_t min_atl_price_index = NUM_PRICES - 1;
 	uint64_t max_atb_price_index = 0;
 
@@ -272,15 +275,19 @@ static auto workaround_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf) 
 			uint64_t price_index;
 			std::tie(price_index, vol) = get_update_runner_unmatched_atl(update);
 
-			if (price_index < min_atl_price_index)
+			if (price_index < min_atl_price_index && vol != 0) {
+				seen_min_atl = true;
 				min_atl_price_index = price_index;
+			}
 
 		} else if (update.type == update_type::RUNNER_UNMATCHED_ATB) {
 			uint64_t price_index;
 			std::tie(price_index, vol) = get_update_runner_unmatched_atb(update);
 
-			if (price_index > max_atb_price_index)
+			if (price_index > max_atb_price_index && vol != 0) {
+				seen_max_atb = true;
 				max_atb_price_index = price_index;
+			}
 		} else {
 			throw std::runtime_error(std::string("Unexpected update type ") +
 						 update_type_str(update.type) +
@@ -295,7 +302,7 @@ static auto workaround_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf) 
 		}
 	}
 
-	if (max_atb_price_index < min_atl_price_index)
+	if (!seen_min_atl || !seen_max_atb || max_atb_price_index < min_atl_price_index)
 		return 0;
 
 	// OK we've received an impossible update, this data is clearly
