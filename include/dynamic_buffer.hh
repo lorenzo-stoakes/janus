@@ -26,6 +26,16 @@ public:
 	{
 	}
 
+	// Explcitly specify the underlying buffer. The capacity in bytes is
+	// aligned to 64-bit, rounding down if not aligned.
+	dynamic_buffer(uint64_t* ptr, uint64_t cap)
+		: _cap{align64_down(cap) / sizeof(uint64_t)},
+		  _read_offset{0},
+		  _write_offset{0},
+		  _buf{std::unique_ptr<uint64_t[]>(ptr)}
+	{
+	}
+
 	// Make the buffer moveable.
 	dynamic_buffer(dynamic_buffer&& that) noexcept
 		: _cap{that._cap},
@@ -239,6 +249,12 @@ private:
 		// aligned value, then by clearing the trailing bits we obtain
 		// that value. Aligned values remain the same.
 		return (size + (sizeof(uint64_t) - 1)) & ~(sizeof(uint64_t) - 1);
+	}
+
+	// Align input value to 64-bits, i.e. 8 bytes, rounding down.
+	static constexpr auto align64_down(uint64_t size) -> uint64_t
+	{
+		return size & ~(sizeof(uint64_t) - 1);
 	}
 
 	// Throw an exception indicating an overflow.
