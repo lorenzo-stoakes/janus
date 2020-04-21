@@ -569,4 +569,29 @@ TEST(dynamic_buffer_test, rewind)
 	EXPECT_EQ(buf.size(), 0);
 	EXPECT_EQ(buf.read_offset(), 0);
 }
+
+// Test that we can construct a dynamic buffer with a custom underlying buffer
+// correctly.
+TEST(dynamic_buffer_test, custom_buffer_ctor)
+{
+	uint64_t* raw = new uint64_t[100];
+
+	auto buf = janus::dynamic_buffer(raw, 100);
+	// We get rounded down to nearest 8 byte aligned value, rounding DOWN.
+	EXPECT_EQ(buf.cap(), 96);
+
+	// Setting values in the dynamic buffer should mutate the underlying
+	// buffer.
+	for (uint64_t i = 0; i < 12; i++) {
+		buf.add_uint64(12 - i);
+		ASSERT_EQ(raw[i], 12 - i);
+	}
+
+	// Setting values in the underlying buffer should mutate the dynamic
+	// buffer.
+	for (uint64_t i = 0; i < 12; i++) {
+		raw[i] = i;
+		ASSERT_EQ(buf.read_uint64(), i);
+	}
+}
 } // namespace
