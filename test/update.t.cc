@@ -540,7 +540,7 @@ TEST(update_test, send_runner_update)
 
 	dyn_buf.reset();
 	char json2[] =
-		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924323577,"mc":[{"rc":[{"tv":1882.61,"trd":[[8.6,220.32]],"atl":[[8.6,8.18],[9.6,13.12]],"id":17247906},{"tv":874.24,"trd":[[14.5,94.73]],"ltp":14.5,"atl":[[14.5,10.61]],"id":18889965},{"tv":402.81,"trd":[[23,29.64]],"ltp":23,"atb":[[23,0]],"id":22109331}],"img":false,"tv":25130.72,"con":true,"id":"1.170020941"}],"status":0})";
+		R"({"op":"mcm","id":1,"clk":"1234","pt":1583924323577,"mc":[{"rc":[{"tv":1882.61,"trd":[[8.6,220.32]],"atl":[[8.6,8.18],[9.6,13.12]],"id":17247906},{"tv":874.24,"trd":[[14.5,94.73]],"ltp":14.5,"atl":[[14.5,10.61]],"id":18889965},{"tv":402.81,"trd":[[0,29.64]],"ltp":23,"atb":[[23,0]],"id":22109331}],"img":false,"tv":25130.72,"con":true,"id":"1.170020941"}],"status":0})";
 	uint64_t size2 = sizeof(json2) - 1;
 
 	num_updates = janus::betfair::parse_update_stream_json(state, json2, size2, dyn_buf);
@@ -590,7 +590,8 @@ TEST(update_test, send_runner_update)
 
 	EXPECT_EQ(pairs[2].first, 22109331);
 	std::tie(price_index, vol) = janus::get_update_runner_matched(pairs[2].second);
-	EXPECT_EQ(price_index, range.pricex100_to_index(2300));
+	// Invalid price index provided, we expect it to default to 1.01.
+	EXPECT_EQ(price_index, range.pricex100_to_index(101));
 	EXPECT_DOUBLE_EQ(vol, 29.64);
 
 	// Matched volume, prices offset from valid prices.

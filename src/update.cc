@@ -198,9 +198,12 @@ static auto parse_trd(const update_state& state, const sajson::value& trd, dynam
 	// Really we should assign to the surrounding price levels weighted by
 	// how close they are to them, however for now we simply round down.
 	// TODO(lorenzo): Review.
-	uint32_t price_index = range->pricex100_to_nearest_index(price.mult100());
-	double vol = trd.get_array_element(1).get_number_value();
+	uint64_t price_index = range->pricex100_to_nearest_index(price.mult100());
+	// If we round down below 1.01 default to 1.01.
+	if (price_index == INVALID_PRICE_INDEX)
+		price_index = 0;
 
+	double vol = trd.get_array_element(1).get_number_value();
 	dyn_buf.add(make_runner_matched_update(price_index, vol));
 	return 1;
 }
