@@ -40,7 +40,8 @@ TEST(universe_test, apply_update)
 
 	// We haven't sent a market ID yet so the universe doesn't know what to
 	// do with an arbitrary update.
-	EXPECT_THROW(universe.apply_update(janus::make_market_clear_update()), std::runtime_error);
+	EXPECT_THROW(universe.apply_update(janus::make_market_clear_update()),
+		     janus::universe_apply_error);
 
 	// Add a market.
 	EXPECT_EQ(universe.num_markets(), 0);
@@ -55,7 +56,8 @@ TEST(universe_test, apply_update)
 
 	// We haven't sent a runner ID yet so the universe doesn't know what to
 	// do with a runner update.
-	EXPECT_THROW(universe.apply_update(janus::make_runner_won_update()), std::runtime_error);
+	EXPECT_THROW(universe.apply_update(janus::make_runner_won_update()),
+		     janus::universe_apply_error);
 
 	// Add a runner.
 	EXPECT_EQ(universe[123456].num_runners(), 0);
@@ -68,7 +70,8 @@ TEST(universe_test, apply_update)
 
 	// We haven't sent a timestamp yet so the universe doesn't know what to
 	// do with an arbitrary update.
-	ASSERT_THROW(universe.apply_update(janus::make_runner_won_update()), std::runtime_error);
+	ASSERT_THROW(universe.apply_update(janus::make_runner_won_update()),
+		     janus::universe_apply_error);
 
 	// Set the timestamp.
 	universe.apply_update(janus::make_timestamp_update(1234567));
@@ -96,7 +99,8 @@ TEST(universe_test, apply_update)
 	EXPECT_EQ(universe.last_market()->id(), 999);
 	// Now we changed market, our last runner should be invalidated.
 	EXPECT_EQ(universe.last_runner(), nullptr);
-	ASSERT_THROW(universe.apply_update(janus::make_runner_won_update()), std::runtime_error);
+	ASSERT_THROW(universe.apply_update(janus::make_runner_won_update()),
+		     janus::universe_apply_error);
 	// Set market traded volume on other market.
 	universe.apply_update(janus::make_market_traded_vol_update(789.99));
 	EXPECT_EQ(universe.num_updates(), 6);
@@ -243,6 +247,6 @@ TEST(universe_test, dont_time_travel)
 
 	universe1.apply_update(janus::make_timestamp_update(1234567));
 	ASSERT_THROW(universe1.apply_update(janus::make_timestamp_update(234567)),
-		     std::runtime_error);
+		     janus::universe_apply_error);
 }
 } // namespace

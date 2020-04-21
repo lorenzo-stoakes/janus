@@ -26,6 +26,24 @@ private:
 	std::string _what;
 };
 
+class universe_apply_error : public std::exception
+{
+public:
+	universe_apply_error(uint64_t market_id, uint64_t runner_id, std::exception& underlying)
+		: _what{"m" + std::to_string(market_id) + ":" + "r" + std::to_string(runner_id) +
+			": " + underlying.what()}
+	{
+	}
+
+	auto what() const noexcept -> const char* override
+	{
+		return _what.c_str();
+	}
+
+private:
+	std::string _what;
+};
+
 namespace betfair
 {
 // Error in trying to add unmatched volume to a ladder.

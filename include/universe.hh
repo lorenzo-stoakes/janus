@@ -187,6 +187,9 @@ private:
 	// Set runner timestamp to universe timestamp - invoked when runner
 	// update occurs.
 	void set_runner_timestamp();
+
+	// Underlying apply update implementation.
+	void do_apply_update(const update& update);
 };
 } // namespace janus::betfair
 

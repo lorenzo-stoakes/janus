@@ -135,7 +135,7 @@ void universe<Cap>::apply_runner_won()
 }
 
 template<uint64_t Cap>
-void universe<Cap>::apply_update(const update& update)
+void universe<Cap>::do_apply_update(const update& update)
 {
 	update_type type = update.type;
 
@@ -253,5 +253,17 @@ void universe<Cap>::apply_update(const update& update)
 	}
 
 	_num_updates++;
+}
+
+template<uint64_t Cap>
+void universe<Cap>::apply_update(const update& update)
+{
+	try {
+		do_apply_update(update);
+	} catch (std::exception& e) {
+		uint64_t market_id = _last_market == nullptr ? 0 : _last_market->id();
+		uint64_t runner_id = _last_runner == nullptr ? 0 : _last_runner->id();
+		throw universe_apply_error(market_id, runner_id, e);
+	}
 }
 } // namespace janus::betfair
