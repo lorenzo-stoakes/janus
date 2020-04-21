@@ -1,5 +1,15 @@
 # Binary file format
 
+## Directory structure
+
+~/data/jandat/
+|- meta.jan
+|-markets/
+ |-[market id].jan (all snappy compressed).
+
+Allows us to append to markets on the fly. Meta will just be an array of
+markets.
+
 ## Metadata
 
 ### Header
