@@ -23,12 +23,9 @@
 
 constexpr uint64_t UNIVERSE_SIZE = 30000;
 
-// Neptune is a tool for converting existing JSON files to a binary format for
-// processing by janus.
-
-// This version is a hacky, terrible and over-allocating jumble designed for
-// testing out the parsing logic of janus and getting an idea of performance,
-// compression ratio and correctness when parsing real data.
+// Checker is a tool for converting existing JSON files to a binary format for
+// processing by janus and parsing it (if update stream data) in a universe for
+// the purposes of checking that the logic is functioning correctly.
 
 static constexpr uint64_t DYN_BUFFER_MAX_SIZE = 500'000'000;
 

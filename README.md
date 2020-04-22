@@ -27,6 +27,7 @@ Install the following shared components:
 * [clang tidy](https://clang.llvm.org/extra/clang-tidy/) - Static analysis tool.
 * [cppcheck](http://cppcheck.sourceforge.net/) - Another static analysis tool.
 * [Address sanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizer) - Memory error detection tool.
+* [snappy](https://github.com/google/snappy) - Fast compressor/decompressor.
 
 After that, simply run `make` in the root directory and binaries should appear in `build/`.
 
@@ -34,4 +35,12 @@ To run tests run `make test`, and to run benchmarks run `make bench`.
 
 ## 3rd-party components
 
-* [sajson](https://github.com/chadaustin/sajson) - Used and modified under MIT license.
+* [sajson](https://github.com/chadaustin/sajson) - Used and modified under an MIT license.
+* [snappy](https://github.com/google/snappy) - Fast compressor/decompressor used as a library under a BSD license.
+
+## Additional tools
+
+- __benchmark__: Run 'make bench' to run benchmarks. Currently this just runs
+  the original sajson benchmarks.
+- __checker__: This allows checking of the JSON parsing and universe update
+  applying logic. This is compiled as a tool in the binary 'checker'.
