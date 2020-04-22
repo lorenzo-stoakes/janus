@@ -37,3 +37,8 @@ To run tests run `make test`, and to run benchmarks run `make bench`.
 
 * [sajson](https://github.com/chadaustin/sajson) - Used and modified under an MIT license.
 * [snappy](https://github.com/google/snappy) - Fast compressor/decompressor used as a library under a BSD license.
+
+## Additional tools
+
+- __benchmark__: Run 'make bench' to run benchmarks. Currently this just runs
+  the original sajson benchmarks.
