@@ -42,3 +42,5 @@ To run tests run `make test`, and to run benchmarks run `make bench`.
 
 - __benchmark__: Run 'make bench' to run benchmarks. Currently this just runs
   the original sajson benchmarks.
+- __checker__: This allows checking of the JSON parsing and universe update
+  applying logic. This is compiled as a tool in the binary 'checker'.
