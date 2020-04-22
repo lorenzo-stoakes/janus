@@ -16,6 +16,24 @@ file(GLOB JANUS_SOURCES
         "src/*.tcc"
 )
 
+# Neptune
+
+file(GLOB_RECURSE NEPTUNE_SOURCES
+	"src/neptune/*.cc"
+)
+add_executable(neptune
+	${JANUS_SOURCES}
+	${NEPTUNE_SOURCES}
+)
+target_compile_options(neptune
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
+)
+
+target_link_libraries(neptune
+	m
+	snappy
+)
+
 # Checker
 
 file(GLOB_RECURSE CHECKER_SOURCES
@@ -107,14 +125,14 @@ add_custom_target(clangformat ALL
 )
 
 add_custom_target(tidy
-	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES}
+	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES} ${NEPTUNE_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running clang-tidy..."
 	VERBATIM
 )
 
 add_custom_target(cppcheck
-	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet --inline-suppr --suppress=unusedStructMember ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES}
+	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet --inline-suppr --suppress=unusedStructMember ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES} ${NEPTUNE_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running cppcheck..."
 	VERBATIM
