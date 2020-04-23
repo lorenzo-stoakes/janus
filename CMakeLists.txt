@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.13.0)
 project(janus)
 include_directories(include . src)
+link_directories(3rdparty/mbedtls-2.22.0/library)
 set(SHARED_COMPILE_OPTIONS
 	--std=gnu++2a -Wall -g)
 
@@ -11,6 +12,15 @@ file(GLOB_RECURSE HEADERS
 file(GLOB_RECURSE SOURCES
 	"src/*.cc"
 	"src/*.tcc"
+)
+
+# 3rd-party
+
+execute_process(COMMAND -j cat /proc/cpuinfo | grep -c processor OUTPUT_VARIABLE NUM_CORES)
+add_custom_target(tls
+	make --silent -C ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mbedtls-2.22.0 -j ${NUM_CORES}
+	COMMENT "Building mbedtls..."
+	VERBATIM
 )
 
 # Excluding sajson for now, will add once static issues resolved.
@@ -54,7 +64,12 @@ target_compile_options(jupiter
 
 target_link_libraries(jupiter
 	m
+	mbedcrypto
+	mbedtls
+	mbedx509
 )
+
+add_dependencies(jupiter tls)
 
 # Checker
 
