@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13.0)
 project(janus)
-include_directories(include . src)
+include_directories(include . src 3rdparty/mbedtls-2.22.0/include)
 link_directories(3rdparty/mbedtls-2.22.0/library)
 set(SHARED_COMPILE_OPTIONS
 	--std=gnu++2a -Wall -g)
