@@ -4,16 +4,21 @@ include_directories(include . src)
 set(SHARED_COMPILE_OPTIONS
 	--std=gnu++2a -Wall -g)
 
-file(GLOB_RECURSE HEADER_SOURCES
+file(GLOB_RECURSE HEADERS
 	"include/*.hh"
 )
 
+file(GLOB_RECURSE SOURCES
+	"src/*.cc"
+	"src/*.tcc"
+)
+
 # Excluding sajson for now, will add once static issues resolved.
-list(FILTER HEADER_SOURCES EXCLUDE REGEX "sajson.*")
+list(FILTER HEADERS EXCLUDE REGEX "sajson.*")
 
 file(GLOB JANUS_SOURCES
 	"src/*.cc"
-        "src/*.tcc"
+	"src/*.tcc"
 )
 
 # Neptune
@@ -111,7 +116,7 @@ target_compile_options(benchmark
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3 -DNDEBUG
 )
 target_link_libraries(benchmark
-        m
+	m
 )
 add_custom_target(bench
 	COMMAND ${PROJECT_BINARY_DIR}/benchmark
@@ -142,14 +147,14 @@ add_custom_target(clangformat ALL
 )
 
 add_custom_target(tidy
-	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES} ${NEPTUNE_SOURCES} ${JUPITER_SOURCES}
+	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${HEADERS} ${SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running clang-tidy..."
 	VERBATIM
 )
 
 add_custom_target(cppcheck
-	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet --inline-suppr --suppress=unusedStructMember ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES} ${NEPTUNE_SOURCES} ${JUPITER_SOURCES}
+	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet --inline-suppr --suppress=unusedStructMember ${HEADERS} ${SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running cppcheck..."
 	VERBATIM
