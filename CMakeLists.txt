@@ -34,6 +34,23 @@ target_link_libraries(neptune
 	snappy
 )
 
+# Jupiter
+
+file(GLOB_RECURSE JUPITER_SOURCES
+	"src/jupiter/*.cc"
+)
+add_executable(jupiter
+	${JANUS_SOURCES}
+	${JUPITER_SOURCES}
+)
+target_compile_options(jupiter
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
+)
+
+target_link_libraries(jupiter
+	m
+)
+
 # Checker
 
 file(GLOB_RECURSE CHECKER_SOURCES
@@ -125,14 +142,14 @@ add_custom_target(clangformat ALL
 )
 
 add_custom_target(tidy
-	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES} ${NEPTUNE_SOURCES}
+	clang-tidy --quiet -p ${PROJECT_BINARY_DIR} ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES} ${NEPTUNE_SOURCES} ${JUPITER_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running clang-tidy..."
 	VERBATIM
 )
 
 add_custom_target(cppcheck
-	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet --inline-suppr --suppress=unusedStructMember ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES} ${NEPTUNE_SOURCES}
+	cppcheck --std=c++11 --language=c++ --enable=warning,style,performance --quiet --inline-suppr --suppress=unusedStructMember ${JANUS_SOURCES} ${HEADER_SOURCES} ${CHECKER_SOURCES} ${NEPTUNE_SOURCES} ${JUPITER_SOURCES}
 	DEPENDS testrunner
 	COMMENT "Running cppcheck..."
 	VERBATIM
