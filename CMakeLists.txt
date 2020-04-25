@@ -102,6 +102,7 @@ file(GLOB_RECURSE TEST_SOURCES
 )
 add_executable(testrunner
 	${JANUS_SOURCES}
+	${NETWORK_SOURCES}
 	${TEST_SOURCES}
 )
 target_compile_options(testrunner
@@ -110,6 +111,9 @@ target_compile_options(testrunner
 )
 target_link_libraries(testrunner
 	m
+	mbedcrypto
+	mbedtls
+	mbedx509
 	asan
 	ubsan
 	gtest
