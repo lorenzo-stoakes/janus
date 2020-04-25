@@ -14,6 +14,10 @@ file(GLOB_RECURSE SOURCES
 	"src/*.tcc"
 )
 
+file(GLOB NETWORK_SOURCES
+	"src/network/*.cc"
+)
+
 # 3rd-party
 
 execute_process(COMMAND -j cat /proc/cpuinfo | grep -c processor OUTPUT_VARIABLE NUM_CORES)
@@ -56,6 +60,7 @@ file(GLOB_RECURSE JUPITER_SOURCES
 )
 add_executable(jupiter
 	${JANUS_SOURCES}
+	${NETWORK_SOURCES}
 	${JUPITER_SOURCES}
 )
 target_compile_options(jupiter
@@ -97,6 +102,7 @@ file(GLOB_RECURSE TEST_SOURCES
 )
 add_executable(testrunner
 	${JANUS_SOURCES}
+	${NETWORK_SOURCES}
 	${TEST_SOURCES}
 )
 target_compile_options(testrunner
@@ -105,6 +111,9 @@ target_compile_options(testrunner
 )
 target_link_libraries(testrunner
 	m
+	mbedcrypto
+	mbedtls
+	mbedx509
 	asan
 	ubsan
 	gtest
