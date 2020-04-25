@@ -58,7 +58,8 @@ TEST(http_test, request)
 	buf[req3.size()] = '\0';
 	EXPECT_STREQ(ptr, "PUT /test.txt HTTP/1.0\r\nHost: ljs.io\r\n");
 
-	// Now a post.
+	// Now a POST.
+
 	janus::http_request req4(buf, 1000);
 	ptr = req4.post("ljs.io");
 	buf[req4.size()] = '\0';
