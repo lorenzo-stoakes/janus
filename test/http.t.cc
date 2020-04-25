@@ -1,6 +1,8 @@
 #include "janus.hh"
 
 #include <gtest/gtest.h>
+#include <stdexcept>
+#include <string>
 
 namespace
 {
@@ -94,5 +96,37 @@ TEST(http_test, request)
 	ASSERT_THROW(req5.post("ljs.io"), std::runtime_error);
 	ASSERT_THROW(req5.op("PUT", "ljs.io"), std::runtime_error);
 	ASSERT_THROW(req5.add_data(data, size), std::runtime_error);
+}
+
+// Test that we can correctly parse an HTTP response.
+TEST(http_test, parse_response)
+{
+	char http[] =
+		"HTTP/1.1 200 OK\r\nServer: nginx/1.14.0 (Ubuntu)\r\nDate: Sat, 25 Apr 2020 17:19:29 GMT\r\nContent-Type: text/plain\r\nContent-Length: 871\r\nLast-Modified: Sat, 25 Apr 2020 09:12:22 GMT\r\nConnection: close\r\nStrict-Transport-Security: max-age=31536000; includeSubdomains; preload\r\nAccept-Ranges: bytes\r\n\r\n012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
+
+	uint64_t expected_offset = std::string(http).find("\r\n\r\n") + 4;
+
+	int response_code = 0;
+	uint64_t offset = 0;
+
+	uint64_t bytes_remaining =
+		janus::parse_http_response(http, sizeof(http) - 1, response_code, offset);
+
+	EXPECT_EQ(bytes_remaining, 0);
+	EXPECT_EQ(response_code, 200);
+	EXPECT_EQ(offset, expected_offset);
+
+	// If it's truncated we should see an error.
+	char tmp = http[3];
+	http[3] = '\0';
+	ASSERT_THROW(janus::parse_http_response(http, 3, response_code, offset),
+		     std::runtime_error);
+	http[3] = tmp;
+
+	// A missing content-length should mean it's treated like there's no data.
+	char http2[] =
+		"HTTP/1.1 200 OK\r\nServer: nginx/1.14.0 (Ubuntu)\r\nDate: Sat, 25 Apr 2020 17:19:29 GMT\r\nContent-Type: text/plain\r\nLast-Modified: Sat, 25 Apr 2020 09:12:22 GMT\r\nConnection: close\r\nStrict-Transport-Security: max-age=31536000; includeSubdomains; preload\r\nAccept-Ranges: bytes\r\n\r\n";
+	EXPECT_EQ(janus::parse_http_response(http2, sizeof(http2) - 1, response_code, offset), 0);
+	EXPECT_EQ(offset, 0);
 }
 } // namespace
