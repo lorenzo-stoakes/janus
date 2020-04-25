@@ -16,3 +16,7 @@
 #include "universe.hh"
 #include "update.hh"
 #include "virtual.hh"
+
+#include "network/certs.hh"
+#include "network/client.hh"
+#include "network/rng.hh"

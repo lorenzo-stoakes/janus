@@ -44,6 +44,30 @@ private:
 	std::string _what;
 };
 
+// Error in network operation.
+class network_error : public std::exception
+{
+public:
+	network_error(int err_code, const std::string& prefix, const char* err_msg)
+		: _err_code{err_code}, _what{std::string("tls:") + prefix + ": " + err_msg}
+	{
+	}
+
+	auto err_code() const -> int
+	{
+		return _err_code;
+	}
+
+	auto what() const noexcept -> const char* override
+	{
+		return _what.c_str();
+	}
+
+private:
+	int _err_code;
+	std::string _what;
+};
+
 namespace betfair
 {
 // Error in trying to add unmatched volume to a ladder.
