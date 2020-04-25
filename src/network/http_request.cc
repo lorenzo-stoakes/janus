@@ -110,7 +110,7 @@ void http_request::append(const char* str)
 void http_request::append_null_terminator()
 {
 	check_size();
-	_buf[_size++] = '\0';
+	_buf[_size] = '\0';
 }
 
 void http_request::append_newline()
