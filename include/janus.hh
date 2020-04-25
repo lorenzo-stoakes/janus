@@ -19,4 +19,5 @@
 
 #include "network/certs.hh"
 #include "network/client.hh"
+#include "network/http_request.hh"
 #include "network/rng.hh"
