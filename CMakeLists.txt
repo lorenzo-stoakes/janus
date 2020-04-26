@@ -20,7 +20,7 @@ file(GLOB NETWORK_SOURCES
 
 # 3rd-party
 
-execute_process(COMMAND -j cat /proc/cpuinfo | grep -c processor OUTPUT_VARIABLE NUM_CORES)
+execute_process(COMMAND cat /proc/cpuinfo | grep -c processor OUTPUT_VARIABLE NUM_CORES)
 add_custom_target(tls
 	make --silent -C ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mbedtls-2.22.0 -j ${NUM_CORES}
 	COMMENT "Building mbedtls..."
