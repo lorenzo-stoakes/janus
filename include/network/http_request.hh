@@ -94,6 +94,9 @@ private:
 	// Append a string to the buffer, WITHOUT null terminator.
 	void append(const char* str);
 
+	// Append a string to the buffer of specified size.
+	void append(const char* str, uint64_t size);
+
 	// Append null terminator to end of buffer.
 	void append_null_terminator();
 

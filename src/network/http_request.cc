@@ -66,7 +66,7 @@ auto http_request::add_data(const char* buf, uint32_t size) -> char*
 	// Add additional newline to indicate data is beginning.
 	append_newline();
 
-	append(buf);
+	append(buf, size);
 	append_null_terminator();
 	_complete = true;
 
@@ -102,6 +102,14 @@ void http_request::check_size()
 void http_request::append(const char* str)
 {
 	while (*str != '\0') {
+		check_size();
+		_buf[_size++] = *str++;
+	}
+}
+
+void http_request::append(const char* str, uint64_t size)
+{
+	for (uint64_t i = 0; i < size; i++) {
 		check_size();
 		_buf[_size++] = *str++;
 	}
