@@ -42,12 +42,6 @@ public:
 	// Query API endpoint.
 	auto api(const std::string& endpoint, const std::string& json) -> std::string;
 
-	// Get current session token if logged in.
-	auto session_token() -> std::string
-	{
-		return _session_token;
-	}
-
 	static constexpr const char* ID_HOST = "identitysso-cert.betfair.com";
 	static constexpr const char* LOGIN_PATH = "/api/certlogin";
 	static constexpr const char* LOGOUT_PATH = "/api/logout";
