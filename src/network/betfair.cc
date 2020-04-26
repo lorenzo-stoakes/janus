@@ -155,6 +155,86 @@ auto session::api(const std::string& endpoint, const std::string& json) -> std::
 	return std::string(ptr, size);
 }
 
+auto session::authenticate_stream(janus::tls::client& client) -> std::string
+{
+	check_logged_in();
+	if (client.connected())
+		throw std::runtime_error("Cannot authenticate stream, already connected!");
+
+	client.connect();
+
+	// We receive a welcome message containing the connection ID.
+
+	int bytes = read_until_newline(client);
+
+	sajson::document doc = janus::internal::parse_json("", _internal_buf.get(), bytes);
+	const sajson::value& root = doc.get_root();
+
+	sajson::value op = root.get_value_of_key(sajson::literal("op"));
+	if (op.get_type() != sajson::TYPE_STRING)
+		throw std::runtime_error("Missing op in stream response");
+
+	if (::strcmp(op.as_cstring(), "connection") != 0)
+		throw std::runtime_error(std::string("Unexpected op (expected connection) ") +
+					 op.as_cstring());
+
+	sajson::value id = root.get_value_of_key(sajson::literal("connectionId"));
+	if (id.get_type() != sajson::TYPE_STRING)
+		throw std::runtime_error("Missing connectionId in stream response");
+
+	std::string ret = id.as_string();
+
+	// Now we need to authenticate.
+
+	// TODO(lorenzo): While we aren't so worried about allocations at this
+	// non-hotspot, this feels particularly horrible.
+	std::string msg = R"({"op":"authentication","id":1,"appKey":")";
+	msg += _config.app_key;
+	msg += R"(","session":")";
+	msg += _session_token;
+	msg += "\"}\n";
+
+	client.write(msg.c_str(), msg.size());
+
+	// Receive response to authentication.
+	bytes = read_until_newline(client);
+
+	sajson::document auth_doc = janus::internal::parse_json("", _internal_buf.get(), bytes);
+	const sajson::value& auth_root = auth_doc.get_root();
+
+	sajson::value auth_op = auth_root.get_value_of_key(sajson::literal("op"));
+	if (auth_op.get_type() != sajson::TYPE_STRING)
+		throw std::runtime_error("Missing op in authentication stream response");
+
+	if (::strcmp(auth_op.as_cstring(), "status") != 0)
+		throw std::runtime_error(std::string("Unexpected op (expected status) ") +
+					 auth_op.as_cstring());
+
+	sajson::value status_code = auth_root.get_value_of_key(sajson::literal("statusCode"));
+	if (::strcmp(status_code.as_cstring(), "SUCCESS") != 0)
+		throw std::runtime_error(std::string("Unsuccessful authentication: ") +
+					 status_code.as_cstring());
+
+	return ret;
+}
+
+auto session::read_until_newline(janus::tls::client& client) -> int
+{
+	int bytes;
+	bool disconnected;
+	int offset = 0;
+	do {
+		bytes = client.read(&_internal_buf[offset], INTERNAL_BUFFER_SIZE, disconnected);
+		offset += bytes;
+	} while (!disconnected && _internal_buf[offset - 1] != '\n');
+	_internal_buf[offset] = '\0';
+
+	if (disconnected)
+		throw std::runtime_error("Unexpected disconnection");
+
+	return offset;
+}
+
 void session::check_certs_loaded()
 {
 	if (!_certs_loaded)

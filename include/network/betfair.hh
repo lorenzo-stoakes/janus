@@ -42,6 +42,17 @@ public:
 	// Query API endpoint.
 	auto api(const std::string& endpoint, const std::string& json) -> std::string;
 
+	// Return a connection configured for the stream API.
+	auto make_stream_connection() -> janus::tls::client
+	{
+		check_logged_in();
+		return janus::tls::client(STREAM_HOST, PORT, _certs, _rng);
+	}
+
+	// Connect to and authenticate stream connection, ready for use.
+	// Returns connection ID.
+	auto authenticate_stream(janus::tls::client& client) -> std::string;
+
 	static constexpr const char* ID_HOST = "identitysso-cert.betfair.com";
 	static constexpr const char* LOGIN_PATH = "/api/certlogin";
 	static constexpr const char* LOGOUT_PATH = "/api/logout";
@@ -83,5 +94,8 @@ private:
 
 	// Generate an HTTP request for an API-NG call.
 	auto gen_api_req(const std::string& endpoint, const std::string& json) -> http_request;
+
+	// Read from connection into internal buffer until newline. Returns bytes read.
+	auto read_until_newline(janus::tls::client& client) -> int;
 };
 } // namespace janus::betfair
