@@ -21,6 +21,11 @@ auto main(int argc, char** argv) -> int
 	std::string response = session.api("listMarketCatalogue", filter_json);
 	std::cout << response << std::endl;
 
+	// Now connect to stream API and output connection ID.
+	janus::tls::client conn = session.make_stream_connection();
+	std::string conn_id = session.authenticate_stream(conn);
+	std::cout << conn_id << std::endl;
+
 	session.logout();
 
 	return 0;
