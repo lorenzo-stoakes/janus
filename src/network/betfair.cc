@@ -140,6 +140,21 @@ void session::logout()
 	_logged_in = false;
 }
 
+auto session::api(const std::string& endpoint, const std::string& json) -> std::string
+{
+	check_logged_in();
+
+	http_request req = gen_api_req(endpoint, json);
+
+	janus::tls::client client(API_HOST, PORT, _certs, _rng);
+	client.connect();
+	client.write(req.buf(), req.size());
+
+	uint64_t size;
+	char* ptr = get_response("API", client, _internal_buf.get(), INTERNAL_BUFFER_SIZE, size);
+	return std::string(ptr, size);
+}
+
 void session::check_certs_loaded()
 {
 	if (!_certs_loaded)
@@ -193,5 +208,26 @@ auto session::gen_logout_req(char* buf, uint64_t cap) -> http_request
 	req.terminate();
 
 	return req;
+}
+
+auto session::gen_api_req(const std::string& endpoint, const std::string& json) -> http_request
+{
+	http_request req(_internal_buf.get(), INTERNAL_BUFFER_SIZE);
+	// API calls have a trailing /.
+	std::string path = std::string(API_PATH) + "/" + endpoint + "/";
+	req.post(API_HOST, path.c_str());
+	req.add_header("Accept", "application/json");
+	req.add_header("X-Application", _config.app_key.c_str());
+	req.add_header("X-Authentication", _session_token.c_str());
+	req.add_header("Content-Type", "application/json");
+	req.add_data(json.c_str(), json.size());
+
+	return req;
+}
+
+void session::check_logged_in()
+{
+	if (!_logged_in)
+		throw std::runtime_error("Attempting operation when not logged in");
 }
 } // namespace janus::betfair
