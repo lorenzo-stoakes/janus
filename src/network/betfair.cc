@@ -37,35 +37,42 @@ static void check_response_code(const char* action, int response_code, char* buf
 	throw std::runtime_error(err);
 }
 
-static auto get_response(const char* action, janus::tls::client& client, char* buf,
+static auto get_response(const char* action, janus::tls::client& client, char* buf, int size,
 			 uint64_t& data_size) -> char*
 {
 	bool disconnected = false;
-	// Reuse buffer as already sent write data.
-	int bytes = client.read(buf, DEFAULT_HTTP_BUF_SIZE, disconnected);
+	int bytes = client.read(buf, size, disconnected);
 	if (bytes == 0)
 		throw std::runtime_error("Received no reply on login");
 
 	int response_code = 0;
 	uint64_t offset = 0;
-	uint64_t bytes_remaining = parse_http_response(buf, bytes, response_code, offset);
+	int bytes_remaining = parse_http_response(buf, bytes, response_code, offset);
 
 	check_response_code(action, response_code, buf, bytes, offset);
 
-	// The response should NEVER exceed our buffer size.
-	if (bytes_remaining > 0)
+	int additional_space = size - bytes;
+	if (bytes_remaining > additional_space)
 		throw std::runtime_error("Unexpected further " + std::to_string(bytes_remaining) +
 					 " bytes for " + action + ":\n" + buf);
 
-	// Terminate data.
-	if (offset > 0) {
-		if (bytes == DEFAULT_HTTP_BUF_SIZE)
-			buf[bytes - 1] = '\0';
-		else
-			buf[bytes] = '\0';
+	int write_offset = bytes;
+	while (bytes_remaining > 0) {
+		int further_bytes =
+			client.read(&buf[write_offset], size - write_offset, disconnected);
+		write_offset += further_bytes;
+		bytes_remaining -= further_bytes;
 	}
 
-	data_size = bytes - offset;
+	// Terminate data.
+	if (offset > 0) {
+		if (write_offset == size)
+			buf[write_offset - 1] = '\0';
+		else
+			buf[write_offset] = '\0';
+	}
+
+	data_size = write_offset - offset;
 	return &buf[offset];
 }
 
@@ -85,7 +92,7 @@ void session::login()
 	client.write(req.buf(), req.size());
 
 	uint64_t size;
-	char* ptr = get_response("login", client, buf, size);
+	char* ptr = get_response("login", client, buf, DEFAULT_HTTP_BUF_SIZE, size);
 
 	sajson::document doc = janus::internal::parse_json("", ptr, size);
 	const sajson::value& root = doc.get_root();
@@ -118,7 +125,7 @@ void session::logout()
 	client.write(req.buf(), req.size());
 
 	uint64_t size;
-	char* ptr = get_response("logout", client, buf, size);
+	char* ptr = get_response("logout", client, buf, DEFAULT_HTTP_BUF_SIZE, size);
 	sajson::document doc = janus::internal::parse_json("", ptr, size);
 	const sajson::value& root = doc.get_root();
 
