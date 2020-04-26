@@ -15,7 +15,12 @@ auto main(int argc, char** argv) -> int
 	session.load_certs();
 
 	session.login();
-	std::cout << session.session_token() << std::endl;
+
+	std::string filter_json =
+		R"({"filter":{"eventTypeIds":["7"],"marketTypeCodes":["WIN"]},"maxResults":1000})";
+	std::string response = session.api("listMarketCatalogue", filter_json);
+	std::cout << response << std::endl;
+
 	session.logout();
 
 	return 0;
