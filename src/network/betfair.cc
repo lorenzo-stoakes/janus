@@ -37,35 +37,42 @@ static void check_response_code(const char* action, int response_code, char* buf
 	throw std::runtime_error(err);
 }
 
-static auto get_response(const char* action, janus::tls::client& client, char* buf,
+static auto get_response(const char* action, janus::tls::client& client, char* buf, int size,
 			 uint64_t& data_size) -> char*
 {
 	bool disconnected = false;
-	// Reuse buffer as already sent write data.
-	int bytes = client.read(buf, DEFAULT_HTTP_BUF_SIZE, disconnected);
+	int bytes = client.read(buf, size, disconnected);
 	if (bytes == 0)
 		throw std::runtime_error("Received no reply on login");
 
 	int response_code = 0;
 	uint64_t offset = 0;
-	uint64_t bytes_remaining = parse_http_response(buf, bytes, response_code, offset);
+	int bytes_remaining = parse_http_response(buf, bytes, response_code, offset);
 
 	check_response_code(action, response_code, buf, bytes, offset);
 
-	// The response should NEVER exceed our buffer size.
-	if (bytes_remaining > 0)
+	int additional_space = size - bytes;
+	if (bytes_remaining > additional_space)
 		throw std::runtime_error("Unexpected further " + std::to_string(bytes_remaining) +
 					 " bytes for " + action + ":\n" + buf);
 
-	// Terminate data.
-	if (offset > 0) {
-		if (bytes == DEFAULT_HTTP_BUF_SIZE)
-			buf[bytes - 1] = '\0';
-		else
-			buf[bytes] = '\0';
+	int write_offset = bytes;
+	while (bytes_remaining > 0) {
+		int further_bytes =
+			client.read(&buf[write_offset], size - write_offset, disconnected);
+		write_offset += further_bytes;
+		bytes_remaining -= further_bytes;
 	}
 
-	data_size = bytes - offset;
+	// Terminate data.
+	if (offset > 0) {
+		if (write_offset == size)
+			buf[write_offset - 1] = '\0';
+		else
+			buf[write_offset] = '\0';
+	}
+
+	data_size = write_offset - offset;
 	return &buf[offset];
 }
 
@@ -85,7 +92,7 @@ void session::login()
 	client.write(req.buf(), req.size());
 
 	uint64_t size;
-	char* ptr = get_response("login", client, buf, size);
+	char* ptr = get_response("login", client, buf, DEFAULT_HTTP_BUF_SIZE, size);
 
 	sajson::document doc = janus::internal::parse_json("", ptr, size);
 	const sajson::value& root = doc.get_root();
@@ -118,7 +125,7 @@ void session::logout()
 	client.write(req.buf(), req.size());
 
 	uint64_t size;
-	char* ptr = get_response("logout", client, buf, size);
+	char* ptr = get_response("logout", client, buf, DEFAULT_HTTP_BUF_SIZE, size);
 	sajson::document doc = janus::internal::parse_json("", ptr, size);
 	const sajson::value& root = doc.get_root();
 
@@ -131,6 +138,21 @@ void session::logout()
 
 	_session_token = "";
 	_logged_in = false;
+}
+
+auto session::api(const std::string& endpoint, const std::string& json) -> std::string
+{
+	check_logged_in();
+
+	http_request req = gen_api_req(endpoint, json);
+
+	janus::tls::client client(API_HOST, PORT, _certs, _rng);
+	client.connect();
+	client.write(req.buf(), req.size());
+
+	uint64_t size;
+	char* ptr = get_response("API", client, _internal_buf.get(), INTERNAL_BUFFER_SIZE, size);
+	return std::string(ptr, size);
 }
 
 void session::check_certs_loaded()
@@ -186,5 +208,26 @@ auto session::gen_logout_req(char* buf, uint64_t cap) -> http_request
 	req.terminate();
 
 	return req;
+}
+
+auto session::gen_api_req(const std::string& endpoint, const std::string& json) -> http_request
+{
+	http_request req(_internal_buf.get(), INTERNAL_BUFFER_SIZE);
+	// API calls have a trailing /.
+	std::string path = std::string(API_PATH) + "/" + endpoint + "/";
+	req.post(API_HOST, path.c_str());
+	req.add_header("Accept", "application/json");
+	req.add_header("X-Application", _config.app_key.c_str());
+	req.add_header("X-Authentication", _session_token.c_str());
+	req.add_header("Content-Type", "application/json");
+	req.add_data(json.c_str(), json.size());
+
+	return req;
+}
+
+void session::check_logged_in()
+{
+	if (!_logged_in)
+		throw std::runtime_error("Attempting operation when not logged in");
 }
 } // namespace janus::betfair

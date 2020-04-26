@@ -6,16 +6,27 @@
 #include "network/http_request.hh"
 #include "network/rng.hh"
 
+#include <cstdint>
+#include <memory>
+#include <string>
+
 namespace janus::betfair
 {
-// Login buffer size.
+// Login/logout buffer size.
 static constexpr uint64_t DEFAULT_HTTP_BUF_SIZE = 1000;
 
+// Represents a session with betfair.
+// Note that as all the operations performed here are slow and network-limited
+// anyway, we make no efforts to avoid allocations etc.
 class session
 {
 public:
 	session(janus::tls::rng& rng, config& config)
-		: _certs_loaded{false}, _logged_in{false}, _rng{rng}, _config{config}
+		: _certs_loaded{false},
+		  _logged_in{false},
+		  _rng{rng},
+		  _config{config},
+		  _internal_buf{std::make_unique<char[]>(INTERNAL_BUFFER_SIZE)}
 	{
 	}
 
@@ -28,11 +39,8 @@ public:
 	// Logout, invalidating session token.
 	void logout();
 
-	// Get current session token if logged in.
-	auto session_token() -> std::string
-	{
-		return _session_token;
-	}
+	// Query API endpoint.
+	auto api(const std::string& endpoint, const std::string& json) -> std::string;
 
 	static constexpr const char* ID_HOST = "identitysso-cert.betfair.com";
 	static constexpr const char* LOGIN_PATH = "/api/certlogin";
@@ -50,22 +58,30 @@ private:
 	// Everything uses the standard TLS port.
 	static constexpr const char* PORT = "443";
 
+	// Maximum size of data we expect to receive in internal buffer.
+	static constexpr uint64_t INTERNAL_BUFFER_SIZE = 10'000'000;
+
 	bool _certs_loaded;
 	bool _logged_in;
 	janus::tls::rng& _rng;
 	config& _config;
 	janus::tls::certs _certs, _self_sign_cert;
-
-	// We tolerate an allocate as logging in/out is slow anyway.
+	std::unique_ptr<char[]> _internal_buf;
 	std::string _session_token;
 
 	// Assert that the certificates are loaded, throw otherwise.
 	void check_certs_loaded();
+
+	// Assert that we're logged in, throw otherwise.
+	void check_logged_in();
 
 	// Generate an HTTP request for logging in.
 	auto gen_login_req(char* buf, uint64_t cap) -> http_request;
 
 	// Generate an HTTP request for logging out.
 	auto gen_logout_req(char* buf, uint64_t cap) -> http_request;
+
+	// Generate an HTTP request for an API-NG call.
+	auto gen_api_req(const std::string& endpoint, const std::string& json) -> http_request;
 };
 } // namespace janus::betfair
