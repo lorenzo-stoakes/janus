@@ -11,10 +11,10 @@ namespace janus::betfair
 // Login buffer size.
 static constexpr uint64_t DEFAULT_HTTP_BUF_SIZE = 1000;
 
-class connection
+class session
 {
 public:
-	connection(janus::tls::rng& rng, config& config)
+	session(janus::tls::rng& rng, config& config)
 		: _certs_loaded{false}, _logged_in{false}, _rng{rng}, _config{config}
 	{
 	}

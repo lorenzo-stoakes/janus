@@ -8,7 +8,7 @@
 
 namespace janus::betfair
 {
-void connection::load_certs()
+void session::load_certs()
 {
 	if (_certs_loaded)
 		return;
@@ -69,7 +69,7 @@ static auto get_response(const char* action, janus::tls::client& client, char* b
 	return &buf[offset];
 }
 
-void connection::login()
+void session::login()
 {
 	// https://docs.developer.betfair.com/display/1smk3cen4v3lu3yomq5qye0ni/Non-Interactive+%28bot%29+login
 
@@ -105,7 +105,7 @@ void connection::login()
 	_logged_in = true;
 }
 
-void connection::logout()
+void session::logout()
 {
 	if (!_logged_in)
 		return;
@@ -133,13 +133,13 @@ void connection::logout()
 	_logged_in = false;
 }
 
-void connection::check_certs_loaded()
+void session::check_certs_loaded()
 {
 	if (!_certs_loaded)
 		throw std::runtime_error("Attempting operation without certificates loaded");
 }
 
-auto connection::gen_login_req(char* buf, uint64_t cap) -> http_request
+auto session::gen_login_req(char* buf, uint64_t cap) -> http_request
 {
 	if (_config.username.size() > MAX_USERNAME_PW_SIZE ||
 	    _config.password.size() > MAX_USERNAME_PW_SIZE)
@@ -176,7 +176,7 @@ auto connection::gen_login_req(char* buf, uint64_t cap) -> http_request
 	return req;
 }
 
-auto connection::gen_logout_req(char* buf, uint64_t cap) -> http_request
+auto session::gen_logout_req(char* buf, uint64_t cap) -> http_request
 {
 	http_request req(buf, cap);
 	req.post(ID_HOST, LOGOUT_PATH);

@@ -10,14 +10,14 @@
 
 namespace
 {
-// Test that the betfair connection object behaves as expected.
-TEST(betfair_test, connection)
+// Test that the betfair session object behaves as expected.
+TEST(betfair_test, session)
 {
 	janus::tls::rng rng;
 
 	janus::config config = janus::parse_config("../test/test-config/config3.json");
 
-	janus::betfair::connection conn(rng, config);
+	janus::betfair::session conn(rng, config);
 
 	// Trying to load certificates with an unseeded RNG should fail.
 	EXPECT_THROW(conn.load_certs(), std::runtime_error);
