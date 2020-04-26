@@ -220,12 +220,10 @@ auto session::authenticate_stream(janus::tls::client& client) -> std::string
 
 auto session::read_until_newline(janus::tls::client& client) -> int
 {
-	int bytes;
 	bool disconnected;
 	int offset = 0;
 	do {
-		bytes = client.read(&_internal_buf[offset], INTERNAL_BUFFER_SIZE, disconnected);
-		offset += bytes;
+		offset += client.read(&_internal_buf[offset], INTERNAL_BUFFER_SIZE, disconnected);
 	} while (!disconnected && _internal_buf[offset - 1] != '\n');
 	_internal_buf[offset] = '\0';
 
