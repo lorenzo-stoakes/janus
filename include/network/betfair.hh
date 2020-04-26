@@ -53,15 +53,6 @@ public:
 	// Returns connection ID.
 	auto authenticate_stream(janus::tls::client& client) -> std::string;
 
-	static constexpr const char* ID_HOST = "identitysso-cert.betfair.com";
-	static constexpr const char* LOGIN_PATH = "/api/certlogin";
-	static constexpr const char* LOGOUT_PATH = "/api/logout";
-
-	static constexpr const char* API_HOST = "api.betfair.com";
-	static constexpr const char* API_PATH = "/exchange/betting/rest/v1.0";
-
-	static constexpr const char* STREAM_HOST = "stream-api.betfair.com";
-
 private:
 	// Maximum number of characters for either username or password.
 	static constexpr uint64_t MAX_USERNAME_PW_SIZE = 50;
@@ -71,6 +62,17 @@ private:
 
 	// Maximum size of data we expect to receive in internal buffer.
 	static constexpr uint64_t INTERNAL_BUFFER_SIZE = 10'000'000;
+
+	// URLs and paths to API endpoints.
+
+	static constexpr const char* ID_HOST = "identitysso-cert.betfair.com";
+	static constexpr const char* LOGIN_PATH = "/api/certlogin";
+	static constexpr const char* LOGOUT_PATH = "/api/logout";
+
+	static constexpr const char* API_HOST = "api.betfair.com";
+	static constexpr const char* API_PATH = "/exchange/betting/rest/v1.0";
+
+	static constexpr const char* STREAM_HOST = "stream-api.betfair.com";
 
 	bool _certs_loaded;
 	bool _logged_in;
