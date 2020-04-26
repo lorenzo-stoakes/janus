@@ -1,0 +1,7 @@
+{
+	"username": "barrycunslow",
+	"password": "password",
+	"app_key": "12345",
+	"cert_path": "../test-cert/client-2048.crt",
+	"key_path": "../test-cert/client-2048.key"
+}
