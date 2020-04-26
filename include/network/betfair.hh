@@ -6,11 +6,18 @@
 #include "network/http_request.hh"
 #include "network/rng.hh"
 
+#include <cstdint>
+#include <memory>
+#include <string>
+
 namespace janus::betfair
 {
-// Login buffer size.
+// Login/logout buffer size.
 static constexpr uint64_t DEFAULT_HTTP_BUF_SIZE = 1000;
 
+// Represents a session with betfair.
+// Note that as all the operations performed here are slow and network-limited
+// anyway, we make no efforts to avoid allocations etc.
 class session
 {
 public:
