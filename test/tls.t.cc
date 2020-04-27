@@ -176,4 +176,33 @@ TEST(tls_test, client)
 		ASSERT_EQ(buf[i], chr);
 	}
 }
+
+// Test that we can move RNG.
+TEST(tls_test, rng_moveable)
+{
+	// This looks like it doesn't do much, but libasan will check to ensure
+	// frees occur correctly.
+
+	// Move-assign.
+	janus::tls::rng rng1;
+	janus::tls::rng rng2 = std::move(rng1);
+	EXPECT_FALSE(rng2.seeded());
+
+	// Move ctor.
+	janus::tls::rng rng3;
+	janus::tls::rng rng4(std::move(rng3));
+	EXPECT_FALSE(rng4.seeded());
+
+	// Move-assign seeded.
+	janus::tls::rng rng5;
+	rng5.seed();
+	janus::tls::rng rng6 = std::move(rng5);
+	EXPECT_TRUE(rng6.seeded());
+
+	// Move ctor seeded.
+	janus::tls::rng rng7;
+	rng7.seed();
+	janus::tls::rng rng8(std::move(rng7));
+	EXPECT_TRUE(rng8.seeded());
+}
 } // namespace
