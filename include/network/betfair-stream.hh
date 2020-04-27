@@ -31,8 +31,9 @@ public:
 	void market_subscribe(const std::vector<std::string>& market_ids,
 			      const std::string& data_filter_json);
 
-	// Subscribe to markets according to config-specified filter and data filter JSON.
-	void market_subscribe(config& config);
+	// Subscribe to markets according to config-specified filter and data
+	// filter JSON. Returns full metadata for requested markets.
+	auto market_subscribe(config& config) -> std::string;
 
 	// Reads the next line of output from the internal buffer or stream,
 	// placing a null terminator at the end of the line. This is BLOCKING
