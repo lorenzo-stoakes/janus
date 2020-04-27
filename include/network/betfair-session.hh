@@ -55,7 +55,7 @@ private:
 	static constexpr const char* PORT = "443";
 
 	// Maximum size of data we expect to receive in internal buffer.
-	static constexpr uint64_t INTERNAL_BUFFER_SIZE = 10'000'000;
+	static constexpr int INTERNAL_BUFFER_SIZE = 10'000'000;
 
 	// URLs and paths to API endpoints.
 
@@ -91,11 +91,14 @@ private:
 	// Generate an HTTP request for an API-NG call.
 	auto gen_api_req(const std::string& endpoint, const std::string& json) -> http_request;
 
-	// Read from connection into internal buffer until newline. Returns bytes read.
-	auto read_until_newline(janus::tls::client& client) -> int;
-
 	// Connect to and authenticate stream connection, ready for use.
 	// Returns connection ID.
 	auto authenticate_stream(janus::tls::client& client) -> std::string;
+
+	// Read from connection into internal buffer until newline. Inclusive of
+	// newline. Appends null terminator.
+	//    client: Client connection to read from.
+	//   returns: Numbers of bytes read.
+	auto read_until_newline(janus::tls::client& client) -> int;
 };
 } // namespace janus::betfair

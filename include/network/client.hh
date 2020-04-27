@@ -56,6 +56,15 @@ public:
 	// the connection is invalidated.
 	auto read(char* buf, int size, bool& disconnected) -> int;
 
+	// Performs a BLOCKING read from the TLS connection and reads into the
+	// specified buffer until a newline is found AT THE END OF THE DATA
+	// SENT. Note this won't search for a newline _within_ a block of data,
+	// rather it is for cases where the server signifies end of transmission
+	// using a newline. If the connection is closed or the buffer is
+	// exceeded, the function throws.
+	// Returns the number of bytes read.
+	auto read_until_newline(char* buf, int size) -> int;
+
 	// Perform a BLOCKING write to the TLS connection. It will keep on
 	// trying to write until write is complete or an error occurs.
 	void write(const char* buf, int size);

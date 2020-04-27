@@ -167,17 +167,7 @@ auto session::make_stream_connection(std::string& conn_id) -> janus::tls::client
 
 auto session::read_until_newline(janus::tls::client& client) -> int
 {
-	bool disconnected;
-	int offset = 0;
-	do {
-		offset += client.read(&_internal_buf[offset], INTERNAL_BUFFER_SIZE, disconnected);
-	} while (!disconnected && _internal_buf[offset - 1] != '\n');
-	_internal_buf[offset] = '\0';
-
-	if (disconnected)
-		throw std::runtime_error("Unexpected disconnection");
-
-	return offset;
+	return client.read_until_newline(_internal_buf.get(), INTERNAL_BUFFER_SIZE);
 }
 
 void session::check_certs_loaded()
