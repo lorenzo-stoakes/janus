@@ -19,5 +19,13 @@
 ## Directory structure
 
 ~/data/json
-|- meta/[market id].json
-|- all/[start of recording in ms sinch epoch].json
+|- meta/[start of recording in ms since epoch].json
+|- market_stream/[start of recording in ms sinch epoch].json
+
+## File contents
+
+* Data may be duplicated in metadata (due to disconnect, etc. + re-retrieving metadata).
+
+* Metadata will be aggregated in files which contain multiple instances of
+  arrays due to the method being used to retrieve metadata. Neptune will need to
+  be updated to handle this.

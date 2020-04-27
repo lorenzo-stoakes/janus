@@ -38,6 +38,7 @@ To run tests run `make test`, and to run benchmarks run `make bench`.
 * [sajson](https://github.com/chadaustin/sajson) - Used and modified under an MIT license.
 * [snappy](https://github.com/google/snappy) - Fast compressor/decompressor used as a library under a BSD license.
 * [mbedtls](https://github.com/ARMmbed/mbedtls) - Efficient TLS implementation used under an Apache license.
+* [spdlog](https://github.com/gabime/spdlog) - Fast header-only C++ logging implementation used under an MIT license.
 
 ## Additional tools
 

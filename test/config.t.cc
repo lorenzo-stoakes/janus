@@ -20,6 +20,7 @@ TEST(config_test, parse)
 	EXPECT_STREQ(
 		config1.market_stream_data_filter_json.c_str(),
 		"{\"ladderLevels\":10,\"fields\":[\"EX_ALL_OFFERS\",\"EX_TRADED\",\"EX_TRADED_VOL\",\"EX_LTP\",\"EX_MARKET_DEF\"]}");
+	EXPECT_STREQ(config1.json_data_root.c_str(), "/home/foo/bar");
 
 	janus::config config2 = janus::parse_config("../test/test-config/config2.json");
 	EXPECT_STREQ(config2.username.c_str(), "barrycunslow");
@@ -30,6 +31,7 @@ TEST(config_test, parse)
 	EXPECT_STREQ(config2.key_path.c_str(), "/home/barrycunslow/client-2048.key");
 	EXPECT_STREQ(config2.market_stream_filter_json.c_str(), "{}");
 	EXPECT_STREQ(config2.market_stream_data_filter_json.c_str(), "{}");
+	EXPECT_STREQ(config2.json_data_root.c_str(), "/home/foo/bar");
 
 	std::string default_path = janus::internal::get_default_config_path();
 	std::string expected_default_path = std::string(::getenv("HOME")) + "/.janus/config.json";

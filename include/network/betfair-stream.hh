@@ -33,7 +33,7 @@ public:
 
 	// Subscribe to markets according to config-specified filter and data
 	// filter JSON. Returns full metadata for requested markets.
-	auto market_subscribe(config& config) -> std::string;
+	auto market_subscribe(config& config, uint64_t& num_markets) -> std::string;
 
 	// Reads the next line of output from the internal buffer or stream,
 	// placing a null terminator at the end of the line. This is BLOCKING
