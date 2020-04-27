@@ -217,4 +217,24 @@ void client::config()
 	if (err_num != 0)
 		throw gen_conn_err("Set hostname", err_num);
 }
+
+auto client::read_until_newline(char* buf, int size) -> int
+{
+	bool disconnected;
+	int offset = 0;
+	do {
+		offset += read(&buf[offset], size, disconnected);
+	} while (!disconnected && offset < size && buf[offset - 1] != '\n');
+
+	if (disconnected)
+		throw std::runtime_error("Unexpected disconnection");
+
+	// Leave an extra character for the null terminator.
+	if (offset >= size)
+		throw std::runtime_error("Read until newline exceeded buffer size?!");
+
+	buf[offset] = '\0';
+	return offset;
+}
+
 } // namespace janus::tls

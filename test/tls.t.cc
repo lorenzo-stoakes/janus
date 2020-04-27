@@ -175,6 +175,14 @@ TEST(tls_test, client)
 
 		ASSERT_EQ(buf[i], chr);
 	}
+
+	janus::tls::client client3("ljs.io", "443", certs, rng);
+	client3.connect();
+	client3.write(write_buf, sizeof(write_buf) - 1);
+
+	char buf2[2000];
+	int bytes = client3.read_until_newline(buf2, sizeof(buf2));
+	ASSERT_EQ(buf2[bytes - 1], '\n');
 }
 
 // Test that we can move RNG.
