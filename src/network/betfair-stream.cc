@@ -103,6 +103,13 @@ void stream::market_subscribe(const std::vector<std::string>& market_ids,
 	market_subscribe(stream_filter_json, data_filter_json);
 }
 
+void stream::market_subscribe(config& config)
+{
+	std::vector<std::string> market_ids =
+		get_market_ids(_session, config.market_stream_filter_json);
+	market_subscribe(market_ids, config.market_stream_data_filter_json);
+}
+
 auto stream::read_next_line(int& size) -> char*
 {
 	if (_read_offset >= _read_size)
