@@ -39,8 +39,6 @@ public:
 	void seed();
 
 private:
-	const char* _name;
-	int _name_size;
 	bool _seeded;
 
 	internal::mbedtls_entropy_context _entropy;
