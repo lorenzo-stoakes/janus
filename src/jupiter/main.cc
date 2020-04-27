@@ -1,6 +1,7 @@
 #include "janus.hh"
 
 #include "sajson.hh"
+#include "spdlog/spdlog.h"
 #include <atomic>
 #include <iostream>
 #include <signal.h>
@@ -33,21 +34,21 @@ auto main(int argc, char** argv) -> int
 
 	janus::tls::rng rng;
 	rng.seed();
-
 	janus::config config = janus::parse_config();
-
 	janus::betfair::session session(rng, config);
 	session.load_certs();
+
+	spdlog::info("Logging in...");
 	session.login();
 
 	janus::betfair::stream stream(session);
 
-	std::cout << "Getting metadata..." << std::endl;
+	spdlog::info("Getting metadata...");
 	std::string meta = stream.market_subscribe(config);
 	// Not doing anything with it yet.
 	(void)meta;
 
-	std::cout << "Done. Starting stream..." << std::endl;
+	spdlog::info("Starting stream...");
 	while (true) {
 		if (interrupted.load())
 			break;
@@ -56,7 +57,7 @@ auto main(int argc, char** argv) -> int
 		std::cout << stream.read_next_line(size) << std::endl;
 	}
 
-	std::cout << "Logging out..." << std::endl;
+	spdlog::info("Logging out...");
 	session.logout();
 
 	return 0;
