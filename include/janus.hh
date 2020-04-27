@@ -17,7 +17,7 @@
 #include "update.hh"
 #include "virtual.hh"
 
-#include "network/betfair.hh"
+#include "network/betfair-session.hh"
 #include "network/certs.hh"
 #include "network/client.hh"
 #include "network/http_request.hh"
