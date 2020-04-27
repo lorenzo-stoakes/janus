@@ -27,6 +27,11 @@ static constexpr uint64_t MAX_NUM_STREAM_ERRORS = 10;
 // How many lines before we flush output.
 static constexpr uint64_t FLUSH_INTERVAL_LINES = 100;
 
+// Indicates whether a signal has occured and we should abort.
+std::atomic<bool> signalled{false};
+
+std::atomic<bool> reload_signalled{false};
+
 // Retrieve ms since epoch.
 static auto get_ms_since_epoch() -> decltype(ms_t().count())
 {
@@ -37,20 +42,32 @@ static auto get_ms_since_epoch() -> decltype(ms_t().count())
 	return ms.count();
 }
 
-// Handle signals such that we can log out on e.g. ctrl+C.
-// Courtesy of https://stackoverflow.com/a/4250601
-std::atomic<bool> interrupted{false};
-static void handle_signal(int)
+// Handle SIGINT, e.g. ctrl+C.
+static void handle_interrupt(int)
 {
-	interrupted.store(true);
+	signalled.store(true);
 }
+
+// Handle a signal indicating execution should be interrupted and markets
+// reloaded (via SIGUSR2).
+static void handle_reload_interrupt(int)
+{
+	reload_signalled.store(true);
+	signalled.store(true);
+}
+
+// Add signal handlers.
 static void add_signal_handler()
 {
-	struct sigaction sa;
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = handle_signal;
-	::sigfillset(&sa.sa_mask);
-	::sigaction(SIGINT, &sa, nullptr);
+	struct sigaction action_interrupt = {0};
+	action_interrupt.sa_handler = handle_interrupt;
+	::sigfillset(&action_interrupt.sa_mask);
+	::sigaction(SIGINT, &action_interrupt, nullptr);
+
+	struct sigaction action_reload_interrupt = {0};
+	action_reload_interrupt.sa_handler = handle_reload_interrupt;
+	::sigfillset(&action_reload_interrupt.sa_mask);
+	::sigaction(SIGUSR2, &action_reload_interrupt, nullptr);
 }
 
 // Setup directory structure if doesn't already exist.
@@ -96,12 +113,8 @@ static void print_status_line(uint64_t num_lines)
 }
 #endif
 
-auto main(int argc, char** argv) -> int
+static bool run_loop(janus::config& config, janus::betfair::session& session)
 {
-	add_signal_handler();
-
-	janus::config config = janus::parse_config();
-
 	std::string meta_dir = config.json_data_root + "/meta/";
 	std::string stream_dir = config.json_data_root + "/market_stream/";
 	setup_dirs(meta_dir, stream_dir);
@@ -109,11 +122,6 @@ auto main(int argc, char** argv) -> int
 	std::string filename = std::to_string(get_ms_since_epoch()) + ".json";
 	std::string meta_path = meta_dir + filename;
 	std::string stream_path = stream_dir + filename;
-
-	janus::tls::rng rng;
-	rng.seed();
-	janus::betfair::session session(rng, config);
-	session.load_certs();
 
 	spdlog::info("Logging in...");
 	session.login();
@@ -130,7 +138,7 @@ auto main(int argc, char** argv) -> int
 	} catch (std::exception& e) {
 		spdlog::error(e.what());
 		spdlog::critical("Cannot save metadata file, aborting...");
-		return 1;
+		return false;
 	}
 
 	spdlog::info("Creating stream output file {}...", stream_path);
@@ -138,7 +146,7 @@ auto main(int argc, char** argv) -> int
 	if (!stream_file) {
 		spdlog::critical("Cannot open stream file {} for writing, aborting...",
 				 stream_path);
-		return 1;
+		return false;
 	}
 
 	spdlog::info("Starting stream...");
@@ -146,9 +154,9 @@ auto main(int argc, char** argv) -> int
 	uint64_t num_lines = 0;
 	uint64_t num_errors = 0;
 	while (true) {
-		if (interrupted.load()) {
+		if (signalled.load()) {
 			spdlog::info("Signal received, aborting...");
-			break;
+			return true;
 		}
 
 		try {
@@ -164,13 +172,37 @@ auto main(int argc, char** argv) -> int
 			if (num_errors >= MAX_NUM_STREAM_ERRORS) {
 				spdlog::critical("{} errors, cap is {}, aborting...", num_errors,
 						 MAX_NUM_STREAM_ERRORS);
-				return 1;
+				return false;
 			}
 		}
 	}
+}
 
-	spdlog::info("Logging out...");
-	session.logout();
+auto main(int argc, char** argv) -> int
+{
+	add_signal_handler();
 
-	return 0;
+	janus::config config = janus::parse_config();
+	janus::tls::rng rng;
+	rng.seed();
+	janus::betfair::session session(rng, config);
+	session.load_certs();
+
+	bool success;
+	while (true) {
+		success = run_loop(config, session);
+
+		spdlog::info("Logging out...");
+		session.logout();
+
+		if (reload_signalled.load()) {
+			signalled.store(false);
+			reload_signalled.store(false);
+			spdlog::info("Reload signal received, restarting!");
+		} else {
+			break;
+		}
+	}
+
+	return success ? 0 : 1;
 }
