@@ -8,7 +8,7 @@ namespace janus::betfair
 class stream
 {
 public:
-	stream(session& session);
+	explicit stream(session& session);
 
 	// Get stream connection ID.
 	auto connection_id() const -> std::string
