@@ -163,8 +163,7 @@ auto session::make_stream_connection(std::string& conn_id) -> janus::tls::client
 {
 	check_logged_in();
 
-	// Note that a stream connection has infinite timeout set.
-	janus::tls::client ret(STREAM_HOST, PORT, _certs, _rng, 0);
+	janus::tls::client ret(STREAM_HOST, PORT, _certs, _rng);
 	conn_id = authenticate_stream(ret);
 
 	return ret;
