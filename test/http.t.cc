@@ -127,6 +127,6 @@ TEST(http_test, parse_response)
 	char http2[] =
 		"HTTP/1.1 200 OK\r\nServer: nginx/1.14.0 (Ubuntu)\r\nDate: Sat, 25 Apr 2020 17:19:29 GMT\r\nContent-Type: text/plain\r\nLast-Modified: Sat, 25 Apr 2020 09:12:22 GMT\r\nConnection: close\r\nStrict-Transport-Security: max-age=31536000; includeSubdomains; preload\r\nAccept-Ranges: bytes\r\n\r\n";
 	EXPECT_EQ(janus::parse_http_response(http2, sizeof(http2) - 1, response_code, offset), 0);
-	EXPECT_EQ(offset, 0);
+	EXPECT_EQ(offset, 273);
 }
 } // namespace
