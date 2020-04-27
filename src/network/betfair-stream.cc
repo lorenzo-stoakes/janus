@@ -66,21 +66,21 @@ void stream::market_subscribe(const std::string& filter_json, const std::string&
 						 "expected SUCCESS/FAILURE");
 
 		// Retrieve details of error so we can give a more meaningful error report.
-		std::string msg = "FAILURE: ";
+		std::string throw_msg = "FAILURE: ";
 		sajson::value error_code = root.get_value_of_key(sajson::literal("errorCode"));
 		if (error_code.get_type() == sajson::TYPE_STRING)
-			msg += error_code.as_cstring();
+			throw_msg += error_code.as_cstring();
 		else
-			msg += "(missing error code)";
-		msg += ": ";
+			throw_msg += "(missing error code)";
+		throw_msg += ": ";
 
 		sajson::value error_msg = root.get_value_of_key(sajson::literal("errorMessage"));
 		if (error_msg.get_type() == sajson::TYPE_STRING)
-			msg += error_msg.as_cstring();
+			throw_msg += error_msg.as_cstring();
 		else
-			msg += "(missing error message)";
+			throw_msg += "(missing error message)";
 
-		throw std::runtime_error(msg);
+		throw std::runtime_error(throw_msg);
 	}
 }
 
