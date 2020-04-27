@@ -182,14 +182,15 @@ auto main(int argc, char** argv) -> int
 {
 	add_signal_handler();
 
-	janus::config config = janus::parse_config();
 	janus::tls::rng rng;
 	rng.seed();
-	janus::betfair::session session(rng, config);
-	session.load_certs();
 
 	bool success;
 	while (true) {
+		janus::config config = janus::parse_config();
+		janus::betfair::session session(rng, config);
+		session.load_certs();
+
 		success = run_loop(config, session);
 
 		spdlog::info("Logging out...");
