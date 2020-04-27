@@ -103,10 +103,13 @@ void stream::market_subscribe(const std::vector<std::string>& market_ids,
 	market_subscribe(stream_filter_json, data_filter_json);
 }
 
-auto stream::market_subscribe(config& config) -> std::string
+auto stream::market_subscribe(config& config, uint64_t& num_markets) -> std::string
 {
 	auto [market_ids, response] = get_market_ids(_session, config.market_stream_filter_json);
+
 	market_subscribe(market_ids, config.market_stream_data_filter_json);
+
+	num_markets = market_ids.size();
 	return response;
 }
 
