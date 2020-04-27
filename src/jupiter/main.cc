@@ -22,8 +22,9 @@ auto main(int argc, char** argv) -> int
 	std::cout << response << std::endl;
 
 	// Now connect to stream API and output connection ID.
-	auto [conn_id, conn] = session.make_stream_connection();
-	std::cout << conn_id << std::endl;
+	janus::betfair::stream stream(session);
+
+	std::cout << stream.connection_id() << std::endl;
 
 	session.logout();
 
