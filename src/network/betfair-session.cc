@@ -155,14 +155,14 @@ auto session::api(const std::string& endpoint, const std::string& json) -> std::
 	return std::string(ptr, size);
 }
 
-auto session::make_stream_connection() -> std::pair<std::string, janus::tls::client>
+auto session::make_stream_connection(std::string& conn_id) -> janus::tls::client
 {
 	check_logged_in();
 
 	janus::tls::client ret(STREAM_HOST, PORT, _certs, _rng);
-	std::string connection_id = authenticate_stream(ret);
+	conn_id = authenticate_stream(ret);
 
-	return std::make_pair(connection_id, std::move(ret));
+	return ret;
 }
 
 auto session::read_until_newline(janus::tls::client& client) -> int

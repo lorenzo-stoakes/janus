@@ -45,7 +45,7 @@ public:
 	// Return a connection configured for the stream API, connected and
 	// authenticated, ready for use.
 	//   returns: Pair containing connection ID and connection.
-	auto make_stream_connection() -> std::pair<std::string, janus::tls::client>;
+	auto make_stream_connection(std::string& conn_id) -> janus::tls::client;
 
 private:
 	// Maximum number of characters for either username or password.
