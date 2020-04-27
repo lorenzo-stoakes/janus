@@ -42,16 +42,10 @@ public:
 	// Query API endpoint.
 	auto api(const std::string& endpoint, const std::string& json) -> std::string;
 
-	// Return a connection configured for the stream API.
-	auto make_stream_connection() -> janus::tls::client
-	{
-		check_logged_in();
-		return janus::tls::client(STREAM_HOST, PORT, _certs, _rng);
-	}
-
-	// Connect to and authenticate stream connection, ready for use.
-	// Returns connection ID.
-	auto authenticate_stream(janus::tls::client& client) -> std::string;
+	// Return a connection configured for the stream API, connected and
+	// authenticated, ready for use.
+	//   returns: Pair containing connection ID and connection.
+	auto make_stream_connection() -> std::pair<std::string, janus::tls::client>;
 
 private:
 	// Maximum number of characters for either username or password.
@@ -99,5 +93,9 @@ private:
 
 	// Read from connection into internal buffer until newline. Returns bytes read.
 	auto read_until_newline(janus::tls::client& client) -> int;
+
+	// Connect to and authenticate stream connection, ready for use.
+	// Returns connection ID.
+	auto authenticate_stream(janus::tls::client& client) -> std::string;
 };
 } // namespace janus::betfair
