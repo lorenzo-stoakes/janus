@@ -1,19 +1,9 @@
 # Binary file format
 
-## Directory structure
-
-~/data/jandat/
-|- meta.jan
-|-markets/
- |-[market id].jan (all snappy compressed).
-
-Allows us to append to markets on the fly. Meta will just be an array of
-markets.
-
 ## Metadata
 
 ### Header
-* magic_number            (uint64)
+
 * market_id               (uint64)
 * event_type_id           (uint64)
 * event_id                (uint64)
@@ -42,12 +32,12 @@ Per-runner:
 
 ## Updates
 
-Stored data will be compressed with [snappy](https://github.com/google/snappy).
+Stored data will be compressed with [snappy](https://github.com/google/snappy)
+if the market has been closed. Otherwise won't be.
 
-### Header
-* magic_number            (uint64)
-* num_updates             (uint64)
+Simple array of updates, use file size to determine number of updates.
 
 ### Data
+
 Per update:
 * update struct           (16 bytes)
