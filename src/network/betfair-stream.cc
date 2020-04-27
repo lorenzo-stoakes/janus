@@ -84,6 +84,28 @@ void stream::market_subscribe(const std::string& filter_json, const std::string&
 	}
 }
 
+void stream::market_subscribe(const std::vector<std::string>& market_ids,
+			      const std::string& data_filter_json)
+{
+	uint64_t count = market_ids.size();
+	if (count == 0)
+		throw std::runtime_error("Attempting to subscribe to 0 markets?!");
+
+	if (count > MAX_MARKETS)
+		count = MAX_MARKETS;
+
+	std::string stream_filter_json = R"({"marketIds":[)";
+	for (uint64_t i = 0; i < count - 1; i++) {
+		stream_filter_json += "\"";
+		stream_filter_json += market_ids[i];
+		stream_filter_json += "\",";
+	}
+
+	stream_filter_json += "\"" + market_ids[market_ids.size() - 1] + "\"]}";
+
+	market_subscribe(stream_filter_json, data_filter_json);
+}
+
 auto stream::read_next_line(int& size) -> char*
 {
 	if (_read_offset >= _read_size)
