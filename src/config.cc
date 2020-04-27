@@ -45,6 +45,12 @@ static void parse_config_json(const std::string& path, std::string& json, config
 	config.app_key = root.get_value_of_key(sajson::literal("app_key")).as_cstring();
 	config.cert_path = root.get_value_of_key(sajson::literal("cert_path")).as_cstring();
 	config.key_path = root.get_value_of_key(sajson::literal("key_path")).as_cstring();
+	config.market_stream_filter_json =
+		root.get_value_of_key(sajson::literal("market_stream_filter_json")).as_cstring();
+	config.market_stream_data_filter_json =
+		root.get_value_of_key(sajson::literal("market_stream_data_filter_json"))
+			.as_cstring();
+	;
 
 	std::string dir_name = extract_dir_name(path);
 	normalise_path(dir_name, config.cert_path);
