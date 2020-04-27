@@ -18,6 +18,7 @@ struct config
 	std::string key_path;
 	std::string market_stream_filter_json;
 	std::string market_stream_data_filter_json;
+	std::string json_data_root;
 };
 
 namespace internal

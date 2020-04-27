@@ -5,5 +5,6 @@
 	"cert_path": "../test-cert/client-2048.crt",
 	"key_path": "../test-cert/client-2048.key",
 	"market_stream_filter_json": "{}",
-	"market_stream_data_filter_json": "{}"
+	"market_stream_data_filter_json": "{}",
+	"json_data_root": "/home/foo/bar"
 }
