@@ -13,7 +13,7 @@
 #include <vector>
 
 // Show status line indicating number of lines processed.
-#define SHOW_STATUS_LINE
+//#define SHOW_STATUS_LINE
 
 // This is a hacked up skeleton version for testing purposes, initially we are simply logging in to
 // betfair and performing simple queries.
