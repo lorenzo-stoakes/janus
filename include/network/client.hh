@@ -13,15 +13,15 @@ public:
 	client(const char* host, const char* port, certs& certs, rng& rng,
 	       uint32_t timeout_ms = DEFAULT_TIMEOUT_MS);
 	~client();
-	// We can move ctor since moving another session to our own makes sense
-	// while ours is uninitialised.
+	// We can move ctor since moving another connection to our own makes
+	// sense while ours is uninitialised.
 	client(client&& that);
 
-	// No copying. It makes no sense to throw away this session and copy
+	// No copying. It makes no sense to throw away this connection and copy
 	// another over it.
 	client(const client& that) = delete;
 	auto operator=(const client& that) -> client& = delete;
-	// No move-assign, it makes no sense to overwrite an existing session
+	// No move-assign, it makes no sense to overwrite an existing connection
 	// with another.
 	auto operator=(client&& that) -> client& = delete;
 
