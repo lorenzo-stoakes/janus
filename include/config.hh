@@ -16,6 +16,8 @@ struct config
 	std::string app_key;
 	std::string cert_path;
 	std::string key_path;
+	std::string market_stream_filter_json;
+	std::string market_stream_data_filter_json;
 };
 
 namespace internal

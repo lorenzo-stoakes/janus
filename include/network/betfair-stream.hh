@@ -1,5 +1,6 @@
 #pragma once
 
+#include "config.hh"
 #include "network/betfair-session.hh"
 #include "network/client.hh"
 
@@ -29,6 +30,9 @@ public:
 	// allocation here since we only rarely need to invoke this.
 	void market_subscribe(const std::vector<std::string>& market_ids,
 			      const std::string& data_filter_json);
+
+	// Subscribe to markets according to config-specified filter and data filter JSON.
+	void market_subscribe(config& config);
 
 	// Reads the next line of output from the internal buffer or stream,
 	// placing a null terminator at the end of the line. This is BLOCKING

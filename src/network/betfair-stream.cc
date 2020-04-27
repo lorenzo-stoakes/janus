@@ -4,8 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
-
-#include <iostream>
+#include <vector>
 
 namespace janus::betfair
 {
@@ -29,8 +28,6 @@ void stream::market_subscribe(const std::string& filter_json, const std::string&
 	msg += R"(,"marketDataFilter":)";
 	msg += data_filter_json;
 	msg += "}\n";
-
-	std::cout << msg << std::endl;
 
 	_client.write(msg.c_str(), msg.size());
 
@@ -66,21 +63,21 @@ void stream::market_subscribe(const std::string& filter_json, const std::string&
 						 "expected SUCCESS/FAILURE");
 
 		// Retrieve details of error so we can give a more meaningful error report.
-		std::string msg = "FAILURE: ";
+		std::string throw_msg = "FAILURE: ";
 		sajson::value error_code = root.get_value_of_key(sajson::literal("errorCode"));
 		if (error_code.get_type() == sajson::TYPE_STRING)
-			msg += error_code.as_cstring();
+			throw_msg += error_code.as_cstring();
 		else
-			msg += "(missing error code)";
-		msg += ": ";
+			throw_msg += "(missing error code)";
+		throw_msg += ": ";
 
 		sajson::value error_msg = root.get_value_of_key(sajson::literal("errorMessage"));
 		if (error_msg.get_type() == sajson::TYPE_STRING)
-			msg += error_msg.as_cstring();
+			throw_msg += error_msg.as_cstring();
 		else
-			msg += "(missing error message)";
+			throw_msg += "(missing error message)";
 
-		throw std::runtime_error(msg);
+		throw std::runtime_error(throw_msg);
 	}
 }
 
@@ -104,6 +101,13 @@ void stream::market_subscribe(const std::vector<std::string>& market_ids,
 	stream_filter_json += "\"" + market_ids[market_ids.size() - 1] + "\"]}";
 
 	market_subscribe(stream_filter_json, data_filter_json);
+}
+
+void stream::market_subscribe(config& config)
+{
+	std::vector<std::string> market_ids =
+		get_market_ids(_session, config.market_stream_filter_json);
+	market_subscribe(market_ids, config.market_stream_data_filter_json);
 }
 
 auto stream::read_next_line(int& size) -> char*

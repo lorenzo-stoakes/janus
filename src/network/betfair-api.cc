@@ -6,7 +6,7 @@
 
 namespace janus::betfair
 {
-auto get_market_ids(session& session, std::string filter_json) -> std::vector<std::string>
+auto get_market_ids(session& session, const std::string& filter_json) -> std::vector<std::string>
 {
 	std::string json = R"({"sort":"FIRST_TO_START","maxResults":1000,"filter":)";
 	json += filter_json + "}";
