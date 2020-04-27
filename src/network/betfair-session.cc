@@ -38,7 +38,7 @@ static void check_response_code(const char* action, int response_code, char* buf
 }
 
 static auto get_response(const char* action, janus::tls::client& client, char* buf, int size,
-			 uint64_t& data_size) -> char*
+			 uint64_t& data_size, bool until_disconnect = false) -> char*
 {
 	bool disconnected = false;
 	int bytes = client.read(buf, size, disconnected);
@@ -52,17 +52,20 @@ static auto get_response(const char* action, janus::tls::client& client, char* b
 	check_response_code(action, response_code, buf, bytes, offset);
 
 	int additional_space = size - bytes;
-	if (bytes_remaining > additional_space)
+	if (!until_disconnect && bytes_remaining > additional_space)
 		throw std::runtime_error("Unexpected further " + std::to_string(bytes_remaining) +
 					 " bytes for " + action + ":\n" + buf);
 
 	int write_offset = bytes;
-	while (bytes_remaining > 0) {
+	while (!disconnected && (until_disconnect || bytes_remaining > 0)) {
 		int further_bytes =
 			client.read(&buf[write_offset], size - write_offset, disconnected);
 		write_offset += further_bytes;
 		bytes_remaining -= further_bytes;
 	}
+
+	if (!until_disconnect && disconnected && bytes_remaining > 0)
+		throw std::runtime_error("Uenxpected disconnect before all data retrieved?");
 
 	// Terminate data.
 	if (offset > 0) {
@@ -151,7 +154,8 @@ auto session::api(const std::string& endpoint, const std::string& json) -> std::
 	client.write(req.buf(), req.size());
 
 	uint64_t size;
-	char* ptr = get_response("API", client, _internal_buf.get(), INTERNAL_BUFFER_SIZE, size);
+	char* ptr =
+		get_response("API", client, _internal_buf.get(), INTERNAL_BUFFER_SIZE, size, true);
 	return std::string(ptr, size);
 }
 

@@ -27,21 +27,20 @@ auto parse_http_response(const char* buf, uint64_t size, int& response_code, uin
 
 	response_code = ::atoi(&buf[start]);
 
-	start = find_str(buf, "Content-Length: ");
-	if (start == -1) {
-		// If we can't find content-length, assume no data.
-		offset = 0;
-		return 0;
-	}
-	uint64_t length = ::atoll(&buf[start]);
-
 	start = find_str(buf, "\r\n\r\n");
 	if (start == -1)
 		throw std::runtime_error("Invalid HTTP, cannot find data");
 	offset = start;
 
-	uint64_t data_length = size - offset + 1;
+	start = find_str(buf, "Content-Length: ");
+	if (start == -1) {
+		// If we can't find content-length, we cannot give a reasonable
+		// remaining bytes response.
+		return 0;
+	}
 
+	uint64_t length = ::atoll(&buf[start]);
+	uint64_t data_length = size - offset + 1;
 	uint64_t remaining_bytes = data_length > length ? 0 : length - data_length;
 	return remaining_bytes;
 }
