@@ -176,4 +176,118 @@ TEST(tls_test, client)
 		ASSERT_EQ(buf[i], chr);
 	}
 }
+
+// Test that we can move RNG.
+TEST(tls_test, rng_moveable)
+{
+	// This looks like it doesn't do much, but libasan will check to ensure
+	// frees occur correctly.
+
+	// Move-assign.
+	janus::tls::rng rng1;
+	janus::tls::rng rng2 = std::move(rng1);
+	EXPECT_FALSE(rng2.seeded());
+
+	// Move ctor.
+	janus::tls::rng rng3;
+	janus::tls::rng rng4(std::move(rng3));
+	EXPECT_FALSE(rng4.seeded());
+
+	// Move-assign seeded.
+	janus::tls::rng rng5;
+	rng5.seed();
+	janus::tls::rng rng6 = std::move(rng5);
+	EXPECT_TRUE(rng6.seeded());
+
+	// Move ctor seeded.
+	janus::tls::rng rng7;
+	rng7.seed();
+	janus::tls::rng rng8(std::move(rng7));
+	EXPECT_TRUE(rng8.seeded());
+}
+
+// Test that we can move certs.
+TEST(tls_test, certs_moveable)
+{
+	// This looks like it doesn't do much, but libasan will check to ensure
+	// frees occur correctly.
+
+	// Move-assign.
+	janus::tls::certs certs1;
+	janus::tls::certs certs2 = std::move(certs1);
+	EXPECT_FALSE(certs2.loaded());
+	EXPECT_FALSE(certs2.self_signed());
+
+	// Move ctor.
+	janus::tls::certs certs3;
+	janus::tls::certs certs4(std::move(certs3));
+	EXPECT_FALSE(certs4.loaded());
+	EXPECT_FALSE(certs4.self_signed());
+
+	// Move-assign, loaded.
+	janus::tls::certs certs5;
+	certs5.load();
+	janus::tls::certs certs6 = std::move(certs5);
+	EXPECT_TRUE(certs6.loaded());
+	EXPECT_FALSE(certs6.self_signed());
+
+	// Move ctor, loaded.
+	janus::tls::certs certs7;
+	certs7.load();
+	janus::tls::certs certs8(std::move(certs7));
+	EXPECT_TRUE(certs8.loaded());
+	EXPECT_FALSE(certs8.self_signed());
+
+	// Move-assign, loaded, self-signed.
+	janus::tls::certs certs9;
+	certs9.load("../test/test-cert/client-2048.crt", "../test/test-cert/client-2048.key");
+	janus::tls::certs certs10 = std::move(certs9);
+	EXPECT_TRUE(certs10.loaded());
+	EXPECT_TRUE(certs10.self_signed());
+
+	// Move ctor, loaded, self-signed.
+	janus::tls::certs certs11;
+	certs11.load("../test/test-cert/client-2048.crt", "../test/test-cert/client-2048.key");
+	janus::tls::certs certs12(std::move(certs11));
+	EXPECT_TRUE(certs12.loaded());
+	EXPECT_TRUE(certs12.self_signed());
+}
+
+// Test that we can move the client.
+TEST(tls_test, client_moveable)
+{
+	// This looks like it doesn't do much, but libasan will check to ensure
+	// frees occur correctly.
+
+	janus::tls::rng rng;
+	rng.seed();
+	janus::tls::certs certs;
+	certs.load();
+
+	janus::tls::client client1("ljs.io", "443", certs, rng);
+
+	janus::tls::client client2(std::move(client1));
+	EXPECT_TRUE(client2.valid());
+	EXPECT_FALSE(client2.connected());
+	EXPECT_EQ(client2.timeout_ms(), janus::tls::client::DEFAULT_TIMEOUT_MS);
+
+	// Now try a connected client.
+
+	janus::tls::client client3("ljs.io", "443", certs, rng);
+	client3.connect();
+
+	janus::tls::client client4(std::move(client3));
+	EXPECT_TRUE(client4.valid());
+	EXPECT_TRUE(client4.connected());
+
+	// Now try an invalid client.
+
+	janus::tls::client client5("ljs.io", "443", certs, rng);
+	client5.connect();
+	client5.disconnect();
+
+	janus::tls::client client6(std::move(client5));
+	EXPECT_FALSE(client6.valid());
+	EXPECT_FALSE(client6.connected());
+}
 } // namespace

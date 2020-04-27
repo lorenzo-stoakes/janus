@@ -10,12 +10,12 @@ class certs
 public:
 	certs();
 	~certs();
+	certs(certs&& that);
+	auto operator=(certs&& that) -> certs&;
 
-	// No copying, moving, assigning.
+	// No copying.
 	certs(const certs& that) = delete;
-	certs(certs&& that) = delete;
 	auto operator=(const certs& that) -> certs& = delete;
-	auto operator=(certs&& that) -> certs& = delete;
 
 	// Is this a self-signed certificate/key pair?
 	auto self_signed() const -> bool
@@ -58,11 +58,15 @@ private:
 	bool _loaded;
 	internal::mbedtls_x509_crt _cacert;
 	internal::mbedtls_pk_context _pk_context;
+	bool _moved;
 
 	// Load certificate(s) from specific path, throws on error.
 	void load_cert(const char* path);
 
 	// Load private key from specific path, throws on error.
 	void load_key(const char* path);
+
+	// Destroy instance, freeing all allocated memory.
+	void destroy();
 };
 } // namespace janus::tls

@@ -10,12 +10,12 @@ class rng
 public:
 	rng();
 	~rng();
+	rng(rng&& that);
+	auto operator=(rng&& that) -> rng&;
 
-	// No copying, moving, assigning.
+	// No copying.
 	rng(const rng& that) = delete;
-	rng(rng&& that) = delete;
 	auto operator=(const rng& that) -> rng& = delete;
-	auto operator=(rng&& that) -> rng& = delete;
 
 	// Get entropy context. Invalid if not seeded.
 	auto entropy() -> internal::mbedtls_entropy_context&
@@ -39,11 +39,13 @@ public:
 	void seed();
 
 private:
-	const char* _name;
-	int _name_size;
 	bool _seeded;
+	bool _moved;
 
 	internal::mbedtls_entropy_context _entropy;
 	internal::mbedtls_ctr_drbg_context _ctr_drbg;
+
+	// Destroy instance, freeing all allocated memory.
+	void destroy();
 };
 } // namespace janus::tls

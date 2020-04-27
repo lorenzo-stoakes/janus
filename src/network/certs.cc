@@ -5,7 +5,7 @@
 
 namespace janus::tls
 {
-certs::certs() : _self_signed{false}, _loaded{false}
+certs::certs() : _self_signed{false}, _loaded{false}, _moved{false}
 {
 	internal::mbedtls_x509_crt_init(&_cacert);
 	internal::mbedtls_pk_init(&_pk_context);
@@ -13,8 +13,34 @@ certs::certs() : _self_signed{false}, _loaded{false}
 
 certs::~certs()
 {
-	internal::mbedtls_x509_crt_free(&_cacert);
-	internal::mbedtls_pk_free(&_pk_context);
+	destroy();
+}
+
+certs::certs(certs&& that)
+	: _self_signed{that._self_signed},
+	  _loaded{that._loaded},
+	  _cacert{std::move(that._cacert)},
+	  _pk_context{std::move(that._pk_context)},
+	  _moved{false}
+{
+	that._moved = true;
+}
+
+auto certs::operator=(certs&& that) -> certs&
+{
+	if (&that == this)
+		return *this;
+
+	destroy();
+
+	_self_signed = that._self_signed;
+	_loaded = that._loaded;
+	_cacert = std::move(that._cacert);
+	_pk_context = std::move(that._pk_context);
+
+	that._moved = true;
+
+	return *this;
 }
 
 void certs::load(const char* cert_path)
@@ -59,5 +85,14 @@ void certs::load_key(const char* path)
 	int err_num = internal::mbedtls_pk_parse_keyfile(&_pk_context, path, nullptr);
 	if (err_num != 0)
 		throw internal::gen_err(std::string("Parsing key at ") + path, err_num);
+}
+
+void certs::destroy()
+{
+	if (_moved)
+		return;
+
+	internal::mbedtls_x509_crt_free(&_cacert);
+	internal::mbedtls_pk_free(&_pk_context);
 }
 } // namespace janus::tls

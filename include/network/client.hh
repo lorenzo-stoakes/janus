@@ -13,12 +13,17 @@ public:
 	client(const char* host, const char* port, certs& certs, rng& rng,
 	       uint32_t timeout_ms = DEFAULT_TIMEOUT_MS);
 	~client();
+	// We can move ctor since moving another session to our own makes sense
+	// while ours is uninitialised.
+	client(client&& that);
 
-	// No copying, moving, assigning.
+	// No copying. It makes no sense to throw away this session and copy
+	// another over it.
 	client(const client& that) = delete;
-	client(client&& that) = delete;
-	auto operator=(const client& that) = delete;
-	auto operator=(client&& that) = delete;
+	auto operator=(const client& that) -> client& = delete;
+	// No move-assign, it makes no sense to overwrite an existing session
+	// with another.
+	auto operator=(client&& that) -> client& = delete;
 
 	// Is this client valid (i.e. usable)?
 	auto valid() const -> bool
@@ -41,17 +46,17 @@ public:
 	// Connect to host and perform TLS handshake. BLOCKING.
 	void connect();
 
-	// Disconnect and invalidate the connection.
+	// Disconnect and invalidate the connection. BLOCKING.
 	void disconnect();
 
-	// Perform a blocking read from the TLS connection. Returns as many
+	// Perform a BLOCKING read from the TLS connection. Returns as many
 	// bytes as it receives (possibly 0), placing the received data in the
 	// specified bufer.
 	// If the connection is closed, the disconnected parameter is set and
 	// the connection is invalidated.
 	auto read(char* buf, int size, bool& disconnected) -> int;
 
-	// Perform a blocking write to the TLS connection. It will keep on
+	// Perform a BLOCKING write to the TLS connection. It will keep on
 	// trying to write until write is complete or an error occurs.
 	void write(const char* buf, int size);
 
@@ -65,6 +70,7 @@ private:
 	rng& _rng;
 	bool _connected;
 	bool _invalid;
+	bool _moved;
 
 	internal::mbedtls_net_context _server_fd;
 	internal::mbedtls_ssl_context _ssl;

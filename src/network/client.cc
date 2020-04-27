@@ -9,7 +9,8 @@ client::client(const char* host, const char* port, certs& certs, rng& rng, uint3
 	  _certs{certs},
 	  _rng{rng},
 	  _connected{false},
-	  _invalid{false}
+	  _invalid{false},
+	  _moved{false}
 {
 	init();
 }
@@ -17,6 +18,22 @@ client::client(const char* host, const char* port, certs& certs, rng& rng, uint3
 client::~client()
 {
 	destroy();
+}
+
+client::client(client&& that)
+	: _host{that._host},
+	  _port{that._port},
+	  _timeout_ms{that._timeout_ms},
+	  _certs{that._certs},
+	  _rng{that._rng},
+	  _connected{that._connected},
+	  _invalid{that._invalid},
+	  _moved{false},
+	  _server_fd{std::move(that._server_fd)},
+	  _ssl{std::move(that._ssl)},
+	  _conf{std::move(that._conf)}
+{
+	that._moved = true;
 }
 
 void client::connect()
@@ -116,6 +133,9 @@ void client::init()
 
 void client::destroy()
 {
+	if (_moved)
+		return;
+
 	// We disconnect on destroy.
 	disconnect();
 
