@@ -18,6 +18,7 @@ static constexpr uint64_t DEFAULT_HTTP_BUF_SIZE = 1000;
 // Represents a session with betfair.
 // Note that as all the operations performed here are slow and network-limited
 // anyway, we make no efforts to avoid allocations etc.
+// Note that this is DEEPLY un-thread safe as a shared internal buffer is used.
 class session
 {
 public:
@@ -39,7 +40,7 @@ public:
 	// Logout, invalidating session token.
 	void logout();
 
-	// Query API endpoint.
+	// Query API endpoint. DEEPLY un-thread safe.
 	auto api(const std::string& endpoint, const std::string& json) -> std::string;
 
 	// Return a connection configured for the stream API, connected and
