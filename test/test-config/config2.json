@@ -6,5 +6,6 @@
 	"key_path": "/home/barrycunslow/client-2048.key",
 	"market_stream_filter_json": "{}",
 	"market_stream_data_filter_json": "{}",
-	"json_data_root": "/home/foo/bar"
+	"json_data_root": "/home/foo/bar",
+	"binary_data_root": "/home/baz/blah"
 }

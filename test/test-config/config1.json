@@ -6,5 +6,6 @@
 	"key_path": "client-2048.key",
 	"market_stream_filter_json": "{\"eventTypeIds\":[\"7\"],\"marketTypeCodes\":[\"WIN\"]}",
 	"market_stream_data_filter_json": "{\"ladderLevels\":10,\"fields\":[\"EX_ALL_OFFERS\",\"EX_TRADED\",\"EX_TRADED_VOL\",\"EX_LTP\",\"EX_MARKET_DEF\"]}",
-	"json_data_root": "/home/foo/bar"
+	"json_data_root": "/home/foo/bar",
+	"binary_data_root": "/home/baz/blah"
 }

@@ -52,6 +52,8 @@ static void parse_config_json(const std::string& path, std::string& json, config
 			.as_cstring();
 	config.json_data_root =
 		root.get_value_of_key(sajson::literal("json_data_root")).as_cstring();
+	config.binary_data_root =
+		root.get_value_of_key(sajson::literal("binary_data_root")).as_cstring();
 
 	std::string dir_name = extract_dir_name(path);
 	normalise_path(dir_name, config.cert_path);
