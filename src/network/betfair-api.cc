@@ -2,16 +2,51 @@
 
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace janus::betfair
 {
-auto get_market_ids(session& session, const std::string& filter_json) -> std::vector<std::string>
+auto get_meta(session& session, std::vector<std::string> market_ids)
+{
+	if (market_ids.size() == 0)
+		throw std::runtime_error("Empty market ID array in get_meta()?");
+
+	// The data weighting system requires that we have to split out metadata retrieval into
+	// blocks of 100 at a time.
+	std::string prefix =
+		R"({"sort":"FIRST_TO_START","maxResults":)" +
+		std::to_string(MAX_METADATA_REQUESTS) +
+		R"(,"marketProjection":["COMPETITION","EVENT","EVENT_TYPE","MARKET_START_TIME","MARKET_DESCRIPTION","RUNNER_DESCRIPTION","RUNNER_METADATA"],"filter":{"marketIds":[)";
+
+	std::string meta = "";
+	for (uint64_t i = 0; i < market_ids.size(); i += MAX_METADATA_REQUESTS) {
+		std::string json = prefix;
+		for (uint64_t j = i; j < market_ids.size() && j < i + MAX_METADATA_REQUESTS; j++) {
+			json += "\"" + market_ids[j] + "\",";
+		}
+		// Remove final comma.
+		json.erase(json.size() - 1);
+		json += "]}}";
+
+		std::string response = session.api("listMarketCatalogue", json);
+		// A newline should be appended to the end of the data delineated each block of
+		// results.
+		meta += response + "\n";
+	}
+
+	return meta;
+}
+
+auto get_market_ids(session& session, const std::string& filter_json)
+	-> std::pair<std::vector<std::string>, std::string>
 {
 	std::string json = R"({"sort":"FIRST_TO_START","maxResults":1000,"filter":)";
 	json += filter_json + "}";
 
 	std::string response = session.api("listMarketCatalogue", json);
+
+	// Horrid const-cast as sajson mutates data. It's terrible I know. I KNOW!
 	sajson::document doc = janus::internal::parse_json("", const_cast<char*>(response.data()),
 							   response.size());
 	const sajson::value& root = doc.get_root();
@@ -30,6 +65,8 @@ auto get_market_ids(session& session, const std::string& filter_json) -> std::ve
 
 		ret.push_back(market_id.as_cstring());
 	}
-	return ret;
+
+	std::string meta = get_meta(session, ret);
+	return std::make_pair(ret, meta);
 }
 } // namespace janus::betfair
