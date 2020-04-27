@@ -4,8 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
-
-#include <iostream>
+#include <vector>
 
 namespace janus::betfair
 {
@@ -29,8 +28,6 @@ void stream::market_subscribe(const std::string& filter_json, const std::string&
 	msg += R"(,"marketDataFilter":)";
 	msg += data_filter_json;
 	msg += "}\n";
-
-	std::cout << msg << std::endl;
 
 	_client.write(msg.c_str(), msg.size());
 
