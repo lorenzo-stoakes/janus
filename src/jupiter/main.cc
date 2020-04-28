@@ -1,6 +1,5 @@
 #include "janus.hh"
 
-#include "sajson.hh"
 #include "spdlog/spdlog.h"
 #include <atomic>
 #include <chrono>
@@ -178,7 +177,7 @@ static bool run_loop(janus::config& config, janus::betfair::session& session)
 	}
 }
 
-auto main(int argc, char** argv) -> int
+auto main() -> int
 {
 	add_signal_handler();
 

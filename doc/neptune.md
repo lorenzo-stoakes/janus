@@ -5,20 +5,20 @@
 ~/data/janbin
 |- meta/[market id].jan
 |- market/[market id].jan[.snap]
-|- neptune.db - stores market id, last updated, last line, closed tuples
+|- neptune.db (see below)
 
 ## DB file format
 
-* flename      (string)
-* last_updated (uint64)
-* last_offset  (uint64)
-* closed       (bool)
+Per file:
+* flename (ms since epoch) (uint64) - jupiter outputs [ms since epoch].json meta/stream
+* last_updated             (uint64)
+* last_offset              (uint64)
+(closed markets get deleted)
 
 ## Phases
 
-1. Passive meta scan - scan JSON meta directory for new markets (i.e. doesn't
-   have an existing meta binary file) - generate if so. Also add to neptune.db
-   if not already present (with updated, offset = 0).
+1. Passive meta scan - scan JSON meta directory for new files (i.e. don't exist
+   in the db) - generate if so and update db with offset = 0.
 
 2. Passive market scan for files to update - anything with updated >
    last_updated. Create a list of files to update.
