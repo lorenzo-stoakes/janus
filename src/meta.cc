@@ -152,17 +152,23 @@ auto extract_meta_runners(const sajson::value& node, dynamic_buffer& dyn_buf) ->
 }
 } // namespace internal
 
-auto parse_meta_json(const char* filename, char* str, uint64_t size, dynamic_buffer& dyn_buf)
-	-> uint64_t
+auto parse_meta_json(const sajson::value& root, dynamic_buffer& dyn_buf) -> uint64_t
 {
-	str = internal::remove_outer_array(str, size);
-	sajson::document doc = janus::internal::parse_json(filename, str, size);
-	const sajson::value& root = doc.get_root();
 	uint64_t count = internal::extract_meta_header(root, dyn_buf);
 	count += internal::extract_meta_static_strings(root, dyn_buf);
 	count += internal::extract_meta_runners(root.get_value_of_key(sajson::literal("runners")),
 						dyn_buf);
 
 	return count;
+}
+
+auto parse_meta_json(const char* filename, char* str, uint64_t size, dynamic_buffer& dyn_buf)
+	-> uint64_t
+{
+	str = internal::remove_outer_array(str, size);
+	sajson::document doc = janus::internal::parse_json(filename, str, size);
+	const sajson::value& root = doc.get_root();
+
+	return parse_meta_json(root, dyn_buf);
 }
 } // namespace janus::betfair
