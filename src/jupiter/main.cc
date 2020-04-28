@@ -1,6 +1,5 @@
 #include "janus.hh"
 
-#include "sajson.hh"
 #include "spdlog/spdlog.h"
 #include <atomic>
 #include <chrono>
