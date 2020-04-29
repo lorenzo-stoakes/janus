@@ -4,16 +4,16 @@
 #include "spdlog/spdlog.h"
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
+#include <errno.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
 #include <vector>
 
-#include <cstring>
-#include <errno.h>
-#include <sys/stat.h>
 namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
@@ -395,12 +395,12 @@ void update_from_stream_file(const janus::config& config, const janus::betfair::
 // Run core functionality.
 auto run_core(janus::config& config) -> bool
 {
-	spdlog::info("Reading DB file...");
+	spdlog::debug("Reading DB file...");
 	auto db = read_db(config);
 
 	auto file_ids = get_file_id_list(config);
-	spdlog::info("Found {} metadata files.", file_ids.size());
-	spdlog::info("Checking for new metadata...");
+	spdlog::debug("Found {} metadata files.", file_ids.size());
+	spdlog::debug("Checking for new metadata...");
 	// Add entries for new files.
 	for (uint64_t file_id : file_ids) {
 		if (!db.contains(file_id)) {
@@ -413,9 +413,8 @@ auto run_core(janus::config& config) -> bool
 	}
 
 	auto update_ids = get_update_id_list(config, db);
-	spdlog::info("Found {} market stream files with new data.", update_ids.size());
-
 	if (update_ids.size() > 0) {
+		spdlog::info("Found {} market stream files with new data.", update_ids.size());
 		spdlog::info("Updating stream data...");
 
 		janus::dynamic_buffer dyn_buf(MAX_STREAM_BYTES);
@@ -426,10 +425,10 @@ auto run_core(janus::config& config) -> bool
 		}
 	}
 
-	spdlog::info("Writing DB file...");
+	spdlog::debug("Writing DB file...");
 	write_db(config, db);
 
-	spdlog::info("Done!");
+	spdlog::debug("Done!");
 	return true;
 }
 
