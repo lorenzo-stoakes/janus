@@ -4,21 +4,25 @@
 #include "spdlog/spdlog.h"
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <errno.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <signal.h>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
+#include <thread>
 #include <vector>
 
 namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
 static constexpr uint64_t MAX_STREAM_BYTES = 1'000'000'000;
+static constexpr uint64_t SLEEP_INTERVAL_MS = 500;
 
 // Indicates whether a signal has occured and we should abort.
 std::atomic<bool> signalled{false};
@@ -165,7 +169,7 @@ auto parse_meta_line(const std::string& dest_dir, std::string& line) -> uint64_t
 }
 
 // Parse metadata and save binary representation.
-void parse_meta(janus::config& config, uint64_t file_id)
+void parse_meta(const janus::config& config, uint64_t file_id)
 {
 	std::string source_path =
 		config.json_data_root + "/meta/" + std::to_string(file_id) + ".json";
@@ -412,7 +416,7 @@ void update_from_stream_file(const janus::config& config, const janus::betfair::
 }
 
 // Run core functionality.
-auto run_core(janus::config& config) -> bool
+auto run_core(const janus::config& config) -> bool
 {
 	spdlog::debug("Reading DB file...");
 	auto db = read_db(config);
@@ -451,18 +455,33 @@ auto run_core(janus::config& config) -> bool
 	return true;
 }
 
+// Run core loop.
+auto run_loop(const janus::config& config) -> bool
+{
+	while (true) {
+		if (signalled.load()) {
+			spdlog::info("Signal received, aborting...");
+			return true;
+		}
+
+		try {
+			if (!run_core(config))
+				return false;
+		} catch (std::exception& e) {
+			spdlog::error(e.what());
+			spdlog::critical("Aborting!");
+			return false;
+		}
+
+		// TODO(lorenzo): inotify implementation.
+		std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_INTERVAL_MS));
+	}
+}
+
 auto main() -> int
 {
+	add_signal_handler();
+
 	janus::config config = janus::parse_config();
-
-	bool success;
-	try {
-		success = run_core(config);
-	} catch (std::exception& e) {
-		spdlog::error(e.what());
-		spdlog::critical("Aborting!");
-		success = false;
-	}
-
-	return success ? 0 : 1;
+	return run_loop(config) ? 0 : 1;
 }
