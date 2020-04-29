@@ -3,6 +3,7 @@
 #include "sajson.hh"
 #include "spdlog/spdlog.h"
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <errno.h>
@@ -18,6 +19,9 @@ namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
 static constexpr uint64_t MAX_STREAM_BYTES = 1'000'000'000;
+
+// Indicates whether a signal has occured and we should abort.
+std::atomic<bool> signalled{false};
 
 // Represents entry in neptune.db database file.
 struct db_entry
@@ -35,6 +39,21 @@ struct db_entry
 
 using db_t = std::unordered_map<uint64_t, db_entry>;
 using per_market_t = std::unordered_map<uint64_t, std::vector<janus::update>>;
+
+// Handle SIGINT, e.g. ctrl+C.
+static void handle_interrupt(int)
+{
+	signalled.store(true);
+}
+
+// Add signal handlers.
+static void add_signal_handler()
+{
+	struct sigaction action_interrupt = {0};
+	action_interrupt.sa_handler = handle_interrupt;
+	::sigfillset(&action_interrupt.sa_mask);
+	::sigaction(SIGINT, &action_interrupt, nullptr);
+}
 
 // Does the file at the specified path exist?
 static auto file_exists(std::string path) -> bool
