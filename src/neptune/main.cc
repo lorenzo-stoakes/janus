@@ -3,21 +3,29 @@
 #include "sajson.hh"
 #include "spdlog/spdlog.h"
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <cstring>
+#include <errno.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <signal.h>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
+#include <thread>
 #include <vector>
 
-#include <cstring>
-#include <errno.h>
-#include <sys/stat.h>
 namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
 static constexpr uint64_t MAX_STREAM_BYTES = 1'000'000'000;
+static constexpr uint64_t SLEEP_INTERVAL_MS = 500;
+
+// Indicates whether a signal has occured and we should abort.
+std::atomic<bool> signalled{false};
 
 // Represents entry in neptune.db database file.
 struct db_entry
@@ -35,6 +43,21 @@ struct db_entry
 
 using db_t = std::unordered_map<uint64_t, db_entry>;
 using per_market_t = std::unordered_map<uint64_t, std::vector<janus::update>>;
+
+// Handle SIGINT, e.g. ctrl+C.
+static void handle_interrupt(int)
+{
+	signalled.store(true);
+}
+
+// Add signal handlers.
+static void add_signal_handler()
+{
+	struct sigaction action_interrupt = {0};
+	action_interrupt.sa_handler = handle_interrupt;
+	::sigfillset(&action_interrupt.sa_mask);
+	::sigaction(SIGINT, &action_interrupt, nullptr);
+}
 
 // Does the file at the specified path exist?
 static auto file_exists(std::string path) -> bool
@@ -146,7 +169,7 @@ auto parse_meta_line(const std::string& dest_dir, std::string& line) -> uint64_t
 }
 
 // Parse metadata and save binary representation.
-void parse_meta(janus::config& config, uint64_t file_id)
+void parse_meta(const janus::config& config, uint64_t file_id)
 {
 	std::string source_path =
 		config.json_data_root + "/meta/" + std::to_string(file_id) + ".json";
@@ -393,14 +416,14 @@ void update_from_stream_file(const janus::config& config, const janus::betfair::
 }
 
 // Run core functionality.
-auto run_core(janus::config& config) -> bool
+auto run_core(const janus::config& config) -> bool
 {
-	spdlog::info("Reading DB file...");
+	spdlog::debug("Reading DB file...");
 	auto db = read_db(config);
 
 	auto file_ids = get_file_id_list(config);
-	spdlog::info("Found {} metadata files.", file_ids.size());
-	spdlog::info("Checking for new metadata...");
+	spdlog::debug("Found {} metadata files.", file_ids.size());
+	spdlog::debug("Checking for new metadata...");
 	// Add entries for new files.
 	for (uint64_t file_id : file_ids) {
 		if (!db.contains(file_id)) {
@@ -413,9 +436,8 @@ auto run_core(janus::config& config) -> bool
 	}
 
 	auto update_ids = get_update_id_list(config, db);
-	spdlog::info("Found {} market stream files with new data.", update_ids.size());
-
 	if (update_ids.size() > 0) {
+		spdlog::info("Found {} market stream files with new data.", update_ids.size());
 		spdlog::info("Updating stream data...");
 
 		janus::dynamic_buffer dyn_buf(MAX_STREAM_BYTES);
@@ -426,25 +448,40 @@ auto run_core(janus::config& config) -> bool
 		}
 	}
 
-	spdlog::info("Writing DB file...");
+	spdlog::debug("Writing DB file...");
 	write_db(config, db);
 
-	spdlog::info("Done!");
+	spdlog::debug("Done!");
 	return true;
+}
+
+// Run core loop.
+auto run_loop(const janus::config& config) -> bool
+{
+	while (true) {
+		if (signalled.load()) {
+			spdlog::info("Signal received, aborting...");
+			return true;
+		}
+
+		try {
+			if (!run_core(config))
+				return false;
+		} catch (std::exception& e) {
+			spdlog::error(e.what());
+			spdlog::critical("Aborting!");
+			return false;
+		}
+
+		// TODO(lorenzo): inotify implementation.
+		std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_INTERVAL_MS));
+	}
 }
 
 auto main() -> int
 {
+	add_signal_handler();
+
 	janus::config config = janus::parse_config();
-
-	bool success;
-	try {
-		success = run_core(config);
-	} catch (std::exception& e) {
-		spdlog::error(e.what());
-		spdlog::critical("Aborting!");
-		success = false;
-	}
-
-	return success ? 0 : 1;
+	return run_loop(config) ? 0 : 1;
 }
