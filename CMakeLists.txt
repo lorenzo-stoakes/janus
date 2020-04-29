@@ -76,6 +76,43 @@ target_link_libraries(jupiter
 
 add_dependencies(jupiter tls)
 
+# Osiris
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+file(GLOB_RECURSE OSIRIS_SOURCES
+	"src/osiris/*.cc"
+)
+
+find_package(Qt5 COMPONENTS Core Widgets Charts REQUIRED)
+
+file(GLOB_RECURSE OSIRIS_HEADERS
+	"src/osiris/*.hh"
+)
+
+qt5_wrap_cpp(OSIRIS_UI_SOURCES ${OSIRIS_HEADERS})
+
+add_executable(osiris
+	${JANUS_SOURCES}
+	${OSIRIS_UI_SOURCES}
+	${OSIRIS_SOURCES}
+)
+target_compile_options(osiris
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
+)
+
+target_link_libraries(osiris
+	m
+	Qt5::Widgets
+	Threads::Threads
+	Qt5::Charts
+)
+
 # Checker
 
 file(GLOB_RECURSE CHECKER_SOURCES
