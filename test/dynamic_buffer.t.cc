@@ -612,4 +612,30 @@ TEST(dynamic_buffer_test, custom_buffer_ctor)
 	EXPECT_EQ(buf3.cap(), 96);
 	EXPECT_EQ(buf3.size(), 96);
 }
+
+// Test that we can reserve a block of zeroed memory using .reserve() correctly.
+TEST(dynamic_buffer_test, reserve)
+{
+	auto buf = janus::dynamic_buffer(1000);
+	EXPECT_EQ(buf.size(), 0);
+
+	// Put some data in the first 8 bytes to make sure we're zeroing.
+	buf.add_uint64(12345678);
+	buf.reset();
+
+	uint64_t* ptr1 = static_cast<uint64_t*>(buf.reserve(7));
+	EXPECT_EQ(*ptr1, 0);
+	*ptr1 = 999;
+	// We should have got rounded up.
+	EXPECT_EQ(buf.size(), 8);
+
+	uint64_t* ptr2 = static_cast<uint64_t*>(buf.reserve(1));
+	// Previous reservation should not be affected.
+	EXPECT_EQ(*ptr1, 999);
+	EXPECT_EQ(*ptr2, 0);
+	*ptr2 = 123;
+	EXPECT_EQ(*ptr1, 999);
+	*ptr1 = 11111;
+	EXPECT_EQ(*ptr2, 123);
+}
 } // namespace

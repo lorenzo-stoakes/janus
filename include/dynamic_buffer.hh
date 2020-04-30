@@ -159,13 +159,27 @@ public:
 		check_write_overflow(aligned_words);
 
 		auto* buf = reinterpret_cast<uint8_t*>(&_buf[_write_offset]);
-		std::memcpy(buf, ptr, size);
-		// It is safe to call this with 0 size.
-		// aligned >= size always.
-		std::memset(&buf[size], '\0', aligned_bytes - size);
+		if (ptr == nullptr) {
+			// If null then we are reserving
+			std::memset(buf, '\0', aligned_bytes);
+		} else {
+			std::memcpy(buf, ptr, size);
+			// It is safe to call this with 0 size.
+			// aligned >= size always.
+			std::memset(&buf[size], '\0', aligned_bytes - size);
+		}
 		_write_offset += aligned_words;
 
 		return buf;
+	}
+
+	// Attempt to reserve a block of memory of specified size (aligned to
+	// word size), zeroed.
+	//      size: Amount of memory to reserve in bytes.
+	//   returns: Pointer to reserved buffer.
+	auto reserve(uint64_t size) -> void*
+	{
+		return add_raw(nullptr, size);
 	}
 
 	// Add an arbitrary object to the buffer.
