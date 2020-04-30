@@ -24,7 +24,8 @@ file(GLOB NETWORK_SOURCES
 
 execute_process(COMMAND grep -c processor  /proc/cpuinfo OUTPUT_VARIABLE NUM_CORES OUTPUT_STRIP_TRAILING_WHITESPACE)
 add_custom_target(tls
-	make --silent -C ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mbedtls-2.22.0 -j ${NUM_CORES}
+	make --silent -C ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mbedtls-2.22.0 -j ${NUM_CORES} &&
+	bash -c "ar -qc ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mbedtls-2.22.0/library/libmbed.a ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/mbedtls-2.22.0/library/*.o"
 	COMMENT "Building mbedtls..."
 	VERBATIM
 )
@@ -71,9 +72,7 @@ target_compile_options(jupiter
 
 target_link_libraries(jupiter
 	m
-	mbedcrypto
-	mbedtls
-	mbedx509
+	mbed
 )
 
 add_dependencies(jupiter tls)
@@ -150,9 +149,7 @@ target_compile_options(testrunner
 )
 target_link_libraries(testrunner
 	m
-	mbedcrypto
-	mbedtls
-	mbedx509
+	mbed
 	asan
 	ubsan
 	gtest
