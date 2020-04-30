@@ -22,4 +22,9 @@ auto read_metadata(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -
 // Read all metadata from binary file directory and return collection of
 // metadata views.
 auto read_all_metadata(const config& config, dynamic_buffer& dyn_buf) -> std::vector<meta_view>;
+
+// Read all market updates for the specified market ID and places in dynamic
+// buffer. Transparently handles snappy-compressed data. Returns number of
+// updates retrieved.
+auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -> uint64_t;
 } // namespace janus

@@ -22,7 +22,7 @@ TEST(db_test, basic)
 	EXPECT_EQ(market_ids[0], 170020946);
 	EXPECT_EQ(market_ids[1], 170030493);
 
-	janus::dynamic_buffer dyn_buf(1'000'000);
+	janus::dynamic_buffer dyn_buf(10'000'000);
 
 	const auto metas = janus::read_all_metadata(config, dyn_buf);
 	ASSERT_EQ(metas.size(), 2);
@@ -46,5 +46,11 @@ TEST(db_test, basic)
 
 	EXPECT_EQ(view.market_id(), 170030493);
 	EXPECT_EQ(view.runners().size(), 2);
+
+	// Now check we can read update data.
+	EXPECT_EQ(janus::read_market_updates(config, dyn_buf, 170358161), 1843);
+
+	// check we can handle snappy-compressed archived stream updates too.
+	EXPECT_EQ(janus::read_market_updates(config, dyn_buf, 168216153), 109648);
 }
 } // namespace

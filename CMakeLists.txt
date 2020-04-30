@@ -180,11 +180,12 @@ target_link_libraries(testrunner
 )
 else()
 target_link_libraries(testrunner
+	asan
+	gtest
 	m
 	mbed
-	asan
+	snappy
 	ubsan
-	gtest
 )
 endif()
 

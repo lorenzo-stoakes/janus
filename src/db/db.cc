@@ -53,7 +53,7 @@ auto read_metadata(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -
 
 	char* ptr = static_cast<char*>(dyn_buf.reserve(size));
 	if (!file.read(ptr, size))
-		throw std::runtime_error(std::string("Error reading metadat from ") + path);
+		throw std::runtime_error(std::string("Error reading metadata from ") + path);
 
 	return meta_view(dyn_buf);
 }
@@ -68,5 +68,46 @@ auto read_all_metadata(const config& config, dynamic_buffer& dyn_buf) -> std::ve
 	}
 
 	return ret;
+}
+
+auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -> uint64_t
+{
+	std::string path = config.binary_data_root + "/market/" + std::to_string(id) + ".jan";
+
+	bool is_compressed = false;
+	auto file = std::ifstream(path, std::ios::binary | std::ios::ate);
+	if (!file) {
+		path += ".snap";
+		file = std::ifstream(path, std::ios::binary | std::ios::ate);
+		if (!file)
+			throw std::runtime_error(std::string("couldn't open ") + path +
+						 "[.snap] for reading");
+		is_compressed = true;
+	}
+
+	uint64_t size = file.tellg();
+	file.seekg(0);
+
+	// Simple case - just read the data and put it in the dynamic buffer.
+	if (!is_compressed) {
+		char* ptr = static_cast<char*>(dyn_buf.reserve(size));
+		if (!file.read(ptr, size))
+			throw std::runtime_error(std::string("Error reading market updates from ") +
+						 path);
+
+		return size / sizeof(janus::update);
+	}
+
+	std::string compressed(size, '\0');
+	if (!file.read(&compressed[0], size))
+		throw std::runtime_error(
+			std::string("Error reading compressed market updates from ") + path);
+
+	std::string uncompressed;
+	if (!snappy::Uncompress(compressed.c_str(), compressed.size(), &uncompressed))
+		throw std::runtime_error(std::string("Unable to decompress ") + path +
+					 " file corrupted?");
+	dyn_buf.add_raw(uncompressed.c_str(), uncompressed.size());
+	return uncompressed.size() / sizeof(janus::update);
 }
 } // namespace janus
