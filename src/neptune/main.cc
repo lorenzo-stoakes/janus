@@ -482,6 +482,8 @@ auto main() -> int
 {
 	add_signal_handler();
 
+	spdlog::info("neptune " STR(GIT_VER));
+
 	janus::config config = janus::parse_config();
 	return run_loop(config) ? 0 : 1;
 }
