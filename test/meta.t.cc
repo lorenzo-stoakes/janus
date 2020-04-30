@@ -337,4 +337,46 @@ TEST(meta_test, parse_meta_json)
 	EXPECT_EQ(dyn_buf.read_offset(), count);
 	EXPECT_EQ(dyn_buf.read_offset(), dyn_buf.size());
 }
+
+// Test that the meta view correctly parses and represents the metadata.
+TEST(meta_test, meta_view)
+{
+	std::string json = janus_test::sample_meta_json;
+
+	// Won't be larger than the JSON buffer.
+	auto dyn_buf = janus::dynamic_buffer(json.size());
+
+	janus::betfair::parse_meta_json("", reinterpret_cast<char*>(json.data()), json.size(),
+					dyn_buf);
+
+	janus::meta_view view(dyn_buf);
+
+	EXPECT_EQ(view.market_id(), 170020941);
+	EXPECT_EQ(view.event_type_id(), 7);
+	EXPECT_EQ(view.event_id(), 29746086);
+	EXPECT_EQ(view.competition_id(), 0);
+	char timestamp[] = "2020-03-11T13:20:00Z";
+	EXPECT_EQ(view.market_start_timestamp(),
+		  janus::parse_iso8601(timestamp, sizeof(timestamp) - 1));
+	EXPECT_EQ(view.name(), "1m2f Hcap");
+	EXPECT_EQ(view.event_type_name(), "Horse Racing");
+	EXPECT_EQ(view.event_name(), "Ling  11th Mar");
+	EXPECT_EQ(view.event_country_code(), "GB");
+	EXPECT_EQ(view.event_timezone(), "Europe/London");
+	EXPECT_EQ(view.market_type_name(), "WIN");
+	EXPECT_EQ(view.venue_name(), "Lingfield");
+	EXPECT_EQ(view.competition_name(), "");
+
+	EXPECT_EQ(view.runners().size(), 12);
+
+	for (uint64_t i = 0; i < 12; i++) {
+		const janus::runner_view& runner = view.runners()[i];
+
+		ASSERT_EQ(runner.id(), janus_test::sample_runner_ids[i]);
+		ASSERT_EQ(runner.sort_priority(), i + 1);
+		ASSERT_EQ(runner.name(), janus_test::sample_runner_names[i]);
+		ASSERT_EQ(runner.jockey_name(), janus_test::sample_jockey_names[i]);
+		ASSERT_EQ(runner.trainer_name(), janus_test::sample_trainer_names[i]);
+	}
+}
 } // namespace

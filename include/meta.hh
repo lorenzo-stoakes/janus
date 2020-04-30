@@ -1,9 +1,11 @@
 #pragma once
 
-#include <cstdint>
-
 #include "dynamic_buffer.hh"
 #include "sajson.hh"
+
+#include <cstdint>
+#include <string_view>
+#include <vector>
 
 namespace janus
 {
@@ -15,6 +17,133 @@ struct meta_header
 	uint64_t competition_id;
 	uint64_t market_start_timestamp;
 	uint64_t num_runners;
+};
+
+class runner_view
+{
+public:
+	explicit runner_view(dynamic_buffer& dyn_buf);
+
+	auto id() const -> uint64_t
+	{
+		return _id;
+	}
+
+	auto sort_priority() const -> uint64_t
+	{
+		return _sort_priority;
+	}
+
+	auto name() const -> std::string_view
+	{
+		return _name;
+	}
+
+	auto jockey_name() const -> std::string_view
+	{
+		return _jockey_name;
+	}
+
+	auto trainer_name() const -> std::string_view
+	{
+		return _trainer_name;
+	}
+
+private:
+	uint64_t _id;
+	uint64_t _sort_priority;
+	std::string_view _name;
+	std::string_view _jockey_name;
+	std::string_view _trainer_name;
+};
+
+class meta_view
+{
+public:
+	explicit meta_view(dynamic_buffer& dyn_buf);
+
+	auto market_id() const -> uint64_t
+	{
+		return _header.market_id;
+	}
+
+	auto event_type_id() const -> uint64_t
+	{
+		return _header.event_type_id;
+	}
+
+	auto event_id() const -> uint64_t
+	{
+		return _header.event_id;
+	}
+
+	auto competition_id() const -> uint64_t
+	{
+		return _header.competition_id;
+	}
+
+	auto market_start_timestamp() const -> uint64_t
+	{
+		return _header.market_start_timestamp;
+	}
+
+	auto name() const -> std::string_view
+	{
+		return _name;
+	}
+
+	auto event_type_name() const -> std::string_view
+	{
+		return _event_type_name;
+	}
+
+	auto event_name() const -> std::string_view
+	{
+		return _event_name;
+	}
+
+	auto event_country_code() const -> std::string_view
+	{
+		return _event_country_code;
+	}
+
+	auto event_timezone() const -> std::string_view
+	{
+		return _event_timezone;
+	}
+
+	auto market_type_name() const -> std::string_view
+	{
+		return _market_type_name;
+	}
+
+	auto venue_name() const -> std::string_view
+	{
+		return _venue_name;
+	}
+
+	auto competition_name() const -> std::string_view
+	{
+		return _competition_name;
+	}
+
+	auto runners() const -> const std::vector<runner_view>&
+	{
+		return _runners;
+	}
+
+private:
+	const meta_header& _header;
+	std::string_view _name;
+	std::string_view _event_type_name;
+	std::string_view _event_name;
+	std::string_view _event_country_code;
+	std::string_view _event_timezone;
+	std::string_view _market_type_name;
+	std::string_view _venue_name;
+	std::string_view _competition_name;
+
+	std::vector<runner_view> _runners;
 };
 
 namespace betfair

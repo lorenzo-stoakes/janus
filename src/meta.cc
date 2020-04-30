@@ -4,7 +4,36 @@
 #include <stdexcept>
 #include <string>
 
-namespace janus::betfair
+#include <iostream>
+
+namespace janus
+{
+runner_view::runner_view(dynamic_buffer& dyn_buf)
+{
+	_id = dyn_buf.read_uint64();
+	_sort_priority = dyn_buf.read_uint64();
+	_name = dyn_buf.read_string();
+	_jockey_name = dyn_buf.read_string();
+	_trainer_name = dyn_buf.read_string();
+}
+
+meta_view::meta_view(dynamic_buffer& dyn_buf) : _header{dyn_buf.read<meta_header>()}
+{
+	_name = dyn_buf.read_string();
+	_event_type_name = dyn_buf.read_string();
+	_event_name = dyn_buf.read_string();
+	_event_country_code = dyn_buf.read_string();
+	_event_timezone = dyn_buf.read_string();
+	_market_type_name = dyn_buf.read_string();
+	_venue_name = dyn_buf.read_string();
+	_competition_name = dyn_buf.read_string();
+
+	for (uint64_t i = 0; i < _header.num_runners; i++) {
+		_runners.emplace_back(dyn_buf);
+	}
+}
+
+namespace betfair
 {
 namespace internal
 {
@@ -171,4 +200,5 @@ auto parse_meta_json(const char* filename, char* str, uint64_t size, dynamic_buf
 
 	return parse_meta_json(root, dyn_buf);
 }
-} // namespace janus::betfair
+} // namespace betfair
+} // namespace janus
