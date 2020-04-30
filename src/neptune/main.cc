@@ -458,6 +458,10 @@ auto run_core(const janus::config& config) -> bool
 // Run core loop.
 auto run_loop(const janus::config& config) -> bool
 {
+	// On the first run, output debug info
+	bool first = true;
+	spdlog::set_level(spdlog::level::debug);
+
 	while (true) {
 		if (signalled.load()) {
 			spdlog::info("Signal received, aborting...");
@@ -471,6 +475,12 @@ auto run_loop(const janus::config& config) -> bool
 			spdlog::error(e.what());
 			spdlog::critical("Aborting!");
 			return false;
+		}
+
+		if (first) {
+			first = false;
+			spdlog::set_level(spdlog::level::info);
+			spdlog::info("Switched to log level INFO");
 		}
 
 		// TODO(lorenzo): inotify implementation.
