@@ -13,7 +13,7 @@ endif()
 
 execute_process(COMMAND git describe OUTPUT_VARIABLE GIT_VER OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(SHARED_COMPILE_OPTIONS
-	--std=gnu++2a -Wall -g -D GIT_VER=${GIT_VER})
+	--std=gnu++2a -Wall -Wno-unknown-pragmas -g -D GIT_VER=${GIT_VER})
 
 file(GLOB_RECURSE HEADERS
 	"include/*.hh"
