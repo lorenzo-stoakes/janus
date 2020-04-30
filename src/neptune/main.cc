@@ -79,7 +79,8 @@ auto read_db(const janus::config& config) -> db_t
 		entries = std::vector<db_entry>(size / sizeof(db_entry));
 
 		file.seekg(0);
-		file.read(reinterpret_cast<char*>(entries.data()), size);
+		if (!file.read(reinterpret_cast<char*>(entries.data()), size))
+			throw std::runtime_error(std::string("Error reading ") + path);
 	}
 
 	// TODO(lorenzo): Probably not the most efficient method...

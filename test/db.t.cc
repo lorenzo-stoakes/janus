@@ -13,13 +13,38 @@ TEST(db_test, basic)
 	};
 
 	const auto ids = janus::get_json_file_id_list(config);
-	EXPECT_EQ(ids.size(), 2);
+	ASSERT_EQ(ids.size(), 2);
 	EXPECT_EQ(ids[0], 123);
 	EXPECT_EQ(ids[1], 456);
 
 	const auto market_ids = janus::get_meta_market_id_list(config);
-	EXPECT_EQ(market_ids.size(), 2);
-	EXPECT_EQ(market_ids[0], 123456);
-	EXPECT_EQ(market_ids[1], 999888);
+	ASSERT_EQ(market_ids.size(), 2);
+	EXPECT_EQ(market_ids[0], 170020946);
+	EXPECT_EQ(market_ids[1], 170030493);
+
+	janus::dynamic_buffer dyn_buf(1'000'000);
+
+	const auto metas = janus::read_all_metadata(config, dyn_buf);
+	ASSERT_EQ(metas.size(), 2);
+
+	// We should have read everything that we wrote.
+	EXPECT_EQ(dyn_buf.size(), dyn_buf.read_offset());
+
+	// No need to check every detail, this is covered in meta view tests
+	// already.
+	EXPECT_EQ(metas[0].market_id(), 170020946);
+	EXPECT_EQ(metas[0].runners().size(), 13);
+	EXPECT_EQ(metas[1].market_id(), 170030493);
+	EXPECT_EQ(metas[1].runners().size(), 2);
+
+	// Now test the single market read function works correctly
+	// individually.
+	auto view = janus::read_metadata(config, dyn_buf, 170030493);
+
+	// Again, we should have read everything that we wrote.
+	EXPECT_EQ(dyn_buf.size(), dyn_buf.read_offset());
+
+	EXPECT_EQ(view.market_id(), 170030493);
+	EXPECT_EQ(view.runners().size(), 2);
 }
 } // namespace
