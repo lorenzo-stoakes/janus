@@ -28,6 +28,10 @@ file(GLOB NETWORK_SOURCES
 	"src/network/*.cc"
 )
 
+file(GLOB DB_SOURCES
+	"src/db/*.cc"
+)
+
 # 3rd-party
 
 execute_process(COMMAND grep -c processor  /proc/cpuinfo OUTPUT_VARIABLE NUM_CORES OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -53,6 +57,7 @@ file(GLOB_RECURSE NEPTUNE_SOURCES
 )
 add_executable(neptune
 	${JANUS_SOURCES}
+	${DB_SOURCES}
 	${NEPTUNE_SOURCES}
 )
 target_compile_options(neptune
@@ -110,6 +115,7 @@ add_executable(osiris
 	${JANUS_SOURCES}
 	${OSIRIS_UI_SOURCES}
 	${OSIRIS_SOURCES}
+	${DB_SOURCES}
 )
 target_compile_options(osiris
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
@@ -117,6 +123,7 @@ target_compile_options(osiris
 
 target_link_libraries(osiris
 	m
+	snappy
 	Qt5::Widgets
 	Threads::Threads
 	Qt5::Charts
@@ -150,6 +157,7 @@ add_executable(testrunner
 	${JANUS_SOURCES}
 	${NETWORK_SOURCES}
 	${TEST_SOURCES}
+	${DB_SOURCES}
 )
 
 if (CMAKE_COMPILER_IS_CLANGXX)
@@ -165,9 +173,10 @@ endif()
 
 if (CMAKE_COMPILER_IS_CLANGXX)
 target_link_libraries(testrunner
+	gtest
 	m
 	mbed
-	gtest
+	snappy
 )
 else()
 target_link_libraries(testrunner

@@ -14,6 +14,7 @@
 #include "parse.hh"
 #include "price_range.hh"
 
+#include "config.hh"
 #include "json.hh"
 #include "market.hh"
 #include "meta.hh"
@@ -31,4 +32,4 @@
 #include "network/http_response.hh"
 #include "network/rng.hh"
 
-#include "config.hh"
+#include "db.hh"

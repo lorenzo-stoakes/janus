@@ -9,7 +9,6 @@
 #include <csignal>
 #include <cstdint>
 #include <cstring>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -17,8 +16,6 @@
 #include <sys/stat.h>
 #include <thread>
 #include <vector>
-
-namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
 static constexpr uint64_t MAX_STREAM_BYTES = 1'000'000'000;
@@ -65,24 +62,6 @@ static auto file_exists(const std::string& path) -> bool
 {
 	std::ifstream f(path);
 	return f.good();
-}
-
-// Retrieve list of JSON files. By convention the filename is [ms since
-// epoch].js both for metadata and stream data.
-auto get_file_id_list(const janus::config& config) -> std::vector<uint64_t>
-{
-	std::vector<uint64_t> ret;
-
-	std::string meta_dir_path = config.json_data_root + "/meta";
-	for (const auto& entry : fs::directory_iterator(meta_dir_path)) {
-		std::string num_str = entry.path().stem().string();
-		ret.push_back(std::stoll(num_str));
-	}
-
-	// Since these are formated as ms since epoch, sorting will give us the
-	// files in correct chronological order.
-	std::sort(ret.begin(), ret.end());
-	return ret;
 }
 
 // Read database file containing information about imported data.
@@ -422,7 +401,7 @@ auto run_core(const janus::config& config) -> bool
 	spdlog::debug("Reading DB file...");
 	auto db = read_db(config);
 
-	auto file_ids = get_file_id_list(config);
+	auto file_ids = janus::get_json_file_id_list(config);
 	spdlog::debug("Found {} metadata files.", file_ids.size());
 	spdlog::debug("Checking for new metadata...");
 	// Add entries for new files.
