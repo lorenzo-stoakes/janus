@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 3.13.0)
 project(janus)
 include_directories(include . src 3rdparty/mbedtls-2.22.0/include 3rdparty/spdlog-1.5.0/include)
 link_directories(3rdparty/mbedtls-2.22.0/library)
+
+execute_process(COMMAND git describe OUTPUT_VARIABLE GIT_VER OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(SHARED_COMPILE_OPTIONS
-	--std=gnu++2a -Wall -g)
+	--std=gnu++2a -Wall -g -D GIT_VER=${GIT_VER})
 
 file(GLOB_RECURSE HEADERS
 	"include/*.hh"
