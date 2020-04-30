@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.13.0)
+
+option(SNAPPY_BUILD_TESTS OFF)
+add_subdirectory(3rdparty/snappy-1.1.8)
+
 project(janus)
-include_directories(include . src 3rdparty/mbedtls-2.22.0/include 3rdparty/spdlog-1.5.0/include)
+include_directories(include . src 3rdparty/mbedtls-2.22.0/include 3rdparty/spdlog-1.5.0/include 3rdparty/snappy-1.1.8)
 link_directories(3rdparty/mbedtls-2.22.0/library)
 
 execute_process(COMMAND git describe OUTPUT_VARIABLE GIT_VER OUTPUT_STRIP_TRAILING_WHITESPACE)
