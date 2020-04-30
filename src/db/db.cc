@@ -62,6 +62,7 @@ auto read_all_metadata(const config& config, dynamic_buffer& dyn_buf) -> std::ve
 {
 	const auto ids = get_meta_market_id_list(config);
 	std::vector<meta_view> ret;
+	ret.reserve(ids.size());
 	for (uint64_t id : ids) {
 		// cppcheck-suppress useStlAlgorithm
 		ret.emplace_back(read_metadata(config, dyn_buf, id));
