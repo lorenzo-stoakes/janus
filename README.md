@@ -27,7 +27,6 @@ Install the following shared components:
 * [clang tidy](https://clang.llvm.org/extra/clang-tidy/) - Static analysis tool.
 * [cppcheck](http://cppcheck.sourceforge.net/) - Another static analysis tool.
 * [Address sanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizer) - Memory error detection tool.
-* [snappy](https://github.com/google/snappy) - Fast compressor/decompressor.
 
 After that, simply run `make` in the root directory and binaries should appear in `build/`.
 
