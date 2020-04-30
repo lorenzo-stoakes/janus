@@ -3,9 +3,13 @@ cmake_minimum_required(VERSION 3.13.0)
 option(SNAPPY_BUILD_TESTS OFF)
 add_subdirectory(3rdparty/snappy-1.1.8)
 
-project(janus)
+project(janus CXX)
 include_directories(include . src 3rdparty/mbedtls-2.22.0/include 3rdparty/spdlog-1.5.0/include 3rdparty/snappy-1.1.8)
 link_directories(3rdparty/mbedtls-2.22.0/library)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang.*")
+set(CMAKE_COMPILER_IS_CLANGXX 1)
+endif()
 
 execute_process(COMMAND git describe OUTPUT_VARIABLE GIT_VER OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(SHARED_COMPILE_OPTIONS
@@ -147,10 +151,25 @@ add_executable(testrunner
 	${NETWORK_SOURCES}
 	${TEST_SOURCES}
 )
+
+if (CMAKE_COMPILER_IS_CLANGXX)
+target_compile_options(testrunner
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O0 -fno-omit-frame-pointer
+)
+else()
 target_compile_options(testrunner
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O0 -fno-omit-frame-pointer
 	-fsanitize=address,leak,undefined,null,return,signed-integer-overflow,bounds,object-size
 )
+endif()
+
+if (CMAKE_COMPILER_IS_CLANGXX)
+target_link_libraries(testrunner
+	m
+	mbed
+	gtest
+)
+else()
 target_link_libraries(testrunner
 	m
 	mbed
@@ -158,6 +177,7 @@ target_link_libraries(testrunner
 	ubsan
 	gtest
 )
+endif()
 
 gtest_add_tests(testrunner "" AUTO)
 
