@@ -1065,7 +1065,10 @@ TEST(sajson_original_test, mutable_string_view_assignment)
 TEST(sajson_original_test, mutable_string_view_self_assignment)
 {
 	sajson::mutable_string_view one(sajson::literal("hello"));
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
 	one = one;
+#pragma clang diagnostic pop
 	EXPECT_EQ(5u, one.length());
 }
 
