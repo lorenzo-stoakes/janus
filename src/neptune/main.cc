@@ -22,7 +22,7 @@ namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
 static constexpr uint64_t MAX_STREAM_BYTES = 1'000'000'000;
-static constexpr uint64_t SLEEP_INTERVAL_MS = 500;
+static constexpr uint64_t SLEEP_INTERVAL_MS = 1000;
 
 // Indicates whether a signal has occured and we should abort.
 std::atomic<bool> signalled{false};
