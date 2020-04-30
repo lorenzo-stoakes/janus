@@ -1,5 +1,10 @@
 #pragma once
 
+// Have to run macro value through twice to get actual stringified version.
+#define _STR(_var) #_var
+// Simple preprocessor variable stringify macro.
+#define STR(_var) _STR(_var)
+
 #include "error.hh"
 
 #include "decimal7.hh"
