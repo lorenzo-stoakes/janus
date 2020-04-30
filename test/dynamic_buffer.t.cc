@@ -26,6 +26,11 @@ TEST(dynamic_buffer_test, ctor)
 	EXPECT_EQ(buf2.cap(), 0);
 	EXPECT_EQ(buf2.size(), 0);
 	EXPECT_EQ(buf2.read_offset(), 0);
+
+	// We can set size + expect to get aligned UP to 64-bits.
+	auto buf4 = janus::dynamic_buffer(100, 39);
+	EXPECT_EQ(buf4.cap(), 104);
+	EXPECT_EQ(buf4.size(), 40);
 }
 
 // Test that the .cap() method returns the correct capacity of the buffer.
@@ -593,5 +598,18 @@ TEST(dynamic_buffer_test, custom_buffer_ctor)
 		raw[i] = i;
 		ASSERT_EQ(buf.read_uint64(), i);
 	}
+
+	// Test setting the size (i.e. write offset) of the buffer
+	// specifically. Everything is aligned here too.
+	uint64_t* raw2 = new uint64_t[100];
+	auto buf2 = janus::dynamic_buffer(raw2, 100, 50);
+	EXPECT_EQ(buf2.cap(), 96);
+	EXPECT_EQ(buf2.size(), 48);
+
+	// Setting size > cap should result in size == cap.
+	uint64_t* raw3 = new uint64_t[100];
+	auto buf3 = janus::dynamic_buffer(raw3, 100, 200);
+	EXPECT_EQ(buf3.cap(), 96);
+	EXPECT_EQ(buf3.size(), 96);
 }
 } // namespace
