@@ -5,7 +5,7 @@
 
 namespace janus::tls
 {
-certs::certs() : _self_signed{false}, _loaded{false}, _moved{false}
+certs::certs() : _self_signed{false}, _loaded{false}, _moved{false}, _cacert{}, _pk_context{}
 {
 	internal::mbedtls_x509_crt_init(&_cacert);
 	internal::mbedtls_pk_init(&_pk_context);
@@ -16,17 +16,17 @@ certs::~certs()
 	destroy();
 }
 
-certs::certs(certs&& that)
+certs::certs(certs&& that) noexcept
 	: _self_signed{that._self_signed},
 	  _loaded{that._loaded},
-	  _cacert{std::move(that._cacert)},
-	  _pk_context{std::move(that._pk_context)},
-	  _moved{false}
+	  _moved{false},
+	  _cacert{that._cacert},
+	  _pk_context{that._pk_context}
 {
 	that._moved = true;
 }
 
-auto certs::operator=(certs&& that) -> certs&
+auto certs::operator=(certs&& that) noexcept -> certs&
 {
 	if (&that == this)
 		return *this;
@@ -35,8 +35,8 @@ auto certs::operator=(certs&& that) -> certs&
 
 	_self_signed = that._self_signed;
 	_loaded = that._loaded;
-	_cacert = std::move(that._cacert);
-	_pk_context = std::move(that._pk_context);
+	_cacert = that._cacert;
+	_pk_context = that._pk_context;
 
 	that._moved = true;
 

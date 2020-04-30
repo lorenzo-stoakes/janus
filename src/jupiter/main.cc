@@ -3,11 +3,11 @@
 #include "spdlog/spdlog.h"
 #include <atomic>
 #include <chrono>
+#include <csignal>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <signal.h>
 #include <string>
 #include <vector>
 
@@ -42,14 +42,14 @@ static auto get_ms_since_epoch() -> decltype(ms_t().count())
 }
 
 // Handle SIGINT, e.g. ctrl+C.
-static void handle_interrupt(int)
+static void handle_interrupt(int) // NOLINT: Unused but required param.
 {
 	signalled.store(true);
 }
 
 // Handle a signal indicating execution should be interrupted and markets
 // reloaded (via SIGUSR2).
-static void handle_reload_interrupt(int)
+static void handle_reload_interrupt(int) // NOLINT: Unused but required param.
 {
 	reload_signalled.store(true);
 	signalled.store(true);
@@ -58,12 +58,12 @@ static void handle_reload_interrupt(int)
 // Add signal handlers.
 static void add_signal_handler()
 {
-	struct sigaction action_interrupt = {0};
+	struct sigaction action_interrupt = {{nullptr}};
 	action_interrupt.sa_handler = handle_interrupt;
 	::sigfillset(&action_interrupt.sa_mask);
 	::sigaction(SIGINT, &action_interrupt, nullptr);
 
-	struct sigaction action_reload_interrupt = {0};
+	struct sigaction action_reload_interrupt = {{nullptr}};
 	action_reload_interrupt.sa_handler = handle_reload_interrupt;
 	::sigfillset(&action_reload_interrupt.sa_mask);
 	::sigaction(SIGUSR2, &action_reload_interrupt, nullptr);
@@ -112,7 +112,7 @@ static void print_status_line(uint64_t num_lines)
 }
 #endif
 
-static bool run_loop(janus::config& config, janus::betfair::session& session)
+static auto run_loop(janus::config& config, janus::betfair::session& session) -> bool
 {
 	std::string meta_dir = config.json_data_root + "/meta/";
 	std::string stream_dir = config.json_data_root + "/market_stream/";
@@ -177,22 +177,19 @@ static bool run_loop(janus::config& config, janus::betfair::session& session)
 	}
 }
 
-auto main() -> int
+auto run_outer_loop() -> bool
 {
-	add_signal_handler();
-
 	spdlog::info("jupiter " STR(GIT_VER));
 
 	janus::tls::rng rng;
 	rng.seed();
 
-	bool success;
 	while (true) {
 		janus::config config = janus::parse_config();
 		janus::betfair::session session(rng, config);
 		session.load_certs();
 
-		success = run_loop(config, session);
+		bool success = run_loop(config, session);
 
 		spdlog::info("Logging out...");
 		session.logout();
@@ -202,9 +199,24 @@ auto main() -> int
 			reload_signalled.store(false);
 			spdlog::info("Reload signal received, restarting!");
 		} else {
-			break;
+			return success;
 		}
 	}
+}
 
-	return success ? 0 : 1;
+auto main() -> int // NOLINT: Handles exceptions!
+{
+	try {
+		add_signal_handler();
+
+		bool success = run_outer_loop();
+		return success ? 0 : 1;
+	} catch (std::exception& e) {
+		spdlog::error(e.what());
+		spdlog::critical("Aborting!");
+	} catch (...) {
+		spdlog::critical("Unknown exception raised, aborting!!");
+	}
+
+	return 1;
 }

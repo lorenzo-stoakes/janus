@@ -10,7 +10,10 @@ client::client(const char* host, const char* port, certs& certs, rng& rng, uint3
 	  _rng{rng},
 	  _connected{false},
 	  _invalid{false},
-	  _moved{false}
+	  _moved{false},
+	  _server_fd{},
+	  _ssl{},
+	  _conf{}
 {
 	init();
 }
@@ -20,7 +23,7 @@ client::~client()
 	destroy();
 }
 
-client::client(client&& that)
+client::client(client&& that) noexcept
 	: _host{that._host},
 	  _port{that._port},
 	  _timeout_ms{that._timeout_ms},
@@ -29,9 +32,9 @@ client::client(client&& that)
 	  _connected{that._connected},
 	  _invalid{that._invalid},
 	  _moved{false},
-	  _server_fd{std::move(that._server_fd)},
-	  _ssl{std::move(that._ssl)},
-	  _conf{std::move(that._conf)}
+	  _server_fd{that._server_fd},
+	  _ssl{that._ssl},
+	  _conf{that._conf}
 {
 	that._moved = true;
 }
@@ -157,7 +160,7 @@ void client::check_connected(const char* op)
 					 " on disconnected client.");
 }
 
-auto client::gen_conn_err(std::string prefix, int err_code) -> network_error
+auto client::gen_conn_err(const std::string& prefix, int err_code) -> network_error
 {
 	// If we're generating a connection error then our underlying
 	// mbedtls state is invalid.
@@ -220,7 +223,7 @@ void client::config()
 
 auto client::read_until_newline(char* buf, int size) -> int
 {
-	bool disconnected;
+	bool disconnected = false;
 	int offset = 0;
 	do {
 		offset += read(&buf[offset], size, disconnected);

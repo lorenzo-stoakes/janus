@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace janus
 {
 // Parse HTTP response, returns response code, offset into buffer where data

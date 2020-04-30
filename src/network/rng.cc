@@ -2,22 +2,19 @@
 
 namespace janus::tls
 {
-rng::rng() : _seeded(false), _moved{false}
+rng::rng() : _seeded(false), _moved{false}, _entropy{}, _ctr_drbg{}
 {
 	internal::mbedtls_entropy_init(&_entropy);
 	internal::mbedtls_ctr_drbg_init(&_ctr_drbg);
 }
 
-rng::rng(rng&& that)
-	: _seeded{that._seeded},
-	  _moved{false},
-	  _entropy{std::move(that._entropy)},
-	  _ctr_drbg{std::move(that._ctr_drbg)}
+rng::rng(rng&& that) noexcept
+	: _seeded{that._seeded}, _moved{false}, _entropy{that._entropy}, _ctr_drbg{that._ctr_drbg}
 {
 	that._moved = true;
 }
 
-auto rng::operator=(rng&& that) -> rng&
+auto rng::operator=(rng&& that) noexcept -> rng&
 {
 	if (this == &that)
 		return *this;
@@ -25,8 +22,8 @@ auto rng::operator=(rng&& that) -> rng&
 	destroy();
 
 	_seeded = that._seeded;
-	_entropy = std::move(that._entropy);
-	_ctr_drbg = std::move(that._ctr_drbg);
+	_entropy = that._entropy;
+	_ctr_drbg = that._ctr_drbg;
 
 	that._moved = true;
 

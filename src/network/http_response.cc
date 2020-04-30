@@ -8,9 +8,11 @@ namespace janus
 {
 // Find needle in haystack and return offset past the found string.
 template<uint64_t sz>
-static auto find_str(const char* haystack, const char (&needle)[sz], int offset = 0) -> int
+static auto find_str(const char* haystack,
+		     const char (&needle)[sz], // NOLINT: Want to use this form.
+		     int offset = 0) -> int
 {
-	const char* ptr = ::strstr(&haystack[offset], needle);
+	const char* ptr = ::strstr(&haystack[offset], &needle[0]);
 	if (ptr == nullptr)
 		return -1;
 
