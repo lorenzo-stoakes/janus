@@ -52,7 +52,7 @@ private:
 	session& _session;
 	std::string _conn_id;
 	janus::tls::client _client;
-	std::unique_ptr<char[]> _internal_buf;
+	std::unique_ptr<char[]> _internal_buf; // NOLINT: Can't use std::array
 
 	// Read the next line**S** of input from the stream into the internal
 	// buffer (BLOCKING). This might read multiple lines but always contains

@@ -41,7 +41,7 @@ static auto strip_runner_ids(dynamic_buffer& dyn_buf) -> int64_t
 		return 0;
 
 	// Rewind to the last update.
-	update* ptr = reinterpret_cast<update*>(dyn_buf.data());
+	auto* ptr = reinterpret_cast<update*>(dyn_buf.data());
 	uint64_t num_updates = dyn_buf.size() / sizeof(update);
 
 	int64_t offset = 0;
@@ -258,7 +258,7 @@ static auto parse_atb(const update_state& state, const sajson::value& atb, dynam
 static auto workaround_atl_atb(uint64_t delta_updates, dynamic_buffer& dyn_buf) -> int64_t
 {
 	// Access last element in buffer.
-	uint8_t* raw = reinterpret_cast<uint8_t*>(dyn_buf.data());
+	auto* raw = reinterpret_cast<uint8_t*>(dyn_buf.data());
 	raw += dyn_buf.size();
 	// Then rewind to the start of the ATL/ATB updates.
 	auto* ptr = reinterpret_cast<update*>(raw) - delta_updates;

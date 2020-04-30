@@ -27,7 +27,7 @@ public:
 		  _logged_in{false},
 		  _rng{rng},
 		  _config{config},
-		  _internal_buf{std::make_unique<char[]>(INTERNAL_BUFFER_SIZE)}
+		  _internal_buf{std::make_unique<char[]>(INTERNAL_BUFFER_SIZE)} // NOLINT
 	{
 	}
 
@@ -74,7 +74,7 @@ private:
 	janus::tls::rng& _rng;
 	config& _config;
 	janus::tls::certs _certs, _self_sign_cert;
-	std::unique_ptr<char[]> _internal_buf;
+	std::unique_ptr<char[]> _internal_buf; // NOLINT: Can't use std::array
 	std::string _session_token;
 
 	// Assert that the certificates are loaded, throw otherwise.

@@ -1,5 +1,6 @@
 #include "janus.hh"
 
+#include <array>
 #include <stdexcept>
 
 namespace janus
@@ -57,12 +58,12 @@ auto http_request::add_data(const char* buf, uint32_t size) -> char*
 	check_incomplete();
 	check_op_set();
 
-	char num_buf[NUMBER_BUFFER_SIZE];
+	std::array<char, NUMBER_BUFFER_SIZE> num_buf{};
 	// We (pretty safely) assume this will not be larger than our
 	// buffer. If it is then, damn that's a lot of data!
-	snprintf(num_buf, NUMBER_BUFFER_SIZE, "%u", size);
+	snprintf(&num_buf[0], NUMBER_BUFFER_SIZE, "%u", size); // NOLINT: vararg ok.
 
-	add_header("Content-Length", num_buf);
+	add_header("Content-Length", &num_buf[0]);
 	// Add additional newline to indicate data is beginning.
 	append_newline();
 

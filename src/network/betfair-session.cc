@@ -23,10 +23,10 @@ void session::load_certs()
 	_certs_loaded = true;
 }
 
-static void check_response_code(const char* action, int response_code, char* buf, int bytes,
-				uint64_t offset)
+static void check_response_code(const char* action, int response_code, char* buf, uint64_t offset)
 {
-	if (response_code == 200)
+	static constexpr int HTTP_OK_STATUS = 200;
+	if (response_code == HTTP_OK_STATUS)
 		return;
 
 	std::string err =
@@ -49,7 +49,7 @@ static auto get_response(const char* action, janus::tls::client& client, char* b
 	uint64_t offset = 0;
 	int bytes_remaining = parse_http_response(buf, bytes, response_code, offset);
 
-	check_response_code(action, response_code, buf, bytes, offset);
+	check_response_code(action, response_code, buf, offset);
 
 	int additional_space = size - bytes;
 	if (!until_disconnect && bytes_remaining > additional_space)
@@ -87,29 +87,29 @@ void session::login()
 		return;
 	check_certs_loaded();
 
-	char buf[DEFAULT_HTTP_BUF_SIZE];
-	http_request req = gen_login_req(buf, DEFAULT_HTTP_BUF_SIZE);
+	std::array<char, DEFAULT_HTTP_BUF_SIZE> buf{};
+	http_request req = gen_login_req(buf.data(), DEFAULT_HTTP_BUF_SIZE);
 
 	janus::tls::client client(ID_HOST, PORT, _self_sign_cert, _rng);
 	client.connect();
 	client.write(req.buf(), req.size());
 
 	uint64_t size;
-	char* ptr = get_response("login", client, buf, DEFAULT_HTTP_BUF_SIZE, size);
+	char* ptr = get_response("login", client, buf.data(), DEFAULT_HTTP_BUF_SIZE, size);
 
 	sajson::document doc = janus::internal::parse_json("", ptr, size);
 	const sajson::value& root = doc.get_root();
 
 	sajson::value login_status = root.get_value_of_key(sajson::literal("loginStatus"));
 	if (login_status.get_type() != sajson::TYPE_STRING)
-		throw std::runtime_error(std::string("Cannot find login status in ") + buf);
+		throw std::runtime_error(std::string("Cannot find login status in ") + buf.data());
 
 	if (::strcmp(login_status.as_cstring(), "SUCCESS") != 0)
-		throw std::runtime_error(std::string("Unsuccessful login: ") + buf);
+		throw std::runtime_error(std::string("Unsuccessful login: ") + buf.data());
 
 	sajson::value session_token = root.get_value_of_key(sajson::literal("sessionToken"));
 	if (session_token.get_type() != sajson::TYPE_STRING)
-		throw std::runtime_error(std::string("Cannot find session token in ") + buf);
+		throw std::runtime_error(std::string("Cannot find session token in ") + buf.data());
 
 	_session_token = session_token.as_cstring();
 	_logged_in = true;
@@ -120,24 +120,24 @@ void session::logout()
 	if (!_logged_in)
 		return;
 
-	char buf[DEFAULT_HTTP_BUF_SIZE];
-	http_request req = gen_logout_req(buf, DEFAULT_HTTP_BUF_SIZE);
+	std::array<char, DEFAULT_HTTP_BUF_SIZE> buf{};
+	http_request req = gen_logout_req(&buf[0], DEFAULT_HTTP_BUF_SIZE);
 
 	janus::tls::client client(ID_HOST, PORT, _certs, _rng);
 	client.connect();
 	client.write(req.buf(), req.size());
 
 	uint64_t size;
-	char* ptr = get_response("logout", client, buf, DEFAULT_HTTP_BUF_SIZE, size);
+	char* ptr = get_response("logout", client, &buf[0], DEFAULT_HTTP_BUF_SIZE, size);
 	sajson::document doc = janus::internal::parse_json("", ptr, size);
 	const sajson::value& root = doc.get_root();
 
 	sajson::value status = root.get_value_of_key(sajson::literal("status"));
 	if (status.get_type() != sajson::TYPE_STRING)
-		throw std::runtime_error(std::string("Cannot find logout status in ") + buf);
+		throw std::runtime_error(std::string("Cannot find logout status in ") + &buf[0]);
 
 	if (::strcmp(status.as_cstring(), "SUCCESS") != 0)
-		throw std::runtime_error(std::string("Unsuccessful logout: ") + buf);
+		throw std::runtime_error(std::string("Unsuccessful logout: ") + &buf[0]);
 
 	_session_token = "";
 	_logged_in = false;
@@ -193,26 +193,26 @@ auto session::gen_login_req(char* buf, uint64_t cap) -> http_request
 	req.add_header("X-Application", _config.app_key.c_str());
 
 	// Leave room for form-encoded username/password specifier.
-	char content_buf[2 * MAX_USERNAME_PW_SIZE + 20 + 2 + 1];
+	std::array<char, 2 * MAX_USERNAME_PW_SIZE + 20 + 2 + 1> content_buf{}; // NOLINT: Not magic.
 
-	const char username_prefix[] = "username=";
+	const char username_prefix[] = "username="; // NOLINT
 	uint64_t username_prefix_size = sizeof(username_prefix) - 1;
-	::memcpy(content_buf, username_prefix, username_prefix_size);
+	::memcpy(&content_buf[0], username_prefix, username_prefix_size); // NOLINT
 	uint64_t offset = username_prefix_size;
 
 	std::string& username = _config.username;
 	::memcpy(&content_buf[offset], username.c_str(), username.size());
 	offset += username.size();
 
-	const char password_prefix[] = "&password=";
+	const char password_prefix[] = "&password="; // NOLINT
 	uint64_t password_prefix_size = sizeof(password_prefix) - 1;
-	::memcpy(&content_buf[offset], password_prefix, password_prefix_size);
+	::memcpy(&content_buf[offset], password_prefix, password_prefix_size); // NOLINT
 	offset += password_prefix_size;
 
 	std::string& password = _config.password;
 	::memcpy(&content_buf[offset], password.c_str(), password.size());
 
-	req.add_data(content_buf, offset + password.size());
+	req.add_data(&content_buf[0], offset + password.size());
 
 	return req;
 }

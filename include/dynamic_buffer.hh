@@ -32,7 +32,7 @@ public:
 		: _cap{align64_down(cap) / sizeof(uint64_t)},
 		  _read_offset{0},
 		  _write_offset{0},
-		  _buf{std::unique_ptr<uint64_t[]>(ptr)}
+		  _buf{std::unique_ptr<uint64_t[]>(ptr)} // NOLINT: can't use std::array
 	{
 	}
 

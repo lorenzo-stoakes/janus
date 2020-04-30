@@ -4,14 +4,14 @@
 #include "spdlog/spdlog.h"
 #include <algorithm>
 #include <atomic>
+#include <cerrno>
 #include <chrono>
+#include <csignal>
 #include <cstdint>
 #include <cstring>
-#include <errno.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <signal.h>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
@@ -35,17 +35,18 @@ struct db_entry
 	{
 	}
 
-	uint64_t file_id;
-	uint64_t last_updated;
-	uint64_t next_offset;
-	uint64_t next_line;
+	// We intentionally make these fields public :) I'm a C programmer at heart...
+	uint64_t file_id;      // NOLINT
+	uint64_t last_updated; // NOLINT
+	uint64_t next_offset;  // NOLINT
+	uint64_t next_line;    // NOLINT
 };
 
 using db_t = std::unordered_map<uint64_t, db_entry>;
 using per_market_t = std::unordered_map<uint64_t, std::vector<janus::update>>;
 
 // Handle SIGINT, e.g. ctrl+C.
-static void handle_interrupt(int)
+static void handle_interrupt(int) // NOLINT: Unused but required param.
 {
 	signalled.store(true);
 }
@@ -53,14 +54,14 @@ static void handle_interrupt(int)
 // Add signal handlers.
 static void add_signal_handler()
 {
-	struct sigaction action_interrupt = {0};
+	struct sigaction action_interrupt = {{nullptr}};
 	action_interrupt.sa_handler = handle_interrupt;
 	::sigfillset(&action_interrupt.sa_mask);
 	::sigaction(SIGINT, &action_interrupt, nullptr);
 }
 
 // Does the file at the specified path exist?
-static auto file_exists(std::string path) -> bool
+static auto file_exists(const std::string& path) -> bool
 {
 	std::ifstream f(path);
 	return f.good();
@@ -213,15 +214,15 @@ auto check_stream_file_changed(const janus::config& config, uint64_t file_id, db
 {
 	std::string path = get_stream_json_path(config, file_id);
 
-	struct stat sb;
+	struct stat sb = {0};
 	int err_code = stat(path.c_str(), &sb);
 	if (err_code != 0) {
 		std::string err = ::strerror(errno);
 		throw std::runtime_error(std::string("Cannot stat ") + path + ": " + err);
 	}
 
-	uint64_t last_access = static_cast<uint64_t>(sb.st_mtime);
-	uint64_t size = static_cast<uint64_t>(sb.st_size);
+	auto last_access = static_cast<uint64_t>(sb.st_mtime);
+	auto size = static_cast<uint64_t>(sb.st_size);
 	if (last_access > entry.last_updated && size > entry.next_offset) {
 		// Update DB now, we will write back later.
 		entry.last_updated = last_access;
@@ -256,7 +257,7 @@ auto extract_by_market(janus::dynamic_buffer& dyn_buf, uint64_t num_updates) -> 
 	}
 
 	// Read first update, HAS to be a timestamp.
-	janus::update& first = dyn_buf.read<janus::update>();
+	auto& first = dyn_buf.read<janus::update>();
 	if (first.type != janus::update_type::TIMESTAMP) {
 		std::ostringstream oss;
 		oss << "First update is of type " << janus::update_type_str(first.type)
@@ -266,7 +267,7 @@ auto extract_by_market(janus::dynamic_buffer& dyn_buf, uint64_t num_updates) -> 
 	uint64_t timestamp = janus::get_update_timestamp(first);
 
 	// Read second update, HAS to be a timestamp.
-	janus::update& second = dyn_buf.read<janus::update>();
+	auto& second = dyn_buf.read<janus::update>();
 	if (second.type != janus::update_type::MARKET_ID) {
 		std::ostringstream oss;
 
@@ -279,7 +280,7 @@ auto extract_by_market(janus::dynamic_buffer& dyn_buf, uint64_t num_updates) -> 
 	std::unordered_map<uint64_t, std::vector<janus::update>> map;
 
 	for (uint64_t i = 2; i < num_updates; i++) {
-		janus::update& u = dyn_buf.read<janus::update>();
+		auto& u = dyn_buf.read<janus::update>();
 		if (u.type == janus::update_type::MARKET_ID) {
 			market_id = janus::get_update_market_id(u);
 
@@ -436,7 +437,7 @@ auto run_core(const janus::config& config) -> bool
 	}
 
 	auto update_ids = get_update_id_list(config, db);
-	if (update_ids.size() > 0) {
+	if (!update_ids.empty()) {
 		spdlog::debug("Found {} market stream files with new data.", update_ids.size());
 		spdlog::debug("Updating stream data...");
 
@@ -488,12 +489,20 @@ auto run_loop(const janus::config& config) -> bool
 	}
 }
 
-auto main() -> int
+auto main() -> int // NOLINT: Handles exceptions!
 {
-	add_signal_handler();
+	try {
+		add_signal_handler();
 
-	spdlog::info("neptune " STR(GIT_VER));
+		spdlog::info("neptune " STR(GIT_VER));
+		janus::config config = janus::parse_config();
+		return run_loop(config) ? 0 : 1;
+	} catch (std::exception& e) {
+		spdlog::error(e.what());
+		spdlog::critical("Aborting!");
+	} catch (...) {
+		spdlog::critical("Unknown exception raised, aborting!!");
+	}
 
-	janus::config config = janus::parse_config();
-	return run_loop(config) ? 0 : 1;
+	return 1;
 }

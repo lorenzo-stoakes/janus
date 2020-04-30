@@ -10,8 +10,8 @@ class rng
 public:
 	rng();
 	~rng();
-	rng(rng&& that);
-	auto operator=(rng&& that) -> rng&;
+	rng(rng&& that) noexcept;
+	auto operator=(rng&& that) noexcept -> rng&;
 
 	// No copying.
 	rng(const rng& that) = delete;

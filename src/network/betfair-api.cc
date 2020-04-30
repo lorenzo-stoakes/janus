@@ -9,7 +9,7 @@ namespace janus::betfair
 {
 auto get_meta(session& session, std::vector<std::string> market_ids)
 {
-	if (market_ids.size() == 0)
+	if (market_ids.empty())
 		throw std::runtime_error("Empty market ID array in get_meta()?");
 
 	// The data weighting system requires that we have to split out metadata retrieval into
@@ -19,7 +19,8 @@ auto get_meta(session& session, std::vector<std::string> market_ids)
 		std::to_string(MAX_METADATA_REQUESTS) +
 		R"(,"marketProjection":["COMPETITION","EVENT","EVENT_TYPE","MARKET_START_TIME","MARKET_DESCRIPTION","RUNNER_DESCRIPTION","RUNNER_METADATA"],"filter":{"marketIds":[)";
 
-	std::string meta = "";
+	std::string meta;
+	;
 	for (uint64_t i = 0; i < market_ids.size(); i += MAX_METADATA_REQUESTS) {
 		std::string json = prefix;
 		for (uint64_t j = i; j < market_ids.size() && j < i + MAX_METADATA_REQUESTS; j++) {
@@ -47,8 +48,10 @@ auto get_market_ids(session& session, const std::string& filter_json)
 	std::string response = session.api("listMarketCatalogue", json);
 
 	// Horrid const-cast as sajson mutates data. It's terrible I know. I KNOW!
-	sajson::document doc = janus::internal::parse_json("", const_cast<char*>(response.data()),
-							   response.size());
+	sajson::document doc =
+		janus::internal::parse_json("",
+					    const_cast<char*>(response.data()), // NOLINT
+					    response.size());
 	const sajson::value& root = doc.get_root();
 	if (root.get_type() != sajson::TYPE_ARRAY)
 		throw std::runtime_error("listMarketCatalogue returned non-array response");
@@ -63,7 +66,7 @@ auto get_market_ids(session& session, const std::string& filter_json)
 			throw std::runtime_error(
 				"Unable to determine market ID for listMarketCatalogue element");
 
-		ret.push_back(market_id.as_cstring());
+		ret.emplace_back(market_id.as_cstring());
 	}
 
 	std::string meta = get_meta(session, ret);

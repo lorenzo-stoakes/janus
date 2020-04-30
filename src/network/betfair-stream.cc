@@ -16,7 +16,7 @@ stream::stream(session& session)
 	  _session{session},
 	  _conn_id{""},
 	  _client{session.make_stream_connection(_conn_id)},
-	  _internal_buf{std::make_unique<char[]>(INTERNAL_BUFFER_SIZE)}
+	  _internal_buf{std::make_unique<char[]>(INTERNAL_BUFFER_SIZE)} // NOLINT
 {
 }
 

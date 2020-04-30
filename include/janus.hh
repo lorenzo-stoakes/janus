@@ -1,9 +1,9 @@
 #pragma once
 
 // Have to run macro value through twice to get actual stringified version.
-#define _STR(_var) #_var
+#define _STR(_var) #_var // NOLINT: Can't do in constexpr.
 // Simple preprocessor variable stringify macro.
-#define STR(_var) _STR(_var)
+#define STR(_var) _STR(_var) // NOLINT: Can't do in constexpr.
 
 #include "error.hh"
 

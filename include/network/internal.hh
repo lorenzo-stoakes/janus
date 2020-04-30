@@ -2,6 +2,8 @@
 
 #include "error.hh"
 
+#include <array>
+#include <cstdint>
 #include <string>
 
 namespace janus::tls::internal
@@ -16,12 +18,15 @@ namespace janus::tls::internal
 #include "mbedtls/platform.h"
 #include "mbedtls/ssl.h"
 
-// Generate error based on mbedtls error code.
-static inline auto gen_err(std::string prefix, int err_code) -> network_error
-{
-	char error_buf[500];
-	internal::mbedtls_strerror(err_code, error_buf, 500);
+// Maximum size of mbedtls reported error.
+static constexpr uint64_t MBEDTLS_ERROR_BUF_SIZE = 500;
 
-	return network_error(err_code, prefix, error_buf);
+// Generate error based on mbedtls error code.
+static inline auto gen_err(const std::string& prefix, int err_code) -> network_error
+{
+	std::array<char, MBEDTLS_ERROR_BUF_SIZE> error_buf{};
+	internal::mbedtls_strerror(err_code, &error_buf[0], MBEDTLS_ERROR_BUF_SIZE);
+
+	return network_error(err_code, prefix, &error_buf[0]);
 }
 } // namespace janus::tls::internal

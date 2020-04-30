@@ -17,7 +17,7 @@ static auto extract_dir_name(const std::string& path) -> std::string
 
 	// Kind of horrible but we need to be able to modify this. We are taking
 	// a copy of the string.
-	char* buf = const_cast<char*>(copy.data());
+	char* buf = const_cast<char*>(copy.data()); // NOLINT
 	char* ret = ::dirname(buf);
 
 	return std::string(ret);
@@ -35,7 +35,9 @@ static void normalise_path(const std::string& dir_name, std::string& path)
 
 static void parse_config_json(const std::string& path, std::string& json, config& config)
 {
-	char* buf = const_cast<char*>(json.data());
+	// Also terrible but we know buffer will not expand so can access +
+	// mutate underlying array.
+	char* buf = const_cast<char*>(json.data()); // NOLINT
 
 	sajson::document doc = janus::internal::parse_json(path.c_str(), buf, json.size());
 	const sajson::value& root = doc.get_root();
@@ -74,7 +76,7 @@ auto parse_config(const std::string& path) -> config
 	config ret;
 
 	std::string config_path;
-	if (path == "")
+	if (path.empty())
 		config_path = internal::get_default_config_path();
 	else
 		config_path = path;

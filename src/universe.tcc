@@ -2,6 +2,7 @@
 
 #include "janus.hh"
 
+#include <cstdint>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -30,13 +31,17 @@ void universe<Cap>::apply_runner_id(uint64_t id)
 template<uint64_t Cap>
 void universe<Cap>::apply_timestamp(uint64_t timestamp)
 {
+	// The ISO-8601 timestamp buffer is 25 characters long.
+	static constexpr uint64_t MAX_TIMESTAMP_SIZE = 25;
+
 	if (_last_timestamp != 0 && timestamp < _last_timestamp) {
-		char buf[25];
+		std::array<char, MAX_TIMESTAMP_SIZE> buf{};
 		std::ostringstream oss;
 		oss << "ERROR: Timestamp goes backwards?! ";
 		oss << "prev timestamp=" << _last_timestamp << " ("
-		    << print_iso8601(buf, _last_timestamp) << ") ";
-		oss << "timestamp=" << timestamp << " (" << print_iso8601(buf, timestamp) << ") ";
+		    << print_iso8601(&buf[0], _last_timestamp) << ") ";
+		oss << "timestamp=" << timestamp << " (" << print_iso8601(&buf[0], timestamp)
+		    << ") ";
 
 		// Reset last timestamp so we don't unnecessarily repeat errors.
 		_last_timestamp = timestamp;

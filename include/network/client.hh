@@ -15,7 +15,7 @@ public:
 	~client();
 	// We can move ctor since moving another connection to our own makes
 	// sense while ours is uninitialised.
-	client(client&& that);
+	client(client&& that) noexcept;
 
 	// No copying. It makes no sense to throw away this connection and copy
 	// another over it.
@@ -99,10 +99,10 @@ private:
 
 	// Generate network error with prefix indicating host and port and sets
 	// this client instance to invalid.
-	auto gen_conn_err(std::string prefix, int err_code) -> network_error;
+	auto gen_conn_err(const std::string& prefix, int err_code) -> network_error;
 
 	// Does this error code indicate we should try the operation again?
-	auto should_try_again(int err_num) -> bool;
+	static auto should_try_again(int err_num) -> bool;
 
 	void config();
 };

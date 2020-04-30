@@ -10,8 +10,8 @@ class certs
 public:
 	certs();
 	~certs();
-	certs(certs&& that);
-	auto operator=(certs&& that) -> certs&;
+	certs(certs&& that) noexcept;
+	auto operator=(certs&& that) noexcept -> certs&;
 
 	// No copying.
 	certs(const certs& that) = delete;
@@ -56,9 +56,9 @@ public:
 private:
 	bool _self_signed;
 	bool _loaded;
+	bool _moved;
 	internal::mbedtls_x509_crt _cacert;
 	internal::mbedtls_pk_context _pk_context;
-	bool _moved;
 
 	// Load certificate(s) from specific path, throws on error.
 	void load_cert(const char* path);
