@@ -120,7 +120,7 @@ void write_db(const janus::config& config, const db_t& db)
 	}
 
 	std::sort(entries.begin(), entries.end(),
-		  [](db_entry& e1, db_entry& e2) { return e1.file_id < e2.file_id; });
+		  [](const db_entry& e1, const db_entry& e2) { return e1.file_id < e2.file_id; });
 
 	std::string path = config.binary_data_root + "/neptune.db";
 	auto file = std::ofstream(path, std::ios::binary);
@@ -133,7 +133,7 @@ void write_db(const janus::config& config, const db_t& db)
 // Write metadata file.
 void write_meta(const std::string& dest_dir, janus::dynamic_buffer& dyn_buf)
 {
-	auto& header = dyn_buf.read<janus::meta_header>();
+	const auto& header = dyn_buf.read<janus::meta_header>();
 	uint64_t market_id = header.market_id;
 
 	std::string path = dest_dir + "/" + std::to_string(market_id) + ".jan";
@@ -327,7 +327,7 @@ auto write_market_stream_data(const std::string& destdir, uint64_t id,
 }
 
 // Write per-market stream data to individual binary files,
-void write_stream_data(const janus::config& config, per_market_t& per_market)
+void write_stream_data(const janus::config& config, const per_market_t& per_market)
 {
 	std::string destdir = config.binary_data_root + "/market/";
 
