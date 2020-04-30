@@ -181,6 +181,8 @@ auto main() -> int
 {
 	add_signal_handler();
 
+	spdlog::info("jupiter " STR(GIT_VER));
+
 	janus::tls::rng rng;
 	rng.seed();
 
