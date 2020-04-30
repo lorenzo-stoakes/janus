@@ -26,6 +26,11 @@ TEST(dynamic_buffer_test, ctor)
 	EXPECT_EQ(buf2.cap(), 0);
 	EXPECT_EQ(buf2.size(), 0);
 	EXPECT_EQ(buf2.read_offset(), 0);
+
+	// We can set size + expect to get aligned UP to 64-bits.
+	auto buf4 = janus::dynamic_buffer(100, 39);
+	EXPECT_EQ(buf4.cap(), 104);
+	EXPECT_EQ(buf4.size(), 40);
 }
 
 // Test that the .cap() method returns the correct capacity of the buffer.
@@ -593,5 +598,44 @@ TEST(dynamic_buffer_test, custom_buffer_ctor)
 		raw[i] = i;
 		ASSERT_EQ(buf.read_uint64(), i);
 	}
+
+	// Test setting the size (i.e. write offset) of the buffer
+	// specifically. Everything is aligned here too.
+	uint64_t* raw2 = new uint64_t[100];
+	auto buf2 = janus::dynamic_buffer(raw2, 100, 50);
+	EXPECT_EQ(buf2.cap(), 96);
+	EXPECT_EQ(buf2.size(), 48);
+
+	// Setting size > cap should result in size == cap.
+	uint64_t* raw3 = new uint64_t[100];
+	auto buf3 = janus::dynamic_buffer(raw3, 100, 200);
+	EXPECT_EQ(buf3.cap(), 96);
+	EXPECT_EQ(buf3.size(), 96);
+}
+
+// Test that we can reserve a block of zeroed memory using .reserve() correctly.
+TEST(dynamic_buffer_test, reserve)
+{
+	auto buf = janus::dynamic_buffer(1000);
+	EXPECT_EQ(buf.size(), 0);
+
+	// Put some data in the first 8 bytes to make sure we're zeroing.
+	buf.add_uint64(12345678);
+	buf.reset();
+
+	uint64_t* ptr1 = static_cast<uint64_t*>(buf.reserve(7));
+	EXPECT_EQ(*ptr1, 0);
+	*ptr1 = 999;
+	// We should have got rounded up.
+	EXPECT_EQ(buf.size(), 8);
+
+	uint64_t* ptr2 = static_cast<uint64_t*>(buf.reserve(1));
+	// Previous reservation should not be affected.
+	EXPECT_EQ(*ptr1, 999);
+	EXPECT_EQ(*ptr2, 0);
+	*ptr2 = 123;
+	EXPECT_EQ(*ptr1, 999);
+	*ptr1 = 11111;
+	EXPECT_EQ(*ptr2, 123);
 }
 } // namespace

@@ -17,23 +17,27 @@ class dynamic_buffer
 public:
 	// We explicitly require a buffer size in bytes. This will be rounded up
 	// to uint64 words.
-	explicit dynamic_buffer(uint64_t cap)
+	explicit dynamic_buffer(uint64_t cap, uint64_t size = 0)
 		// Note that we store capacity/size values in uint64 words.
-		: _cap{align64(cap) / sizeof(uint64_t)},
+		: _cap{align64_words(cap)},
 		  _read_offset{0},
-		  _write_offset{0},
+		  _write_offset{align64_words(size)},
 		  _buf{std::make_unique<uint64_t[]>(_cap)} // NOLINT: Can't use std::array here.
 	{
+		if (_write_offset > _cap)
+			_write_offset = _cap;
 	}
 
 	// Explcitly specify the underlying buffer. The capacity in bytes is
 	// aligned to 64-bit, rounding down if not aligned.
-	dynamic_buffer(uint64_t* ptr, uint64_t cap)
-		: _cap{align64_down(cap) / sizeof(uint64_t)},
+	dynamic_buffer(uint64_t* ptr, uint64_t cap, uint64_t size = 0)
+		: _cap{align64_down_words(cap)},
 		  _read_offset{0},
-		  _write_offset{0},
+		  _write_offset{align64_down_words(size)},
 		  _buf{std::unique_ptr<uint64_t[]>(ptr)} // NOLINT: can't use std::array
 	{
+		if (_write_offset > _cap)
+			_write_offset = _cap;
 	}
 
 	// Make the buffer moveable.
@@ -103,8 +107,7 @@ public:
 	//   size: Size in bytes of required block of memory.
 	auto read_raw(uint64_t size) -> void*
 	{
-		uint64_t aligned_bytes = align64(size);
-		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
+		uint64_t aligned_words = align64_words(size);
 		check_read_overflow(aligned_words);
 
 		void* ret = &_buf[_read_offset];
@@ -152,17 +155,31 @@ public:
 	auto add_raw(const void* ptr, uint64_t size) -> void*
 	{
 		uint64_t aligned_bytes = align64(size);
-		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
+		uint64_t aligned_words = align64_words(size);
 		check_write_overflow(aligned_words);
 
 		auto* buf = reinterpret_cast<uint8_t*>(&_buf[_write_offset]);
-		std::memcpy(buf, ptr, size);
-		// It is safe to call this with 0 size.
-		// aligned >= size always.
-		std::memset(&buf[size], '\0', aligned_bytes - size);
+		if (ptr == nullptr) {
+			// If null then we are reserving
+			std::memset(buf, '\0', aligned_bytes);
+		} else {
+			std::memcpy(buf, ptr, size);
+			// It is safe to call this with 0 size.
+			// aligned >= size always.
+			std::memset(&buf[size], '\0', aligned_bytes - size);
+		}
 		_write_offset += aligned_words;
 
 		return buf;
+	}
+
+	// Attempt to reserve a block of memory of specified size (aligned to
+	// word size), zeroed.
+	//      size: Amount of memory to reserve in bytes.
+	//   returns: Pointer to reserved buffer.
+	auto reserve(uint64_t size) -> void*
+	{
+		return add_raw(nullptr, size);
 	}
 
 	// Add an arbitrary object to the buffer.
@@ -205,8 +222,7 @@ public:
 	// exceeds size. Rounds up to word size.
 	void rewind(uint64_t bytes)
 	{
-		uint64_t aligned_bytes = align64(bytes);
-		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
+		uint64_t aligned_words = align64_words(bytes);
 		if (aligned_words >= _write_offset)
 			_write_offset = 0;
 		else
@@ -251,10 +267,23 @@ private:
 		return (size + (sizeof(uint64_t) - 1)) & ~(sizeof(uint64_t) - 1);
 	}
 
+	// Align input value in bytes to 64-bits expressed in 64-bit words.
+	static constexpr auto align64_words(uint64_t bytes) -> uint64_t
+	{
+		return align64(bytes) / sizeof(uint64_t);
+	}
+
 	// Align input value to 64-bits, i.e. 8 bytes, rounding down.
 	static constexpr auto align64_down(uint64_t size) -> uint64_t
 	{
 		return size & ~(sizeof(uint64_t) - 1);
+	}
+
+	// Align input value in bytes to 64-bits expressed in 64-bit words,
+	// down.
+	static constexpr auto align64_down_words(uint64_t bytes) -> uint64_t
+	{
+		return align64_down(bytes) / sizeof(uint64_t);
 	}
 
 	// Throw an exception indicating an overflow.

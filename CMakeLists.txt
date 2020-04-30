@@ -13,7 +13,7 @@ endif()
 
 execute_process(COMMAND git describe OUTPUT_VARIABLE GIT_VER OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(SHARED_COMPILE_OPTIONS
-	--std=gnu++2a -Wall -g -D GIT_VER=${GIT_VER})
+	--std=gnu++2a -Wall -Wno-unknown-pragmas -g -D GIT_VER=${GIT_VER})
 
 file(GLOB_RECURSE HEADERS
 	"include/*.hh"
@@ -26,6 +26,10 @@ file(GLOB_RECURSE SOURCES
 
 file(GLOB NETWORK_SOURCES
 	"src/network/*.cc"
+)
+
+file(GLOB DB_SOURCES
+	"src/db/*.cc"
 )
 
 # 3rd-party
@@ -53,6 +57,7 @@ file(GLOB_RECURSE NEPTUNE_SOURCES
 )
 add_executable(neptune
 	${JANUS_SOURCES}
+	${DB_SOURCES}
 	${NEPTUNE_SOURCES}
 )
 target_compile_options(neptune
@@ -110,6 +115,7 @@ add_executable(osiris
 	${JANUS_SOURCES}
 	${OSIRIS_UI_SOURCES}
 	${OSIRIS_SOURCES}
+	${DB_SOURCES}
 )
 target_compile_options(osiris
 	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
@@ -117,6 +123,7 @@ target_compile_options(osiris
 
 target_link_libraries(osiris
 	m
+	snappy
 	Qt5::Widgets
 	Threads::Threads
 	Qt5::Charts
@@ -150,6 +157,7 @@ add_executable(testrunner
 	${JANUS_SOURCES}
 	${NETWORK_SOURCES}
 	${TEST_SOURCES}
+	${DB_SOURCES}
 )
 
 if (CMAKE_COMPILER_IS_CLANGXX)
@@ -165,17 +173,19 @@ endif()
 
 if (CMAKE_COMPILER_IS_CLANGXX)
 target_link_libraries(testrunner
+	gtest
 	m
 	mbed
-	gtest
+	snappy
 )
 else()
 target_link_libraries(testrunner
+	asan
+	gtest
 	m
 	mbed
-	asan
+	snappy
 	ubsan
-	gtest
 )
 endif()
 
