@@ -177,7 +177,7 @@ void parse_meta(const janus::config& config, uint64_t file_id)
 		throw std::runtime_error(std::string("Cannot find metadata JSON file ") +
 					 source_path);
 
-	spdlog::info("Found new metadata file {}", source_path);
+	spdlog::debug("Found new metadata file {}", source_path);
 
 	std::string dest_dir = config.binary_data_root + "/meta/";
 	if (!file_exists(dest_dir))
@@ -188,7 +188,7 @@ void parse_meta(const janus::config& config, uint64_t file_id)
 	if (!file)
 		throw std::runtime_error(std::string("Cannot open file ") + source_path);
 
-	spdlog::info("Writing metadata...");
+	spdlog::debug("Writing metadata...");
 	uint64_t num_markets = 0;
 	std::string line;
 	while (std::getline(file, line)) {
@@ -197,7 +197,7 @@ void parse_meta(const janus::config& config, uint64_t file_id)
 
 		num_markets += parse_meta_line(dest_dir, line);
 	}
-	spdlog::info("Wrote {} markets.", num_markets);
+	spdlog::debug("Wrote {} markets.", num_markets);
 }
 
 // Get path for JSON stream data file.
@@ -347,7 +347,7 @@ void write_stream_data(const janus::config& config, per_market_t& per_market)
 		markets_written++;
 	}
 
-	spdlog::info("Wrote {} markets.", markets_written);
+	spdlog::debug("Wrote {} markets.", markets_written);
 }
 
 // Parse new data from stream file with specified file ID, updating entry to
@@ -401,15 +401,15 @@ void update_from_stream_file(const janus::config& config, const janus::betfair::
 	uint64_t bytes = new_offset - entry.next_offset;
 	uint64_t num_lines = state.line - entry.next_line + 1;
 
-	spdlog::info("Read {} lines ({} bytes) from {} resulting in {} updates.", num_lines, bytes,
-		     source, num_updates);
+	spdlog::debug("Read {} lines ({} bytes) from {} resulting in {} updates.", num_lines, bytes,
+		      source, num_updates);
 
-	spdlog::info("Extracting per-market data...");
+	spdlog::debug("Extracting per-market data...");
 
 	auto per_market = extract_by_market(dyn_buf, num_updates);
-	spdlog::info("Extracted data for {} markets.", per_market.size());
+	spdlog::debug("Extracted data for {} markets.", per_market.size());
 
-	spdlog::info("Writing market data...");
+	spdlog::debug("Writing market data...");
 	write_stream_data(config, per_market);
 	entry.next_offset = new_offset;
 	entry.next_line = state.line;
@@ -437,8 +437,8 @@ auto run_core(const janus::config& config) -> bool
 
 	auto update_ids = get_update_id_list(config, db);
 	if (update_ids.size() > 0) {
-		spdlog::info("Found {} market stream files with new data.", update_ids.size());
-		spdlog::info("Updating stream data...");
+		spdlog::debug("Found {} market stream files with new data.", update_ids.size());
+		spdlog::debug("Updating stream data...");
 
 		janus::dynamic_buffer dyn_buf(MAX_STREAM_BYTES);
 		janus::betfair::price_range range;
