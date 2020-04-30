@@ -107,8 +107,7 @@ public:
 	//   size: Size in bytes of required block of memory.
 	auto read_raw(uint64_t size) -> void*
 	{
-		uint64_t aligned_bytes = align64(size);
-		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
+		uint64_t aligned_words = align64_words(size);
 		check_read_overflow(aligned_words);
 
 		void* ret = &_buf[_read_offset];
@@ -156,7 +155,7 @@ public:
 	auto add_raw(const void* ptr, uint64_t size) -> void*
 	{
 		uint64_t aligned_bytes = align64(size);
-		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
+		uint64_t aligned_words = align64_words(size);
 		check_write_overflow(aligned_words);
 
 		auto* buf = reinterpret_cast<uint8_t*>(&_buf[_write_offset]);
@@ -209,8 +208,7 @@ public:
 	// exceeds size. Rounds up to word size.
 	void rewind(uint64_t bytes)
 	{
-		uint64_t aligned_bytes = align64(bytes);
-		uint64_t aligned_words = aligned_bytes / sizeof(uint64_t);
+		uint64_t aligned_words = align64_words(bytes);
 		if (aligned_words >= _write_offset)
 			_write_offset = 0;
 		else
