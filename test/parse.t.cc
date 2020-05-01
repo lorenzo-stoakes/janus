@@ -36,10 +36,6 @@ uint64_t get_epoch_ms(uint64_t year, uint64_t month, uint64_t day, uint64_t hour
 	return secs_since_epoch * 1000 + ms;
 }
 
-// 41696
-// :56
-// 34:56
-
 // Test that the parse_digits() internal helper function correctly parses digits
 // from 1 - 4 digits long.
 TEST(parse_test, parse_digits)
