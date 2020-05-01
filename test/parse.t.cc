@@ -97,6 +97,9 @@ TEST(parse_test, parse_iso8601)
 				ASSERT_EQ(parse(timestamp_str), expected)
 					<< "Couldn't parse " << timestamp_str;
 
+				ASSERT_EQ(janus::encode_epoch(year, month, day, 12, 34, 56, 789),
+					  expected);
+
 				expected -= 789;
 				std::string without_ms_str =
 					timestamp_str.substr(0, timestamp_str.size() - 5) + "Z";
@@ -116,6 +119,9 @@ TEST(parse_test, parse_iso8601)
 							timestamp_str);
 				ASSERT_EQ(parse(timestamp_str), expected)
 					<< "Couldn't parse " << timestamp_str;
+
+				ASSERT_EQ(janus::encode_epoch(2020, 4, 4, hour, min, sec, 789),
+					  expected);
 
 				expected -= 789;
 				std::string without_ms_str =

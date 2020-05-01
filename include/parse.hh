@@ -77,6 +77,10 @@ static inline auto parse_market_id(const char* str, uint64_t size) -> uint64_t
 void unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
 		     uint64_t& hour, uint64_t& minute, uint64_t& second, uint64_t& ms);
 
+// Encode date/time components into ms since epoch.
+auto encode_epoch(uint64_t year, uint64_t month, uint64_t day, uint64_t hour, uint64_t minute,
+		  uint64_t second, uint64_t ms) -> uint64_t;
+
 // Parse an ISO-8601 format (e.g. 2020-03-11T13:20:00.123Z) and convert it to time
 // since epoch in ms.
 //     str: The string to be parsed. Must be in zulu timezone (GMT).

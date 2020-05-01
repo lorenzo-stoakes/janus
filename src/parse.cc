@@ -44,6 +44,35 @@ static inline auto print_digits100 = print_digits<100>;   // NOLINT: Not magical
 static inline auto print_digits1000 = print_digits<1000>; // NOLINT: Not magical.
 } // namespace internal
 
+auto encode_epoch(uint64_t year, uint64_t month, uint64_t day, uint64_t hour, uint64_t minute,
+		  uint64_t second, uint64_t ms) -> uint64_t
+{
+	// We gradually build the value by appending each value by a multiplier
+	// value which is equal to how many ms that unit represents:
+	uint64_t in_ms = internal::MS_IN_SEC;
+	ms += second * in_ms;
+	in_ms *= internal::SECS_IN_MIN;
+	ms += minute * in_ms;
+	in_ms *= internal::MINS_IN_HR;
+	ms += hour * in_ms;
+	in_ms *= internal::HRS_IN_DAY;
+	ms += (day - 1) * in_ms;
+
+	// The month and year are more complicated. Months and years vary
+	// depending on which years were leap years. We use lookup tables to
+	// determine the correct value to use:
+
+	// Month.
+	if (internal::is_leap(year))
+		ms += internal::DAY_OFFSET_BY_MONTH_LEAP[month - 1] * in_ms;
+	else
+		ms += internal::DAY_OFFSET_BY_MONTH_NO_LEAP[month - 1] * in_ms;
+	// Year.
+	ms += internal::DAY_OFFSET_BY_YEAR_SINCE_EPOCH[year - internal::MIN_YEAR] * in_ms;
+
+	return ms;
+}
+
 auto parse_iso8601(const char* str, uint64_t size) -> uint64_t
 {
 	// There are 2 permissible formats:
@@ -89,30 +118,7 @@ auto parse_iso8601(const char* str, uint64_t size) -> uint64_t
 	uint64_t second = internal::parse_digits10(&str[SECOND_INDEX]);
 	uint64_t ms = size == MAX_SIZE ? internal::parse_digits100(&str[MS_INDEX]) : 0;
 
-	// We gradually build the value by appending each value by a multiplier
-	// value which is equal to how many ms that unit represents:
-	uint64_t in_ms = internal::MS_IN_SEC;
-	ms += second * in_ms;
-	in_ms *= internal::SECS_IN_MIN;
-	ms += minute * in_ms;
-	in_ms *= internal::MINS_IN_HR;
-	ms += hour * in_ms;
-	in_ms *= internal::HRS_IN_DAY;
-	ms += (day - 1) * in_ms;
-
-	// The month and year are more complicated. Months and years vary
-	// depending on which years were leap years. We use lookup tables to
-	// determine the correct value to use:
-
-	// Month.
-	if (internal::is_leap(year))
-		ms += internal::DAY_OFFSET_BY_MONTH_LEAP[month - 1] * in_ms;
-	else
-		ms += internal::DAY_OFFSET_BY_MONTH_NO_LEAP[month - 1] * in_ms;
-	// Year.
-	ms += internal::DAY_OFFSET_BY_YEAR_SINCE_EPOCH[year - internal::MIN_YEAR] * in_ms;
-
-	return ms;
+	return encode_epoch(year, month, day, hour, minute, second, ms);
 }
 
 void unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
