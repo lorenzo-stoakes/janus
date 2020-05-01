@@ -44,6 +44,25 @@ static inline auto print_digits100 = print_digits<100>;   // NOLINT: Not magical
 static inline auto print_digits1000 = print_digits<1000>; // NOLINT: Not magical.
 } // namespace internal
 
+auto encode_epoch_days(uint64_t year, uint64_t month, uint64_t day) -> uint64_t
+{
+	uint64_t days = day - 1;
+
+	// The month and year are more complicated. Months and years vary
+	// depending on which years were leap years. We use lookup tables to
+	// determine the correct value to use:
+
+	// Month.
+	if (internal::is_leap(year))
+		days += internal::DAY_OFFSET_BY_MONTH_LEAP[month - 1];
+	else
+		days += internal::DAY_OFFSET_BY_MONTH_NO_LEAP[month - 1];
+	// Year.
+	days += internal::DAY_OFFSET_BY_YEAR_SINCE_EPOCH[year - internal::MIN_YEAR];
+
+	return days;
+}
+
 auto encode_epoch(uint64_t year, uint64_t month, uint64_t day, uint64_t hour, uint64_t minute,
 		  uint64_t second, uint64_t ms) -> uint64_t
 {
@@ -55,20 +74,9 @@ auto encode_epoch(uint64_t year, uint64_t month, uint64_t day, uint64_t hour, ui
 	ms += minute * in_ms;
 	in_ms *= internal::MINS_IN_HR;
 	ms += hour * in_ms;
+
 	in_ms *= internal::HRS_IN_DAY;
-	ms += (day - 1) * in_ms;
-
-	// The month and year are more complicated. Months and years vary
-	// depending on which years were leap years. We use lookup tables to
-	// determine the correct value to use:
-
-	// Month.
-	if (internal::is_leap(year))
-		ms += internal::DAY_OFFSET_BY_MONTH_LEAP[month - 1] * in_ms;
-	else
-		ms += internal::DAY_OFFSET_BY_MONTH_NO_LEAP[month - 1] * in_ms;
-	// Year.
-	ms += internal::DAY_OFFSET_BY_YEAR_SINCE_EPOCH[year - internal::MIN_YEAR] * in_ms;
+	ms += in_ms * encode_epoch_days(year, month, day);
 
 	return ms;
 }

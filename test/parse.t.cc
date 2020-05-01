@@ -36,6 +36,17 @@ uint64_t get_epoch_ms(uint64_t year, uint64_t month, uint64_t day, uint64_t hour
 	return secs_since_epoch * 1000 + ms;
 }
 
+// Helper method to convert ms value to days.
+auto ms_to_days(uint64_t ms) -> uint64_t
+{
+	uint64_t secs = ms / 1000;
+	uint64_t minutes = secs / 60;
+	uint64_t hours = minutes / 60;
+	uint64_t days = hours / 24;
+
+	return days;
+}
+
 // Test that the parse_digits() internal helper function correctly parses digits
 // from 1 - 4 digits long.
 TEST(parse_test, parse_digits)
@@ -99,6 +110,9 @@ TEST(parse_test, parse_iso8601)
 
 				ASSERT_EQ(janus::encode_epoch(year, month, day, 12, 34, 56, 789),
 					  expected);
+
+				ASSERT_EQ(janus::encode_epoch_days(year, month, day),
+					  ms_to_days(expected));
 
 				expected -= 789;
 				std::string without_ms_str =

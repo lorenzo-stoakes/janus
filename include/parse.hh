@@ -77,6 +77,9 @@ static inline auto parse_market_id(const char* str, uint64_t size) -> uint64_t
 void unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
 		     uint64_t& hour, uint64_t& minute, uint64_t& second, uint64_t& ms);
 
+// Encode date components into days since epoch.
+auto encode_epoch_days(uint64_t year, uint64_t month, uint64_t day) -> uint64_t;
+
 // Encode date/time components into ms since epoch.
 auto encode_epoch(uint64_t year, uint64_t month, uint64_t day, uint64_t hour, uint64_t minute,
 		  uint64_t second, uint64_t ms) -> uint64_t;
