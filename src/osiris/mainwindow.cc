@@ -1,12 +1,13 @@
 #include "mainwindow.hh"
 #include "ui_mainwindow.h"
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWindow)
+MainWindow::MainWindow(main_controller& controller, QWidget* parent)
+	: QMainWindow(parent), _ui(new Ui::MainWindow), _controller{controller}
 {
-	ui->setupUi(this);
+	_ui->setupUi(this);
 }
 
 MainWindow::~MainWindow()
 {
-	delete ui;
+	delete _ui;
 }
