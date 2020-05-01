@@ -12,6 +12,8 @@ static constexpr uint64_t MIN_YEAR = 1970;
 static constexpr uint64_t MAX_YEAR = 2100;
 static constexpr uint64_t NUM_YEARS = MAX_YEAR - MIN_YEAR + 1;
 
+static constexpr uint64_t MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 // Parse digits for a fixed size integer = log10(start_mult), e.g. parse_digits<100>("123");
 //   start_mult: The multiplier of the left-most digit, e.g. 10^(num_digits - 1)
 //          str: The string to be parsed.
