@@ -4,6 +4,7 @@
 #include "sajson.hh"
 
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -61,6 +62,9 @@ class meta_view
 {
 public:
 	explicit meta_view(dynamic_buffer& dyn_buf);
+
+	// Provide a short description of the market.
+	auto describe() -> std::string;
 
 	auto market_id() const -> uint64_t
 	{
