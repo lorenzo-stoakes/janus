@@ -30,6 +30,9 @@ public:
 		return _meta_by_day;
 	}
 
+	// Get meta views for the specified day in ms since epoch.
+	auto get_views_on_day(uint64_t ms) -> const std::vector<janus::meta_view*>&;
+
 private:
 	janus::config _config;
 	janus::dynamic_buffer _meta_dyn_buf;

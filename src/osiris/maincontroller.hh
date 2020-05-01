@@ -3,6 +3,8 @@
 #include "mainmodel.hh"
 #include "ui_mainwindow.h"
 
+#include <cstdint>
+
 class main_controller
 {
 public:
@@ -17,6 +19,9 @@ public:
 
 	// Populate the view with initial state.
 	void init();
+
+	// Obtain data for the specified date.
+	void select_date(QDate date);
 
 private:
 	// Populate date selector, setting bold where data is available.

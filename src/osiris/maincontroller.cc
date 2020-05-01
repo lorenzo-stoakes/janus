@@ -22,4 +22,17 @@ void main_controller::populate_dates()
 void main_controller::init()
 {
 	populate_dates();
+	select_date(_view->raceDateSelecter->selectedDate());
+}
+
+void main_controller::select_date(QDate date)
+{
+	QDateTime date_time = date.startOfDay();
+	uint64_t ms = date_time.toMSecsSinceEpoch();
+
+	_view->raceListWidget->clear();
+	for (auto& view : _model.get_views_on_day(ms)) {
+		std::string descr = view->describe();
+		_view->raceListWidget->addItem(QString::fromStdString(descr));
+	}
 }
