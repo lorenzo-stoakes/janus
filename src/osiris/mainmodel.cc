@@ -1,5 +1,7 @@
 #include "mainmodel.hh"
 
+#include <vector>
+
 main_model::main_model() : _meta_dyn_buf{META_MAX_BYTES} {}
 
 void main_model::load()
@@ -16,4 +18,10 @@ void main_model::populate_meta_by_day()
 		uint64_t days = ms / janus::MS_PER_DAY;
 		_meta_by_day[days].push_back(&view);
 	}
+}
+
+auto main_model::get_views_on_day(uint64_t ms) -> const std::vector<janus::meta_view*>&
+{
+	uint64_t days = ms / janus::MS_PER_DAY;
+	return _meta_by_day[days];
 }

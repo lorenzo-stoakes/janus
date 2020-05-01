@@ -23,6 +23,9 @@ public:
 		return _ui;
 	}
 
+private slots:
+	void on_raceDateSelecter_selectionChanged();
+
 private:
 	Ui::MainWindow* _ui;
 	main_controller& _controller;

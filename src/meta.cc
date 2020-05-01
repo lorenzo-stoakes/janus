@@ -1,6 +1,8 @@
 #include "janus.hh"
 
 #include <cstdlib>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -201,4 +203,24 @@ auto parse_meta_json(const char* filename, char* str, uint64_t size, dynamic_buf
 	return parse_meta_json(root, dyn_buf);
 }
 } // namespace betfair
+
+auto meta_view::describe() -> std::string
+{
+	uint64_t year, month, day, ms; // Unused
+	uint64_t hour, minute, second;
+	unpack_epoch_ms(market_start_timestamp(), year, month, day, hour, minute, second, ms);
+
+	std::ostringstream oss;
+	oss << std::setfill('0') << std::setw(2) << hour << ":" << std::setw(2) << minute << ":"
+	    << std::setw(2) << second << " / ";
+
+	// If horse racing then output venue as neater.
+	if (event_type_id() == 7) // NOLINT: Not magical, horses!
+		oss << venue_name();
+	else
+		oss << event_name();
+
+	oss << " / " << name();
+	return oss.str();
+}
 } // namespace janus

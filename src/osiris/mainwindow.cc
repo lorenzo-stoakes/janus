@@ -11,3 +11,9 @@ MainWindow::~MainWindow()
 {
 	delete _ui;
 }
+
+void MainWindow::on_raceDateSelecter_selectionChanged()
+{
+	QDate date = _ui->raceDateSelecter->selectedDate();
+	_controller.select_date(date);
+}
