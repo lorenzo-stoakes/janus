@@ -12,6 +12,8 @@ static constexpr uint64_t MIN_YEAR = 1970;
 static constexpr uint64_t MAX_YEAR = 2100;
 static constexpr uint64_t NUM_YEARS = MAX_YEAR - MIN_YEAR + 1;
 
+static constexpr uint64_t MS_PER_DAY = 1000 * 60 * 60 * 24;
+
 // Parse digits for a fixed size integer = log10(start_mult), e.g. parse_digits<100>("123");
 //   start_mult: The multiplier of the left-most digit, e.g. 10^(num_digits - 1)
 //          str: The string to be parsed.
@@ -76,6 +78,9 @@ static inline auto parse_market_id(const char* str, uint64_t size) -> uint64_t
 // Convert an epoch_ms value to separate date/time component values.
 void unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
 		     uint64_t& hour, uint64_t& minute, uint64_t& second, uint64_t& ms);
+
+// Encode date components into days since epoch.
+auto encode_epoch_days(uint64_t year, uint64_t month, uint64_t day) -> uint64_t;
 
 // Encode date/time components into ms since epoch.
 auto encode_epoch(uint64_t year, uint64_t month, uint64_t day, uint64_t hour, uint64_t minute,
