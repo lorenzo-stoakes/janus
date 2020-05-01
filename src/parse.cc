@@ -44,12 +44,6 @@ static inline auto print_digits100 = print_digits<100>;   // NOLINT: Not magical
 static inline auto print_digits1000 = print_digits<1000>; // NOLINT: Not magical.
 } // namespace internal
 
-// Parse an ISO-8601 format (e.g. 2020-03-11T13:20:00.123Z) and convert it to time
-// since epoch in ms.
-//     str: The string to be parsed. Must be in zulu timezone (GMT).
-//    size: Size of the string to be parsed.
-// returns: The number of ms since epoch (1/1/1970 00:00), or 0 if cannot be
-//          parsed.
 auto parse_iso8601(const char* str, uint64_t size) -> uint64_t
 {
 	// There are 2 permissible formats:
@@ -121,20 +115,16 @@ auto parse_iso8601(const char* str, uint64_t size) -> uint64_t
 	return ms;
 }
 
-// Convert ms since epoch value to an ISO-8601 string. It outputs to a 25 byte
-// character buffer including ms, e.g. 2020-03-11T13:20:00.123Z.
-//   epoch_ms: Milliseconds since epoch (1/1/1970 00:00)
-//        str: Character buffer containing minimum 25 bytes space where string will be output to
-//    returns: Returns a std::string_view pointing at the provided char buffer for convenience.
-auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view
+void unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
+		     uint64_t& hour, uint64_t& minute, uint64_t& second, uint64_t& ms)
 {
-	uint64_t ms = epoch_ms % internal::MS_IN_SEC;
+	ms = epoch_ms % internal::MS_IN_SEC;
 	epoch_ms /= internal::MS_IN_SEC;
-	uint64_t second = epoch_ms % internal::SECS_IN_MIN;
+	second = epoch_ms % internal::SECS_IN_MIN;
 	epoch_ms /= internal::SECS_IN_MIN;
-	uint64_t minute = epoch_ms % internal::MINS_IN_HR;
+	minute = epoch_ms % internal::MINS_IN_HR;
 	epoch_ms /= internal::MINS_IN_HR;
-	uint64_t hour = epoch_ms % internal::HRS_IN_DAY;
+	hour = epoch_ms % internal::HRS_IN_DAY;
 	epoch_ms /= internal::HRS_IN_DAY;
 
 	// We are now left with the number of days from epoch to 00:00 on the
@@ -142,7 +132,7 @@ auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view
 	uint64_t days_in_date = epoch_ms;
 
 	// First guess which year we are in.
-	uint64_t year = internal::MIN_YEAR + days_in_date / internal::DAYS_IN_YEAR;
+	year = internal::MIN_YEAR + days_in_date / internal::DAYS_IN_YEAR;
 
 	// If we are wrong, we will appear to be in a later year than we
 	// actually are due to leap years meaning we under-estimate the length
@@ -166,7 +156,7 @@ auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view
 	const auto& month_offsets = internal::is_leap(year) ? internal::DAY_OFFSET_BY_MONTH_LEAP
 							    : internal::DAY_OFFSET_BY_MONTH_NO_LEAP;
 	uint64_t month_offset = 0;
-	uint64_t month;
+
 	// The month value is offset by 1 so is equal to the human-readable
 	// month number.
 	for (month = 1; month <= internal::MONTHS_IN_YEAR; month++) {
@@ -178,7 +168,19 @@ auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view
 
 	// Retrieve day offset in month and offset by 1 for a human-readable day
 	// number.
-	uint64_t day = days_in_year - month_offset + 1;
+	day = days_in_year - month_offset + 1;
+}
+
+auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view
+{
+	uint64_t year;
+	uint64_t month;
+	uint64_t day;
+	uint64_t hour;
+	uint64_t minute;
+	uint64_t second;
+	uint64_t ms;
+	unpack_epoch_ms(epoch_ms, year, month, day, hour, minute, second, ms);
 
 	char* ptr = str;
 

@@ -230,6 +230,25 @@ TEST(parse_test, print_iso8601)
 				// Check 12:34:56.789 for each day.
 				epoch_ms = get_epoch_ms(year, month, day, 12, 34, 56, 789,
 							timestamp_str);
+
+				uint64_t actual_year;
+				uint64_t actual_month;
+				uint64_t actual_day;
+				uint64_t actual_hour;
+				uint64_t actual_minute;
+				uint64_t actual_second;
+				uint64_t actual_ms;
+				janus::unpack_epoch_ms(epoch_ms, actual_year, actual_month,
+						       actual_day, actual_hour, actual_minute,
+						       actual_second, actual_ms);
+				EXPECT_EQ(actual_year, year);
+				EXPECT_EQ(actual_month, month);
+				EXPECT_EQ(actual_day, day);
+				EXPECT_EQ(actual_hour, 12);
+				EXPECT_EQ(actual_minute, 34);
+				EXPECT_EQ(actual_second, 56);
+				EXPECT_EQ(actual_ms, 789);
+
 				view = janus::print_iso8601(buf, epoch_ms);
 				EXPECT_EQ(std::strcmp(buf, timestamp_str.c_str()), 0);
 				EXPECT_EQ(std::strcmp(view.data(), timestamp_str.c_str()), 0);
@@ -244,6 +263,25 @@ TEST(parse_test, print_iso8601)
 				// Sticking to .789 ms.
 				epoch_ms = get_epoch_ms(2020, 4, 4, hour, min, sec, 789,
 							timestamp_str);
+
+				uint64_t actual_year;
+				uint64_t actual_month;
+				uint64_t actual_day;
+				uint64_t actual_hour;
+				uint64_t actual_minute;
+				uint64_t actual_second;
+				uint64_t actual_ms;
+				janus::unpack_epoch_ms(epoch_ms, actual_year, actual_month,
+						       actual_day, actual_hour, actual_minute,
+						       actual_second, actual_ms);
+				EXPECT_EQ(actual_year, 2020);
+				EXPECT_EQ(actual_month, 4);
+				EXPECT_EQ(actual_day, 4);
+				EXPECT_EQ(actual_hour, hour);
+				EXPECT_EQ(actual_minute, min);
+				EXPECT_EQ(actual_second, sec);
+				EXPECT_EQ(actual_ms, 789);
+
 				view = janus::print_iso8601(buf, epoch_ms);
 				EXPECT_EQ(std::strcmp(buf, timestamp_str.c_str()), 0);
 				EXPECT_EQ(std::strcmp(view.data(), timestamp_str.c_str()), 0);

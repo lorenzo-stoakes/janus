@@ -73,6 +73,22 @@ static inline auto parse_market_id(const char* str, uint64_t size) -> uint64_t
 }
 } // namespace internal
 
+// Convert an epoch_ms value to separate date/time component values.
+void unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
+		     uint64_t& hour, uint64_t& minute, uint64_t& second, uint64_t& ms);
+
+// Parse an ISO-8601 format (e.g. 2020-03-11T13:20:00.123Z) and convert it to time
+// since epoch in ms.
+//     str: The string to be parsed. Must be in zulu timezone (GMT).
+//    size: Size of the string to be parsed.
+// returns: The number of ms since epoch (1/1/1970 00:00), or 0 if cannot be
+//          parsed.
 auto parse_iso8601(const char* str, uint64_t size) -> uint64_t;
+
+// Convert ms since epoch value to an ISO-8601 string. It outputs to a 25 byte
+// character buffer including ms, e.g. 2020-03-11T13:20:00.123Z.
+//   epoch_ms: Milliseconds since epoch (1/1/1970 00:00)
+//        str: Character buffer containing minimum 25 bytes space where string will be output to
+//    returns: Returns a std::string_view pointing at the provided char buffer for convenience.
 auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view;
 } // namespace janus
