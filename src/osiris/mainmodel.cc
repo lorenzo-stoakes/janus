@@ -25,3 +25,9 @@ auto main_model::get_views_on_day(uint64_t ms) -> const std::vector<janus::meta_
 	uint64_t days = ms / janus::MS_PER_DAY;
 	return _meta_by_day[days];
 }
+
+auto main_model::get_market_at(uint64_t ms, int index) -> janus::meta_view*
+{
+	const auto& on_day = get_views_on_day(ms);
+	return on_day[index];
+}
