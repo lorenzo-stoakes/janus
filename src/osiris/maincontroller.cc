@@ -77,6 +77,8 @@ void main_controller::clear(update_level level)
 		_view->raceListWidget->clear();
 		// fallthrough
 	case update_level::MARKET:
+		_num_market_updates = 0;
+
 		_view->marketNameLabel->setText("");
 		_view->postLabel->setText("");
 		_view->inplayLabel->setText("");
@@ -88,13 +90,13 @@ void main_controller::clear(update_level level)
 
 		// fallthrough
 	case update_level::RUNNERS:
+		_visible_runner_indexes.fill(-1);
+
 		_view->runnerLTPTableWidget->clearContents();
-		// TODO: Free items!!
+		// TODO(lorenzo): Free items!!
 		while (_view->runnerLTPTableWidget->rowCount() > 0) {
 			_view->runnerLTPTableWidget->removeRow(0);
 		}
-
-		_visible_runner_indexes.fill(-1);
 
 		for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
 			_ladders[i].clear(&_price_strings[0]);
@@ -142,6 +144,10 @@ void main_controller::select_market(int index)
 	_selected_market_index = index;
 	auto* view = _model.get_market_at(_selected_date_ms, index);
 	std::string title = view->describe() + " (" + std::to_string(view->market_id()) + ")";
+
+	_num_market_updates = _model.get_market_updates(view->market_id());
+	_curr_universe.clear();
+	_curr_universe.apply_update(janus::make_market_id_update(view->market_id()));
 
 	_view->marketNameLabel->setText(QString::fromStdString(title));
 

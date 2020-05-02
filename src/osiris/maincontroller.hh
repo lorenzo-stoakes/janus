@@ -62,7 +62,9 @@ public:
 		  _view{nullptr},
 		  _selected_market_index{-1},
 		  _selected_date_ms{0},
+		  _num_market_updates{0},
 		  _visible_runner_indexes{-1}
+
 	{
 		init_price_strings();
 	}
@@ -91,10 +93,13 @@ private:
 	Ui::MainWindow* _view;
 	int _selected_market_index;
 	uint64_t _selected_date_ms;
+	uint64_t _num_market_updates;
 
 	std::array<int, NUM_DISPLAYED_RUNNERS> _visible_runner_indexes;
 	std::array<runner_ladder_ui, NUM_DISPLAYED_RUNNERS> _ladders;
 	std::array<QString, janus::betfair::NUM_PRICES> _price_strings;
+
+	janus::betfair::universe<1> _curr_universe;
 
 	// Populate date selector, setting bold where data is available.
 	void populate_dates();
