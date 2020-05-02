@@ -65,7 +65,7 @@ void main_controller::select_date(QDate date)
 {
 	clear(update_level::MARKET_LIST);
 
-	QDateTime date_time = date.startOfDay();
+	QDateTime date_time = date.startOfDay(Qt::UTC);
 	uint64_t ms = date_time.toMSecsSinceEpoch();
 	for (auto& view : _model.get_views_on_day(ms)) {
 		std::string descr = view->describe();
