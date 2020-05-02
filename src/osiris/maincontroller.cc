@@ -21,16 +21,36 @@ void main_controller::populate_dates()
 
 void main_controller::init()
 {
+	clear(update_level::FULL);
 	populate_dates();
 	select_date(_view->raceDateSelecter->selectedDate());
 }
 
+void main_controller::clear(update_level level)
+{
+	switch (level) {
+	case update_level::FULL:
+		// fallthrough
+	case update_level::MARKET_LIST:
+		_view->raceListWidget->clear();
+		// fallthrough
+	case update_level::MARKET:
+		_view->marketNameLabel->setText("");
+		_view->postLabel->setText("");
+		_view->inplayLabel->setText("");
+		_view->nowLabel->setText("");
+		_view->tradedVolLabel->setText("");
+		_view->tradedPerSecVolLabel->setText("");
+		break;
+	}
+}
+
 void main_controller::select_date(QDate date)
 {
+	clear(update_level::MARKET_LIST);
+
 	QDateTime date_time = date.startOfDay();
 	uint64_t ms = date_time.toMSecsSinceEpoch();
-
-	_view->raceListWidget->clear();
 	for (auto& view : _model.get_views_on_day(ms)) {
 		std::string descr = view->describe();
 		_view->raceListWidget->addItem(QString::fromStdString(descr));

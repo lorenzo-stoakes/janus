@@ -5,6 +5,13 @@
 
 #include <cstdint>
 
+enum class update_level
+{
+	FULL,
+	MARKET_LIST,
+	MARKET,
+};
+
 class main_controller
 {
 public:
@@ -19,6 +26,9 @@ public:
 
 	// Populate the view with initial state.
 	void init();
+
+	// Clear UI at specified update level.
+	void clear(update_level level);
 
 	// Obtain data for the specified date.
 	void select_date(QDate date);
