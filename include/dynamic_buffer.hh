@@ -122,6 +122,19 @@ public:
 		return *static_cast<T*>(read_raw(sizeof(T)));
 	}
 
+	// Deduct the size of the specified object from the read offset.
+	template<typename T>
+	void unread()
+	{
+		uint64_t size = sizeof(T);
+		uint64_t aligned_words = align64_words(size);
+
+		if (_read_offset <= aligned_words)
+			_read_offset = 0;
+		else
+			_read_offset -= aligned_words;
+	}
+
 	// Decode and read a string from the buffer. Returns a string view
 	// pointing at the char array in the buffer.
 	auto read_string() -> std::string_view
