@@ -215,6 +215,8 @@ auto meta_view::describe() -> std::string
 	oss << std::setfill('0') << std::setw(2) << tmval.tm_hour << ":" << std::setw(2)
 	    << tmval.tm_min << ":" << std::setw(2) << tmval.tm_sec << " / ";
 
+	oss << event_country_code() << " / ";
+
 	// If horse racing then output venue as neater.
 	if (event_type_id() == 7) // NOLINT: Not magical, horses!
 		oss << venue_name();
