@@ -6,6 +6,7 @@
 #include <ctime>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 
 void main_controller::populate_dates()
 {
@@ -32,6 +33,14 @@ void main_controller::init()
 		_ladders[i].init();
 	}
 
+	// Initialise runner LTP list.
+	auto* table = _view->runnerLTPTableWidget;
+	auto* header = table->horizontalHeader();
+	header->setSectionResizeMode(0, QHeaderView::Stretch);
+	table->sortItems(1, Qt::AscendingOrder);
+	// Reduce LTP column size.
+	table->setColumnWidth(1, 20); // NOLINT: Not magical.
+
 	clear(update_level::FULL);
 	populate_dates();
 	select_date(_view->raceDateSelecter->selectedDate());
@@ -56,7 +65,12 @@ void main_controller::clear(update_level level)
 		_view->tradedPerSecVolLabel->setText("");
 		// fallthrough
 	case update_level::RUNNERS:
-		_view->runnerLTPTableWidget->clear();
+		_view->runnerLTPTableWidget->clearContents();
+		while (_view->runnerLTPTableWidget->rowCount() > 0)
+			_view->runnerLTPTableWidget->removeRow(0);
+
+		_visible_runner_indexes.fill(-1);
+
 		for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
 			_ladders[i].clear();
 		}
@@ -78,6 +92,32 @@ void main_controller::select_date(QDate date)
 	}
 }
 
+// Create a read-only table item for insertion into a table.
+static auto make_readonly_table_item() -> QTableWidgetItem*
+{
+	QTableWidgetItem* item = new QTableWidgetItem();
+
+	item->setTextAlignment(Qt::AlignCenter);
+	item->setFlags(item->flags() ^ (Qt::ItemIsEditable | Qt::ItemIsSelectable));
+
+	return item;
+}
+
+void main_controller::populate_runner_combo(const std::vector<janus::runner_view>& runners,
+					    int index)
+{
+	auto* combo = _ladders[index].combo;
+
+	for (const auto& runner : runners) {
+		std::string_view name = runner.name();
+		combo->addItem(QString::fromUtf8(name.data(), name.size()));
+	}
+
+	// By default when setting the runner combo the index we're looking at
+	// is also the index we set.
+	combo->setCurrentIndex(index);
+}
+
 void main_controller::select_market(int index)
 {
 	if (index < 0)
@@ -90,6 +130,23 @@ void main_controller::select_market(int index)
 	std::string title = view->describe() + " (" + std::to_string(view->market_id()) + ")";
 
 	_view->marketNameLabel->setText(QString::fromStdString(title));
+
+	auto& runners = view->runners();
+	for (uint64_t i = 0; i < runners.size(); i++) {
+		auto& runner = runners[i];
+		if (i < NUM_DISPLAYED_RUNNERS) {
+			_visible_runner_indexes[i] = i;
+
+			populate_runner_combo(runners, i);
+		}
+
+		_view->runnerLTPTableWidget->insertRow(i);
+
+		auto* name_item = make_readonly_table_item();
+		std::string_view name = runner.name();
+		name_item->setText(QString::fromUtf8(name.data(), name.size()));
+		_view->runnerLTPTableWidget->setItem(i, 0, name_item);
+	}
 }
 
 void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)

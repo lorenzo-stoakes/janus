@@ -44,7 +44,11 @@ class main_controller
 {
 public:
 	explicit main_controller(main_model& model)
-		: _model{model}, _view{nullptr}, _selected_market_index{-1}, _selected_date_ms{0}
+		: _model{model},
+		  _view{nullptr},
+		  _selected_market_index{-1},
+		  _selected_date_ms{0},
+		  _visible_runner_indexes{-1}
 	{
 	}
 
@@ -73,8 +77,11 @@ private:
 	int _selected_market_index;
 	uint64_t _selected_date_ms;
 
+	std::array<int, NUM_DISPLAYED_RUNNERS> _visible_runner_indexes;
 	std::array<runner_ladder_ui, NUM_DISPLAYED_RUNNERS> _ladders;
 
 	// Populate date selector, setting bold where data is available.
 	void populate_dates();
+
+	void populate_runner_combo(const std::vector<janus::runner_view>& runners, int index);
 };
