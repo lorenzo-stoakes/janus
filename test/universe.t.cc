@@ -249,4 +249,16 @@ TEST(universe_test, dont_time_travel)
 	ASSERT_THROW(universe1.apply_update(janus::make_timestamp_update(234567)),
 		     janus::universe_apply_error);
 }
+
+// Ensure that clearing the universe clears all markets down.
+TEST(universe_test, clear)
+{
+	auto ptr = std::make_unique<janus::betfair::universe<1>>();
+	auto& universe = *ptr;
+	EXPECT_EQ(universe.num_markets(), 0);
+	universe.apply_update(janus::make_market_id_update(123456));
+	EXPECT_EQ(universe.num_markets(), 1);
+	universe.clear();
+	EXPECT_EQ(universe.num_markets(), 0);
+}
 } // namespace

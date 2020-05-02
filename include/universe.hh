@@ -30,6 +30,13 @@ public:
 	{
 	}
 
+	// Clear universe of markets.
+	void clear()
+	{
+		_markets.clear();
+		_num_markets = 0;
+	}
+
 	// Get MUTABLE reference to markets in universe.
 	auto markets() -> markets_t&
 	{
