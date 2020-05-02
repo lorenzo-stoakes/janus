@@ -260,5 +260,9 @@ TEST(universe_test, clear)
 	EXPECT_EQ(universe.num_markets(), 1);
 	universe.clear();
 	EXPECT_EQ(universe.num_markets(), 0);
+	EXPECT_EQ(universe.last_timestamp(), 0);
+	EXPECT_EQ(universe.num_updates(), 0);
+	EXPECT_EQ(universe.last_market(), nullptr);
+	EXPECT_EQ(universe.last_runner(), nullptr);
 }
 } // namespace

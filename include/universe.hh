@@ -35,6 +35,11 @@ public:
 	{
 		_markets.clear();
 		_num_markets = 0;
+		_last_timestamp = 0;
+		_num_updates = 0;
+		_last_market = nullptr;
+		_last_runner = nullptr;
+		_market_ids.fill(0);
 	}
 
 	// Get MUTABLE reference to markets in universe.
