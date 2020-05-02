@@ -167,6 +167,8 @@ static auto run_loop(janus::config& config, janus::betfair::session& session) ->
 			print_status_line(num_lines);
 #endif
 		} catch (std::exception& e) {
+			num_errors++;
+
 			spdlog::error(e.what());
 			if (num_errors >= MAX_NUM_STREAM_ERRORS) {
 				spdlog::critical("{} errors, cap is {}, aborting...", num_errors,
