@@ -3,13 +3,40 @@
 #include "mainmodel.hh"
 #include "ui_mainwindow.h"
 
+#include <array>
 #include <cstdint>
+
+// Number of runners displayed at any one time.
+static constexpr uint64_t NUM_DISPLAYED_RUNNERS = 4;
 
 enum class update_level
 {
 	FULL,
 	MARKET_LIST,
 	MARKET,
+	RUNNERS,
+};
+
+// Represents a specific displayed runner ladder UI.
+struct runner_ladder_ui
+{
+	QTableWidget* table;
+	QComboBox* combo;
+	QLabel* traded_vol_label;
+	QLabel* traded_vol_sec_label;
+	QLabel* ltp_label;
+
+	QFrame* status_frame;
+	QFrame* tv_status_frame;
+
+	// Set the runner ladder UI to the specified runner index.
+	void set(Ui::MainWindow* _view, size_t index);
+
+	// Initialise the runner ladder UI.
+	void init();
+
+	// Clear the contents of the runner ladder UI.
+	void clear();
 };
 
 class main_controller
@@ -34,9 +61,10 @@ public:
 	void select_date(QDate date);
 
 private:
-	// Populate date selector, setting bold where data is available.
-	void populate_dates();
-
 	main_model& _model;
 	Ui::MainWindow* _view;
+	std::array<runner_ladder_ui, NUM_DISPLAYED_RUNNERS> _ladders;
+
+	// Populate date selector, setting bold where data is available.
+	void populate_dates();
 };
