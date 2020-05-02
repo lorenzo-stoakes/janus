@@ -63,6 +63,9 @@ void main_controller::clear(update_level level)
 		_view->nowLabel->setText("");
 		_view->tradedVolLabel->setText("");
 		_view->tradedPerSecVolLabel->setText("");
+
+		_view->timeHorizontalSlider->setValue(0);
+
 		// fallthrough
 	case update_level::RUNNERS:
 		_view->runnerLTPTableWidget->clearContents();
