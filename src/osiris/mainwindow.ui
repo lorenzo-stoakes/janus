@@ -101,7 +101,7 @@
               <rect>
                <x>0</x>
                <y>10</y>
-               <width>111</width>
+               <width>271</width>
                <height>21</height>
               </rect>
              </property>
@@ -115,7 +115,7 @@
               </font>
              </property>
              <property name="text">
-              <string>12:05:37</string>
+              <string> 02/05/2020 12:05:37</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -124,10 +124,10 @@
             <widget class="QLabel" name="inplayLabel">
              <property name="geometry">
               <rect>
-               <x>51</x>
+               <x>158</x>
                <y>36</y>
-               <width>59</width>
-               <height>15</height>
+               <width>111</width>
+               <height>20</height>
               </rect>
              </property>
              <property name="font">
@@ -140,7 +140,7 @@
               <string notr="true">QLabel { color: rgb(255, 0, 0) }</string>
              </property>
              <property name="text">
-              <string>12:11:07</string>
+              <string>04/05/2020 12:11:07</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -149,8 +149,8 @@
             <widget class="QLabel" name="tradedVolLabel">
              <property name="geometry">
               <rect>
-               <x>10</x>
-               <y>55</y>
+               <x>80</x>
+               <y>60</y>
                <width>101</width>
                <height>20</height>
               </rect>
@@ -182,8 +182,8 @@
               <rect>
                <x>8</x>
                <y>36</y>
-               <width>59</width>
-               <height>15</height>
+               <width>111</width>
+               <height>16</height>
               </rect>
              </property>
              <property name="font">
@@ -197,7 +197,7 @@
               <string notr="true">QLabel { color: rgb(0, 0, 255) }</string>
              </property>
              <property name="text">
-              <string>12:10:00</string>
+              <string>04/05/2020 12:10:00</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -206,7 +206,7 @@
             <widget class="QLabel" name="tradedPerSecVolLabel">
              <property name="geometry">
               <rect>
-               <x>10</x>
+               <x>80</x>
                <y>80</y>
                <width>101</width>
                <height>20</height>
