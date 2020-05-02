@@ -12,8 +12,8 @@
 
 namespace janus::betfair
 {
-// Represents a 'universe' of markets. It has a fixed capacity which is
-// specified as a template parameter.
+// Represents a 'universe' of markets. It has a fixed capacity of markets which
+// is specified as a template parameter.
 template<uint64_t Cap>
 class universe
 {
