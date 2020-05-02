@@ -115,4 +115,24 @@ auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t
 	dyn_buf.add_raw(uncompressed.c_str(), uncompressed.size());
 	return uncompressed.size() / sizeof(janus::update);
 }
+
+auto index_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std::vector<uint64_t>
+{
+	std::vector<uint64_t> ret;
+
+	// The read offset might be non-zero, ensure it is non-zero.
+	dyn_buf.reset_read();
+
+	for (uint64_t i = 0; i < num_updates; i++) {
+		auto& u = dyn_buf.read<update>();
+
+		if (u.type == update_type::TIMESTAMP)
+			ret.push_back(i);
+	}
+
+	// Reset before we return so future use isn't offset.
+	dyn_buf.reset_read();
+	return ret;
+}
+
 } // namespace janus
