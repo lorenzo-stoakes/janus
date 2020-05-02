@@ -78,6 +78,7 @@ void main_controller::clear(update_level level)
 		// fallthrough
 	case update_level::MARKET:
 		_num_market_updates = 0;
+		_curr_universe.clear();
 
 		_view->marketNameLabel->setText("");
 		_view->postLabel->setText("");
