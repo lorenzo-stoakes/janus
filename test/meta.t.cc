@@ -379,4 +379,20 @@ TEST(meta_test, meta_view)
 		ASSERT_EQ(runner.trainer_name(), janus_test::sample_trainer_names[i]);
 	}
 }
+
+// Test that the .describe() method behaves as expected.
+TEST(meta_test, describe)
+{
+	std::string json = janus_test::sample_meta_json;
+
+	// Won't be larger than the JSON buffer.
+	auto dyn_buf = janus::dynamic_buffer(json.size());
+
+	janus::betfair::parse_meta_json("", reinterpret_cast<char*>(json.data()), json.size(),
+					dyn_buf);
+
+	janus::meta_view view(dyn_buf);
+
+	EXPECT_EQ(view.describe(), "13:20:00 / GB / Lingfield / 1m2f Hcap");
+}
 } // namespace
