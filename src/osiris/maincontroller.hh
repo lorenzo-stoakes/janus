@@ -83,5 +83,6 @@ private:
 	// Populate date selector, setting bold where data is available.
 	void populate_dates();
 
+	// Popualte each runner combo and set indexes to defaults.
 	void populate_runner_combo(const std::vector<janus::runner_view>& runners, int index);
 };
