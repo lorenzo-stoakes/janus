@@ -1,5 +1,6 @@
 #pragma once
 
+#include "janus.hh"
 #include "mainmodel.hh"
 #include "ui_mainwindow.h"
 
@@ -42,7 +43,10 @@ struct runner_ladder_ui
 class main_controller
 {
 public:
-	explicit main_controller(main_model& model) : _model{model}, _view{nullptr} {}
+	explicit main_controller(main_model& model)
+		: _model{model}, _view{nullptr}, _selected_market_index{-1}, _selected_date_ms{0}
+	{
+	}
 
 	// Set the view. We want to be able to pass the controller to the view
 	// so we pass the model in the ctor and the view here.
@@ -60,9 +64,15 @@ public:
 	// Obtain data for the specified date.
 	void select_date(QDate date);
 
+	// Select the market at the specified index in the market list.
+	void select_market(int index);
+
 private:
 	main_model& _model;
 	Ui::MainWindow* _view;
+	int _selected_market_index;
+	uint64_t _selected_date_ms;
+
 	std::array<runner_ladder_ui, NUM_DISPLAYED_RUNNERS> _ladders;
 
 	// Populate date selector, setting bold where data is available.

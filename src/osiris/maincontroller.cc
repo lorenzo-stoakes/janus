@@ -43,6 +43,8 @@ void main_controller::clear(update_level level)
 	case update_level::FULL:
 		// fallthrough
 	case update_level::MARKET_LIST:
+		_selected_market_index = -1;
+		_selected_date_ms = 0;
 		_view->raceListWidget->clear();
 		// fallthrough
 	case update_level::MARKET:
@@ -67,10 +69,26 @@ void main_controller::select_date(QDate date)
 
 	QDateTime date_time = date.startOfDay(Qt::UTC);
 	uint64_t ms = date_time.toMSecsSinceEpoch();
+	_selected_date_ms = ms;
+
 	for (auto& view : _model.get_views_on_day(ms)) {
 		std::string descr = view->describe();
 		_view->raceListWidget->addItem(QString::fromStdString(descr));
 	}
+}
+
+void main_controller::select_market(int index)
+{
+	if (index < 0)
+		return;
+
+	clear(update_level::MARKET);
+
+	_selected_market_index = index;
+	auto* view = _model.get_market_at(_selected_date_ms, index);
+	std::string title = view->describe() + " (" + std::to_string(view->market_id()) + ")";
+
+	_view->marketNameLabel->setText(QString::fromStdString(title));
 }
 
 void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)

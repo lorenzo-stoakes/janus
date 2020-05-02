@@ -17,3 +17,8 @@ void MainWindow::on_raceDateSelecter_selectionChanged()
 	QDate date = _ui->raceDateSelecter->selectedDate();
 	_controller.select_date(date);
 }
+
+void MainWindow::on_raceListWidget_currentRowChanged(int row)
+{
+	_controller.select_market(row);
+}

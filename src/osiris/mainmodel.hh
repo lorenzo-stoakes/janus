@@ -33,6 +33,9 @@ public:
 	// Get meta views for the specified day in ms since epoch.
 	auto get_views_on_day(uint64_t ms) -> const std::vector<janus::meta_view*>&;
 
+	// Get market on specified day at specified index.
+	auto get_market_at(uint64_t ms, int index) -> janus::meta_view*;
+
 private:
 	janus::config _config;
 	janus::dynamic_buffer _meta_dyn_buf;
