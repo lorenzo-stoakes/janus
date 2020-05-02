@@ -68,6 +68,10 @@ auto read_all_metadata(const config& config, dynamic_buffer& dyn_buf) -> std::ve
 		ret.emplace_back(read_metadata(config, dyn_buf, id));
 	}
 
+	// Sort chronologically by start time.
+	std::sort(ret.begin(), ret.end(), [](meta_view v1, meta_view v2) {
+		return v1.market_start_timestamp() < v2.market_start_timestamp();
+	});
 	return ret;
 }
 
