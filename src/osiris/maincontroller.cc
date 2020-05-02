@@ -56,6 +56,7 @@ void main_controller::clear(update_level level)
 		_view->tradedPerSecVolLabel->setText("");
 		// fallthrough
 	case update_level::RUNNERS:
+		_view->runnerLTPTableWidget->clear();
 		for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
 			_ladders[i].clear();
 		}
