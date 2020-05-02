@@ -8,6 +8,17 @@
 #include <string>
 #include <string_view>
 
+// Create a read-only table item for insertion into a table.
+static auto make_readonly_table_item() -> QTableWidgetItem*
+{
+	QTableWidgetItem* item = new QTableWidgetItem();
+
+	item->setTextAlignment(Qt::AlignCenter);
+	item->setFlags(item->flags() ^ (Qt::ItemIsEditable | Qt::ItemIsSelectable));
+
+	return item;
+}
+
 void main_controller::populate_dates()
 {
 	QTextCharFormat format;
@@ -22,6 +33,15 @@ void main_controller::populate_dates()
 	}
 }
 
+void main_controller::init_price_strings()
+{
+	for (uint64_t i = 0; i < janus::betfair::NUM_PRICES; i++) {
+		double price = janus::betfair::price_range::index_to_price(
+			janus::betfair::NUM_PRICES - i - 1);
+		_price_strings[i] = QString::number(price, 'g', 10); // NOLINT: Not magical.
+	}
+}
+
 void main_controller::init()
 {
 	// Not currently implemented so hide.
@@ -30,7 +50,7 @@ void main_controller::init()
 
 	for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
 		_ladders[i].set(_view, i);
-		_ladders[i].init();
+		_ladders[i].init(&_price_strings[0]);
 	}
 
 	// Initialise runner LTP list.
@@ -69,13 +89,15 @@ void main_controller::clear(update_level level)
 		// fallthrough
 	case update_level::RUNNERS:
 		_view->runnerLTPTableWidget->clearContents();
-		while (_view->runnerLTPTableWidget->rowCount() > 0)
+		// TODO: Free items!!
+		while (_view->runnerLTPTableWidget->rowCount() > 0) {
 			_view->runnerLTPTableWidget->removeRow(0);
+		}
 
 		_visible_runner_indexes.fill(-1);
 
 		for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
-			_ladders[i].clear();
+			_ladders[i].clear(&_price_strings[0]);
 		}
 		break;
 	}
@@ -93,17 +115,6 @@ void main_controller::select_date(QDate date)
 		std::string descr = view->describe();
 		_view->raceListWidget->addItem(QString::fromStdString(descr));
 	}
-}
-
-// Create a read-only table item for insertion into a table.
-static auto make_readonly_table_item() -> QTableWidgetItem*
-{
-	QTableWidgetItem* item = new QTableWidgetItem();
-
-	item->setTextAlignment(Qt::AlignCenter);
-	item->setFlags(item->flags() ^ (Qt::ItemIsEditable | Qt::ItemIsSelectable));
-
-	return item;
 }
 
 void main_controller::populate_runner_combo(const std::vector<janus::runner_view>& runners,
@@ -198,23 +209,80 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 	}
 }
 
-void runner_ladder_ui::init()
+void runner_ladder_ui::init(QString* price_strings)
 {
 	QPalette palette = table->palette();
 	palette.setBrush(QPalette::Highlight, QBrush(Qt::white));
 	palette.setBrush(QPalette::HighlightedText, QBrush(Qt::black));
 	table->setPalette(palette);
 	table->setFocusPolicy(Qt::NoFocus);
+
+	// Set column widths.
+	for (int col = 0; col < table->columnCount(); col++) {
+		if (col < NUM_HISTORY_COLS)
+			table->setColumnWidth(col, CANDLESTICK_COL_WIDTH);
+		else if (col == PL_COL)
+			table->setColumnWidth(col, PL_COL_WIDTH);
+	}
+
+	// Set table items.
+	for (int row = 0; row < table->rowCount(); row++) {
+		for (int col = 0; col < table->columnCount(); col++) {
+			auto* item = make_readonly_table_item();
+
+			if (col == PRICE_COL) {
+				QFont font = item->font();
+				font.setWeight(QFont::Bold);
+				item->setFont(font);
+				item->setText(price_strings[row]);
+			}
+
+			table->setItem(row, col, item);
+		}
+	}
 }
 
-void runner_ladder_ui::clear()
+void runner_ladder_ui::clear(QString* price_strings)
 {
-	table->clear();
-
 	combo->clear();
 	traded_vol_label->setText("");
 	traded_vol_sec_label->setText("");
 	ltp_label->setText("");
 	status_frame->setStyleSheet("");
 	tv_status_frame->setStyleSheet("");
+
+	for (int row = 0; row < table->rowCount(); row++) {
+		for (int col = 0; col < table->columnCount(); col++) {
+			QTableWidgetItem* item = table->item(row, col);
+
+			// We only want to keep the text in the price column.
+			if (col != PRICE_COL)
+				item->setText("");
+
+			// Clear history columns.
+			if (col < NUM_HISTORY_COLS) {
+				item->setBackground(Qt::white);
+				continue;
+			}
+
+			switch (col) {
+			case LAY_COL:
+				item->setBackground(LAY_BG_COLOUR);
+				break;
+			case PRICE_COL:
+				item->setBackground(PRICE_BG_COLOUR);
+				item->setText(price_strings[row]);
+				break;
+			case BACK_COL:
+				item->setBackground(BACK_BG_COLOUR);
+				break;
+			case TRADED_COL:
+				item->setBackground(Qt::white);
+				break;
+			case PL_COL:
+				// No styling required.
+				break;
+			}
+		}
+	}
 }

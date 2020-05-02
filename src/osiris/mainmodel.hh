@@ -30,6 +30,12 @@ public:
 		return _meta_by_day;
 	}
 
+	// Get instance of price range object.
+	auto price_range() const -> const janus::betfair::price_range&
+	{
+		return _price_range;
+	}
+
 	// Get meta views for the specified day in ms since epoch.
 	auto get_views_on_day(uint64_t ms) -> const std::vector<janus::meta_view*>&;
 
@@ -41,6 +47,7 @@ private:
 	janus::dynamic_buffer _meta_dyn_buf;
 	std::vector<janus::meta_view> _meta_views;
 	std::unordered_map<uint64_t, std::vector<janus::meta_view*>> _meta_by_day;
+	janus::betfair::price_range _price_range;
 
 	void populate_meta_by_day();
 };
