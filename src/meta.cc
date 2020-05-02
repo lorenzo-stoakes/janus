@@ -19,7 +19,7 @@ runner_view::runner_view(dynamic_buffer& dyn_buf)
 	_trainer_name = dyn_buf.read_string();
 }
 
-meta_view::meta_view(dynamic_buffer& dyn_buf) : _header{dyn_buf.read<meta_header>()}
+meta_view::meta_view(dynamic_buffer& dyn_buf) : _header{&dyn_buf.read<meta_header>()}
 {
 	_name = dyn_buf.read_string();
 	_event_type_name = dyn_buf.read_string();
@@ -30,7 +30,7 @@ meta_view::meta_view(dynamic_buffer& dyn_buf) : _header{dyn_buf.read<meta_header
 	_venue_name = dyn_buf.read_string();
 	_competition_name = dyn_buf.read_string();
 
-	for (uint64_t i = 0; i < _header.num_runners; i++) {
+	for (uint64_t i = 0; i < _header->num_runners; i++) {
 		_runners.emplace_back(dyn_buf);
 	}
 }

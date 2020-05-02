@@ -68,27 +68,27 @@ public:
 
 	auto market_id() const -> uint64_t
 	{
-		return _header.market_id;
+		return _header->market_id;
 	}
 
 	auto event_type_id() const -> uint64_t
 	{
-		return _header.event_type_id;
+		return _header->event_type_id;
 	}
 
 	auto event_id() const -> uint64_t
 	{
-		return _header.event_id;
+		return _header->event_id;
 	}
 
 	auto competition_id() const -> uint64_t
 	{
-		return _header.competition_id;
+		return _header->competition_id;
 	}
 
 	auto market_start_timestamp() const -> uint64_t
 	{
-		return _header.market_start_timestamp;
+		return _header->market_start_timestamp;
 	}
 
 	auto name() const -> std::string_view
@@ -137,7 +137,7 @@ public:
 	}
 
 private:
-	const meta_header& _header;
+	const meta_header* _header;
 	std::string_view _name;
 	std::string_view _event_type_name;
 	std::string_view _event_name;
