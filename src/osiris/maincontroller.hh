@@ -25,6 +25,9 @@ static constexpr QColor PRICE_BG_COLOUR = QColor(255, 255, 255);
 static constexpr QColor LAY_BG_COLOUR = QColor(246, 221, 228);
 static constexpr QColor BACK_BG_COLOUR = QColor(191, 220, 245);
 
+static const QColor LAY_VOL_BG_COLOUR = QColor(255, 142, 172);
+static const QColor BACK_VOL_BG_COLOUR = QColor(39, 148, 228);
+
 enum class update_level
 {
 	FULL,

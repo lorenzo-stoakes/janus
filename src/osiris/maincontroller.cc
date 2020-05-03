@@ -202,12 +202,43 @@ void main_controller::update_ladder(int ladder_index)
 	}
 
 	auto& ladder_ui = _ladders[ladder_index];
+	ladder_ui.clear(&_price_strings[0]);
 
 	int traded_vol = static_cast<int>(runner->traded_vol());
 	ladder_ui.traded_vol_label->setText(QString::number(traded_vol));
 
 	double ltp = janus::betfair::price_range::index_to_price(runner->ltp());
 	ladder_ui.ltp_label->setText(QString::number(ltp, 'g', 10));
+
+	janus::betfair::ladder& ladder = runner->ladder();
+	QTableWidget* table = ladder_ui.table;
+	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
+		uint64_t table_index = janus::betfair::NUM_PRICES - price_index - 1;
+
+		bool back = true;
+		double unmatched = ladder.unmatched(price_index);
+		if (unmatched < 0) {
+			back = false;
+			unmatched = -unmatched;
+		}
+		if (unmatched >= 1) {
+			if (back) {
+				QTableWidgetItem* item = table->item(table_index, BACK_COL);
+				item->setBackground(BACK_VOL_BG_COLOUR);
+				item->setText(QString::number(static_cast<int>(unmatched)));
+			} else {
+				QTableWidgetItem* item = table->item(table_index, LAY_COL);
+				item->setBackground(LAY_VOL_BG_COLOUR);
+				item->setText(QString::number(static_cast<int>(unmatched)));
+			}
+		}
+
+		double matched = ladder.matched(price_index);
+		if (matched >= 1) {
+			QTableWidgetItem* item = table->item(table_index, TRADED_COL);
+			item->setText(QString::number(static_cast<int>(matched)));
+		}
+	}
 }
 
 // Update dynamic market fields.
