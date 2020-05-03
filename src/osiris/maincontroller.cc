@@ -377,7 +377,14 @@ void main_controller::follow_ladder(int index)
 	uint64_t row = janus::betfair::NUM_PRICES - ltp_index - 1;
 
 	auto* table = ladder_ui.table;
-	table->scrollToItem(table->item(row, LAY_COL), QAbstractItemView::PositionAtCenter);
+
+	// We centre on first follow, after that we just show visible to avoid stutter.
+	if (ladder_ui.centre) {
+		table->scrollToItem(table->item(row, LAY_COL), QAbstractItemView::PositionAtCenter);
+		ladder_ui.centre = false;
+	} else {
+		table->scrollToItem(table->item(row, LAY_COL), QAbstractItemView::EnsureVisible);
+	}
 }
 
 void main_controller::set_follow(int index, bool state)
@@ -387,6 +394,9 @@ void main_controller::set_follow(int index, bool state)
 					 std::to_string(index));
 
 	_ladders[index].follow = state;
+	// We centre on first follow.
+	if (state)
+		_ladders[index].centre = true;
 }
 
 void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)

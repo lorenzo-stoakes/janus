@@ -47,7 +47,8 @@ struct runner_ladder_ui
 		  ltp_label{nullptr},
 		  status_frame{nullptr},
 		  tv_status_frame{nullptr},
-		  follow{true}
+		  follow{true},
+		  centre{true}
 	{
 	}
 
@@ -61,6 +62,7 @@ struct runner_ladder_ui
 	QFrame* tv_status_frame;
 
 	bool follow;
+	bool centre;
 
 	// Set the runner ladder UI to the specified runner index.
 	void set(Ui::MainWindow* _view, size_t index);
