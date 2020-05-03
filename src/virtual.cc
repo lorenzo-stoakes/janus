@@ -43,7 +43,7 @@ auto calc_virtual_bets(const price_range& range, bool atl,
 
 	// This process continues until we have no further virtual prices we can
 	// generate.
-	while (true) {
+	for (uint64_t count = 0; count < MAX_VIRTUAL_LOOPS; count++) {
 		// We will scale all volumes matched against a virtual price
 		// against the lowest odds, so sort accordingly.
 		std::sort(ladders.begin(), ladders.end(), sorter);

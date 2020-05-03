@@ -8,6 +8,9 @@
 
 namespace janus::betfair
 {
+// Maximum number of iterations of virtual calculation loop.
+static constexpr uint64_t MAX_VIRTUAL_LOOPS = 10'000;
+
 // Calculate the virtual bets that can be generated against specific ladders by
 // forming a 100% book. E.g. ATL unmatched volume of 2, and 3 can be matched
 // against a virtual ATB bet at 6 (1 = 1/2 + 1/3 + 1/6).
