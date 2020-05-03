@@ -80,14 +80,18 @@ public:
 	explicit main_controller(main_model& model)
 		: _model{model},
 		  _view{nullptr},
+		  _playback_timer{nullptr},
 		  _selected_market_index{-1},
 		  _selected_date_ms{0},
 		  _num_market_updates{0},
 		  _num_indexes{0},
 		  _curr_index{0},
+		  _curr_timestamp{0},
+		  _next_timestamp{0},
 		  _visible_runner_indexes{-1},
 		  _ladders{},
-		  _setting_up_combos{false}
+		  _setting_up_combos{false},
+		  _playing{false}
 	{
 		init_price_strings();
 	}
@@ -97,6 +101,12 @@ public:
 	void set_view(Ui::MainWindow* view)
 	{
 		_view = view;
+	}
+
+	// Set the playback timer.
+	void set_playback_timer(QTimer* timer)
+	{
+		_playback_timer = timer;
 	}
 
 	// Populate the view with initial state.
@@ -117,15 +127,26 @@ public:
 	// Set the specified ladder runner index.
 	void set_ladder_to_runner(int ladder_index, int runner_index);
 
+	// Toggle playback.
+	void toggle_play();
+
+	// Toggle playback to specified state.
+	void toggle_play(bool state);
+
+	// Tick timer.
+	void timer_tick();
+
 private:
 	main_model& _model;
 	Ui::MainWindow* _view;
+	QTimer* _playback_timer;
 	int _selected_market_index;
 	uint64_t _selected_date_ms;
 	uint64_t _num_market_updates;
 	uint64_t _num_indexes;
-
 	uint64_t _curr_index;
+	uint64_t _curr_timestamp;
+	uint64_t _next_timestamp;
 
 	std::array<int, NUM_DISPLAYED_RUNNERS> _visible_runner_indexes;
 	std::array<runner_ladder_ui, NUM_DISPLAYED_RUNNERS> _ladders;
@@ -135,6 +156,7 @@ private:
 	janus::meta_view* _curr_meta;
 
 	bool _setting_up_combos;
+	bool _playing;
 
 	// Clear UI at specified update level.
 	void clear(update_level level);

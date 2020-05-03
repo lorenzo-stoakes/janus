@@ -94,11 +94,15 @@ void main_controller::clear(update_level level)
 		_view->raceListWidget->clear();
 		// fallthrough
 	case update_level::MARKET:
+		toggle_play(false);
+
 		_num_market_updates = 0;
 		_num_indexes = 0;
 		_curr_index = 0;
 		_curr_universe.clear();
 		_curr_meta = nullptr;
+		_curr_timestamp = 0;
+		_next_timestamp = 0;
 
 		_view->marketNameLabel->setText("");
 		_view->postLabel->setText("");
@@ -171,7 +175,10 @@ void main_controller::apply_until_next_index()
 			// entirity of this set of updates for this timesliver.
 			// timesliver.  If it's the first item in the stream
 			// then we just consume it so we don't stall forever.
-			if (!first) {
+			if (first) {
+				_curr_timestamp = janus::get_update_timestamp(u);
+			} else {
+				_next_timestamp = janus::get_update_timestamp(u);
 				// Unread the timestamp so we can read it next
 				// time.
 				dyn_buf.unread<janus::update>();
@@ -356,6 +363,9 @@ void main_controller::set_index(int index)
 {
 	auto index_val = static_cast<uint64_t>(index);
 
+	// We disable playback on index set.
+	toggle_play(false);
+
 	// If we're rewinding then we need to clear and re-run up to the index.
 	// TODO(lorenzo): Make this more efficient.
 	if (index_val < _curr_index) {
@@ -479,6 +489,42 @@ void main_controller::update_runner_ltp_list()
 		_view->runnerLTPTableWidget->setItem(i, 0, name_item);
 		_view->runnerLTPTableWidget->setItem(i, 1, ltp_item);
 	}
+}
+
+void main_controller::toggle_play()
+{
+	toggle_play(!_playing);
+}
+
+void main_controller::toggle_play(bool state)
+{
+	if (_curr_meta == nullptr) {
+		_playback_timer->stop();
+		return;
+	}
+
+	if (state) {
+		_playing = true;
+		_playback_timer->start(_next_timestamp - _curr_timestamp);
+
+	} else {
+		_playing = false;
+		_playback_timer->stop();
+	}
+}
+
+void main_controller::timer_tick()
+{
+	_playback_timer->stop();
+
+	if (!_playing || _curr_meta == nullptr)
+		return;
+
+	apply_until_next_index();
+
+	_playback_timer->start(_next_timestamp - _curr_timestamp);
+
+	update_market_dynamic();
 }
 
 void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
