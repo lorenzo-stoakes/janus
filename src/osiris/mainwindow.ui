@@ -458,8 +458,11 @@
                <attribute name="verticalHeaderVisible">
                 <bool>false</bool>
                </attribute>
+               <attribute name="verticalHeaderMinimumSectionSize">
+                <number>15</number>
+               </attribute>
                <attribute name="verticalHeaderDefaultSectionSize">
-                <number>21</number>
+                <number>15</number>
                </attribute>
                <row/>
                <row/>
@@ -1124,8 +1127,11 @@
                <attribute name="verticalHeaderVisible">
                 <bool>false</bool>
                </attribute>
+               <attribute name="verticalHeaderMinimumSectionSize">
+                <number>15</number>
+               </attribute>
                <attribute name="verticalHeaderDefaultSectionSize">
-                <number>21</number>
+                <number>15</number>
                </attribute>
                <row/>
                <row/>
@@ -1711,8 +1717,11 @@
                <attribute name="verticalHeaderVisible">
                 <bool>false</bool>
                </attribute>
+               <attribute name="verticalHeaderMinimumSectionSize">
+                <number>15</number>
+               </attribute>
                <attribute name="verticalHeaderDefaultSectionSize">
-                <number>21</number>
+                <number>15</number>
                </attribute>
                <row/>
                <row/>
@@ -2306,11 +2315,20 @@
                <attribute name="horizontalHeaderDefaultSectionSize">
                 <number>50</number>
                </attribute>
+               <attribute name="horizontalHeaderHighlightSections">
+                <bool>true</bool>
+               </attribute>
                <attribute name="verticalHeaderVisible">
                 <bool>false</bool>
                </attribute>
+               <attribute name="verticalHeaderMinimumSectionSize">
+                <number>15</number>
+               </attribute>
                <attribute name="verticalHeaderDefaultSectionSize">
-                <number>21</number>
+                <number>15</number>
+               </attribute>
+               <attribute name="verticalHeaderHighlightSections">
+                <bool>true</bool>
                </attribute>
                <row/>
                <row/>
@@ -2722,6 +2740,7 @@
        <font>
         <family>Open Sans</family>
         <pointsize>8</pointsize>
+        <italic>false</italic>
        </font>
       </property>
       <property name="resizeMode">
@@ -2742,6 +2761,13 @@
         <width>250</width>
         <height>200</height>
        </size>
+      </property>
+      <property name="font">
+       <font>
+        <family>Open Sans</family>
+        <pointsize>8</pointsize>
+        <italic>false</italic>
+       </font>
       </property>
       <property name="minimumDate">
        <date>
