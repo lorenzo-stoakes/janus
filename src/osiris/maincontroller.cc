@@ -103,6 +103,7 @@ void main_controller::clear(update_level level)
 		_curr_meta = nullptr;
 		_curr_timestamp = 0;
 		_next_timestamp = 0;
+		_playback_timestamp = 0;
 
 		_view->marketNameLabel->setText("");
 		_view->postLabel->setText("");
@@ -297,8 +298,13 @@ void main_controller::update_ladder(int ladder_index)
 void main_controller::update_market_dynamic()
 {
 	janus::betfair::market& market = _curr_universe.markets()[0];
-	uint64_t timestamp = market.last_timestamp();
-	std::string now = janus::local_epoch_ms_to_string(timestamp);
+
+	std::string now;
+	if (_playing)
+		now = janus::local_epoch_ms_to_string(_playback_timestamp);
+	else
+		now = janus::local_epoch_ms_to_string(_curr_timestamp);
+
 	_view->nowLabel->setText(QString::fromStdString(now));
 
 	uint64_t start_timestamp = _curr_meta->market_start_timestamp();
@@ -523,12 +529,14 @@ void main_controller::toggle_play(bool state)
 {
 	if (_curr_meta == nullptr) {
 		_playback_timer->stop();
+		_playback_timestamp = 0;
 		return;
 	}
 
 	if (state) {
+		_playback_timestamp = _curr_timestamp;
 		_playing = true;
-		_playback_timer->start(_next_timestamp - _curr_timestamp);
+		_playback_timer->start(PLAYBACK_INTERVAL_MS);
 
 	} else {
 		_playing = false;
@@ -538,14 +546,14 @@ void main_controller::toggle_play(bool state)
 
 void main_controller::timer_tick()
 {
-	_playback_timer->stop();
-
 	if (!_playing || _curr_meta == nullptr)
 		return;
 
-	apply_until_next_index();
+	_playback_timestamp += PLAYBACK_INTERVAL_MS;
 
-	_playback_timer->start(_next_timestamp - _curr_timestamp);
+	while (_next_timestamp < _playback_timestamp) {
+		apply_until_next_index();
+	}
 
 	update_market_dynamic();
 }
