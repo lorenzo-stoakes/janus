@@ -219,8 +219,15 @@ void main_controller::update_ladder(int ladder_index)
 	ladder_ui.traded_vol_label->setText(QString::number(traded_vol));
 
 	if (runner->state() != janus::betfair::runner_state::REMOVED && runner->traded_vol() >= 1) {
-		double ltp = janus::betfair::price_range::index_to_price(runner->ltp());
+		uint64_t ltp_index = runner->ltp();
+		double ltp = janus::betfair::price_range::index_to_price(ltp_index);
 		ladder_ui.ltp_label->setText(QString::number(ltp, 'g', 10));
+
+		// Highlight just traded price in the ladder.
+		uint64_t table_index = janus::betfair::NUM_PRICES - ltp_index - 1;
+		QTableWidgetItem* price_item = ladder_ui.table->item(table_index, PRICE_COL);
+		price_item->setBackground(PRICE_HIGHLIGHT_COLOUR);
+
 	} else {
 		ladder_ui.removed_label->setVisible(true);
 	}

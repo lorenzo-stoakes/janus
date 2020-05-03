@@ -22,6 +22,8 @@ static constexpr int CANDLESTICK_COL_WIDTH = 3;
 static constexpr int PL_COL_WIDTH = 45;
 
 static constexpr QColor PRICE_BG_COLOUR = QColor(255, 255, 255);
+static constexpr QColor PRICE_HIGHLIGHT_COLOUR = QColor(250, 146, 0); // Orange.
+
 static constexpr QColor LAY_BG_COLOUR = QColor(246, 221, 228);
 static constexpr QColor BACK_BG_COLOUR = QColor(191, 220, 245);
 
