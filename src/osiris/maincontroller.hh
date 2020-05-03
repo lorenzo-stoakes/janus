@@ -33,6 +33,8 @@ static const QColor BACK_VOL_BG_COLOUR = QColor(39, 148, 228);
 static constexpr const char* RED_FOREGROUND_STYLE = "color: rgb(255, 0, 0);";
 static constexpr const char* GREEN_FOREGROUND_STYLE = "color: rgb(0, 128, 0);";
 
+static constexpr const uint64_t PLAYBACK_INTERVAL_MS = 50;
+
 enum class update_level
 {
 	FULL,
@@ -88,6 +90,7 @@ public:
 		  _curr_index{0},
 		  _curr_timestamp{0},
 		  _next_timestamp{0},
+		  _playback_timestamp{0},
 		  _visible_runner_indexes{-1},
 		  _ladders{},
 		  _setting_up_combos{false},
@@ -151,6 +154,7 @@ private:
 	uint64_t _curr_index;
 	uint64_t _curr_timestamp;
 	uint64_t _next_timestamp;
+	uint64_t _playback_timestamp;
 
 	std::array<int, NUM_DISPLAYED_RUNNERS> _visible_runner_indexes;
 	std::array<runner_ladder_ui, NUM_DISPLAYED_RUNNERS> _ladders;
