@@ -47,6 +47,8 @@ private slots:
 	void on_runner2ComboBox_currentIndexChanged(int index);
 	void on_runner3ComboBox_currentIndexChanged(int index);
 
+	void on_crossmatchCheckBox_toggled(bool state);
+
 	void on__playback_timer_timeout();
 
 private:
