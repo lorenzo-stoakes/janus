@@ -93,3 +93,8 @@ void MainWindow::on__playback_timer_timeout()
 {
 	_controller.timer_tick();
 }
+
+void MainWindow::on_crossmatchCheckBox_toggled(bool state)
+{
+	_controller.set_calc_virtual(state);
+}

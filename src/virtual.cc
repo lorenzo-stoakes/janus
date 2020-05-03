@@ -86,7 +86,7 @@ auto calc_virtual_bets(const price_range& range, bool atl,
 			}
 		}
 		virt_price = 1. / virt_price;
-		if (virt_price < 1.01) // NOLINT: Not magical.
+		if (virt_price < 1.01 || virt_price > 1000) // NOLINT: Not magical.
 			return ret;
 
 		for (uint64_t i = 0; i < ladders.size(); i++) {

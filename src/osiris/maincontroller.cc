@@ -26,8 +26,8 @@ auto main_controller::get_runner(const janus::runner_view& runner_meta) -> janus
 	auto& runners = market.runners();
 
 	janus::betfair::runner* runner;
-	uint64_t i = 0;
-	for (; i < runners.size(); i++) {
+
+	for (uint64_t i = 0; i < runners.size(); i++) {
 		runner = &runners[i];
 		if (runner->id() == runner_meta.id())
 			return runner;
@@ -204,6 +204,28 @@ void main_controller::get_first_update()
 	apply_until_next_index();
 }
 
+auto main_controller::gen_virtual(const janus::runner_view& runner_meta) -> janus::betfair::ladder
+{
+	janus::betfair::market& market = _curr_universe.markets()[0];
+	auto& runners = market.runners();
+
+	janus::betfair::ladder ladder;
+	std::vector<janus::betfair::ladder> others;
+	for (uint64_t i = 0; i < runners.size(); i++) {
+		auto& runner = runners[i];
+		if (runner.state() != janus::betfair::runner_state::ACTIVE)
+			continue;
+
+		if (runner.id() == runner_meta.id())
+			ladder = runner.ladder();
+		else
+			others.push_back(runner.ladder());
+	}
+
+	janus::betfair::price_range range;
+	return janus::betfair::gen_virt_ladder(range, ladder, others);
+}
+
 void main_controller::update_ladder(int ladder_index)
 {
 	int index = _visible_runner_indexes[ladder_index];
@@ -239,7 +261,8 @@ void main_controller::update_ladder(int ladder_index)
 		ladder_ui.removed_label->setVisible(true);
 	}
 
-	janus::betfair::ladder& ladder = runner->ladder();
+	const janus::betfair::ladder& ladder =
+		_calc_virtual ? gen_virtual(runner_meta) : runner->ladder();
 	QTableWidget* table = ladder_ui.table;
 	for (uint64_t price_index = 0; price_index < janus::betfair::NUM_PRICES; price_index++) {
 		uint64_t table_index = janus::betfair::NUM_PRICES - price_index - 1;
@@ -525,6 +548,14 @@ void main_controller::timer_tick()
 	_playback_timer->start(_next_timestamp - _curr_timestamp);
 
 	update_market_dynamic();
+}
+
+void main_controller::set_calc_virtual(bool state)
+{
+	_calc_virtual = state;
+
+	if (_curr_meta != nullptr)
+		update_market_dynamic();
 }
 
 void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)

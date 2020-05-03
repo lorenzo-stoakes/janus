@@ -91,7 +91,8 @@ public:
 		  _visible_runner_indexes{-1},
 		  _ladders{},
 		  _setting_up_combos{false},
-		  _playing{false}
+		  _playing{false},
+		  _calc_virtual{false}
 	{
 		init_price_strings();
 	}
@@ -136,6 +137,9 @@ public:
 	// Tick timer.
 	void timer_tick();
 
+	// Determine whether we calculate virtual prices (cross-match).
+	void set_calc_virtual(bool state);
+
 private:
 	main_model& _model;
 	Ui::MainWindow* _view;
@@ -157,6 +161,7 @@ private:
 
 	bool _setting_up_combos;
 	bool _playing;
+	bool _calc_virtual;
 
 	// Clear UI at specified update level.
 	void clear(update_level level);
@@ -197,4 +202,7 @@ private:
 
 	// Update the runner LTP list.
 	void update_runner_ltp_list();
+
+	// Generate a virtual ladder for the specified runner.
+	auto gen_virtual(const janus::runner_view& runner_meta) -> janus::betfair::ladder;
 };
