@@ -53,4 +53,27 @@ TEST(db_test, basic)
 	// check we can handle snappy-compressed archived stream updates too.
 	EXPECT_EQ(janus::read_market_updates(config, dyn_buf, 168216153), 109648);
 }
+
+// Test that we can correctly index timestamp indexes.
+TEST(db_test, index_updates)
+{
+	janus::dynamic_buffer dyn_buf(1000);
+
+	janus::update update;
+
+	update = janus::make_market_id_update(12345);
+	dyn_buf.add<janus::update>(update);
+
+	update = janus::make_timestamp_update(123);
+	dyn_buf.add<janus::update>(update);
+
+	update = janus::make_timestamp_update(123);
+	dyn_buf.add<janus::update>(update);
+
+	update = janus::make_market_inplay_update();
+	dyn_buf.add<janus::update>(update);
+
+	update = janus::make_timestamp_update(123);
+	dyn_buf.add<janus::update>(update);
+}
 } // namespace

@@ -12,8 +12,8 @@
 
 namespace janus::betfair
 {
-// Represents a 'universe' of markets. It has a fixed capacity which is
-// specified as a template parameter.
+// Represents a 'universe' of markets. It has a fixed capacity of markets which
+// is specified as a template parameter.
 template<uint64_t Cap>
 class universe
 {
@@ -28,6 +28,18 @@ public:
 		  _last_runner{nullptr},
 		  _market_ids{0}
 	{
+	}
+
+	// Clear universe of markets.
+	void clear()
+	{
+		_markets.clear();
+		_num_markets = 0;
+		_last_timestamp = 0;
+		_num_updates = 0;
+		_last_market = nullptr;
+		_last_runner = nullptr;
+		_market_ids.fill(0);
 	}
 
 	// Get MUTABLE reference to markets in universe.

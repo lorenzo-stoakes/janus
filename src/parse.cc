@@ -2,6 +2,8 @@
 
 #include <array>
 #include <cstdint>
+#include <iomanip>
+#include <string>
 #include <string_view>
 
 namespace janus
@@ -183,6 +185,37 @@ void unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_
 	// Retrieve day offset in month and offset by 1 for a human-readable day
 	// number.
 	day = days_in_year - month_offset + 1;
+}
+
+void local_unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
+			   uint64_t& hour, uint64_t& minute, uint64_t& second, uint64_t& ms)
+{
+	auto timer = static_cast<time_t>(epoch_ms / 1000); // NOLINT: Not magical.
+	struct tm tmval = {0};
+	::localtime_r(&timer, &tmval);
+
+	ms = epoch_ms % 1000; // NOLINT: Not magical.
+
+	year = tmval.tm_year + 1900;
+	month = tmval.tm_mon + 1;
+	day = tmval.tm_mday;
+	hour = tmval.tm_hour;
+	minute = tmval.tm_min;
+	second = tmval.tm_sec;
+}
+
+auto local_epoch_ms_to_string(uint64_t epoch_ms) -> std::string
+{
+	uint64_t year, month, day;
+	uint64_t hour, minute, second, ms;
+	janus::local_unpack_epoch_ms(epoch_ms, year, month, day, hour, minute, second, ms);
+
+	std::ostringstream oss;
+	oss << year << "-" << std::setfill('0') << std::setw(2) << month << "-" << std::setw(2)
+	    << day << " " << std::setw(2) << hour << ":" << std::setw(2) << minute << ":"
+	    << std::setw(2) << second;
+
+	return oss.str();
 }
 
 auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view

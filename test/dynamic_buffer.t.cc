@@ -638,4 +638,48 @@ TEST(dynamic_buffer_test, reserve)
 	*ptr1 = 11111;
 	EXPECT_EQ(*ptr2, 123);
 }
+
+TEST(dynamic_buffer_test, unread)
+{
+	auto buf = janus::dynamic_buffer(1000);
+
+	struct foo
+	{
+		uint64_t x, y, z;
+	};
+
+	foo a = {.x = 1, .y = 2, .z = 3};
+	foo b = {.x = 4, .y = 5, .z = 6};
+	foo c = {.x = 7, .y = 8, .z = 9};
+
+	buf.add(a);
+	buf.add(b);
+	buf.add(c);
+
+	EXPECT_EQ(buf.size(), 72);
+	EXPECT_EQ(buf.read_offset(), 0);
+
+	EXPECT_EQ(buf.read<foo>().x, 1);
+	EXPECT_EQ(buf.read_offset(), 24);
+
+	EXPECT_EQ(buf.read<foo>().x, 4);
+	EXPECT_EQ(buf.read_offset(), 48);
+
+	EXPECT_EQ(buf.read<foo>().x, 7);
+	EXPECT_EQ(buf.read_offset(), 72);
+
+	buf.unread<foo>();
+	EXPECT_EQ(buf.read<foo>().x, 7);
+	EXPECT_EQ(buf.read_offset(), 72);
+
+	buf.unread<foo>();
+	buf.unread<foo>();
+	EXPECT_EQ(buf.read<foo>().x, 4);
+	EXPECT_EQ(buf.read_offset(), 48);
+
+	buf.unread<foo>();
+	buf.unread<foo>();
+	EXPECT_EQ(buf.read<foo>().x, 1);
+	EXPECT_EQ(buf.read_offset(), 24);
+}
 } // namespace

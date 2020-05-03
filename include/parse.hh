@@ -79,6 +79,14 @@ static inline auto parse_market_id(const char* str, uint64_t size) -> uint64_t
 void unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
 		     uint64_t& hour, uint64_t& minute, uint64_t& second, uint64_t& ms);
 
+// Convert an epoch_ms value to separate date/time component values in the local
+// timezone.
+void local_unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
+			   uint64_t& hour, uint64_t& minute, uint64_t& second, uint64_t& ms);
+
+// Convert local epoch ms to yyyy-MM-dd HH:mm:ss format.
+auto local_epoch_ms_to_string(uint64_t epoch_ms) -> std::string;
+
 // Encode date components into days since epoch.
 auto encode_epoch_days(uint64_t year, uint64_t month, uint64_t day) -> uint64_t;
 
