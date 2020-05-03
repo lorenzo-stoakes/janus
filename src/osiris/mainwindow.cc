@@ -12,6 +12,11 @@ MainWindow::~MainWindow()
 	delete _ui;
 }
 
+void MainWindow::on_actionExit_triggered()
+{
+	QApplication::quit();
+}
+
 void MainWindow::on_raceDateSelecter_selectionChanged()
 {
 	QDate date = _ui->raceDateSelecter->selectedDate();

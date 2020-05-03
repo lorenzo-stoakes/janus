@@ -219,8 +219,15 @@ void main_controller::update_ladder(int ladder_index)
 	ladder_ui.traded_vol_label->setText(QString::number(traded_vol));
 
 	if (runner->state() != janus::betfair::runner_state::REMOVED && runner->traded_vol() >= 1) {
-		double ltp = janus::betfair::price_range::index_to_price(runner->ltp());
+		uint64_t ltp_index = runner->ltp();
+		double ltp = janus::betfair::price_range::index_to_price(ltp_index);
 		ladder_ui.ltp_label->setText(QString::number(ltp, 'g', 10));
+
+		// Highlight just traded price in the ladder.
+		uint64_t table_index = janus::betfair::NUM_PRICES - ltp_index - 1;
+		QTableWidgetItem* price_item = ladder_ui.table->item(table_index, PRICE_COL);
+		price_item->setBackground(PRICE_HIGHLIGHT_COLOUR);
+
 	} else {
 		ladder_ui.removed_label->setVisible(true);
 	}
@@ -272,23 +279,30 @@ void main_controller::update_market_dynamic()
 	switch (market.state()) {
 	case janus::betfair::market_state::OPEN:
 		state = "OPEN";
+		_view->statusLabel->setStyleSheet(GREEN_FOREGROUND_STYLE);
 		break;
 	case janus::betfair::market_state::CLOSED:
 		state = "CLOSED";
+		_view->statusLabel->setStyleSheet(RED_FOREGROUND_STYLE);
 		break;
 	case janus::betfair::market_state::SUSPENDED:
 		state = "SUSPENDED";
+		_view->statusLabel->setStyleSheet(RED_FOREGROUND_STYLE);
 		break;
 	default:
 		state = "UNKNOWN?";
+		_view->statusLabel->setStyleSheet(RED_FOREGROUND_STYLE);
 		break;
 	}
 	_view->statusLabel->setText(QString::fromStdString(state));
 
-	if (market.inplay())
+	if (market.inplay()) {
 		_view->inplayLabel->setText(QString::fromUtf8("INPLAY"));
-	else
+		_view->inplayLabel->setStyleSheet(RED_FOREGROUND_STYLE);
+	} else {
 		_view->inplayLabel->setText(QString::fromUtf8("PRE"));
+		_view->inplayLabel->setStyleSheet(GREEN_FOREGROUND_STYLE);
+	}
 
 	_view->tradedVolLabel->setText(QString::number(static_cast<int>(market.traded_vol())));
 
@@ -371,6 +385,10 @@ void main_controller::follow_ladder(int index)
 
 	auto& runner_meta = _curr_meta->runners()[runner_index];
 	auto* runner = get_runner(runner_meta);
+	if (runner == nullptr) {
+		std::cerr << "Unable to find runner " << runner_meta.id() << std::endl;
+		return;
+	}
 
 	uint64_t ltp_index = runner->ltp();
 	// The prices are shown in inverse order.
@@ -438,6 +456,10 @@ void main_controller::update_runner_ltp_list()
 	for (uint64_t i = 0; i < runner_metas.size(); i++) {
 		auto& runner_meta = runner_metas[i];
 		auto* runner = get_runner(runner_meta);
+		if (runner == nullptr) {
+			std::cerr << "Unable to find runner " << runner_meta.id() << std::endl;
+			return;
+		}
 
 		auto* name_item = make_readonly_table_item();
 		std::string_view name = runner_meta.name();
@@ -472,8 +494,6 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		traded_vol_label = view->runnerTradedVol0Label;
 		removed_label = view->removed0Label;
 		ltp_label = view->ltp0Label;
-		status_frame = view->statusFrame0;
-		tv_status_frame = view->tvStatusFrame0;
 		break;
 	case 1:
 		table = view->ladder1TableWidget;
@@ -481,8 +501,6 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		traded_vol_label = view->runnerTradedVol1Label;
 		removed_label = view->removed1Label;
 		ltp_label = view->ltp1Label;
-		status_frame = view->statusFrame1;
-		tv_status_frame = view->tvStatusFrame1;
 		break;
 	case 2:
 		table = view->ladder2TableWidget;
@@ -490,8 +508,6 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		traded_vol_label = view->runnerTradedVol2Label;
 		removed_label = view->removed2Label;
 		ltp_label = view->ltp2Label;
-		status_frame = view->statusFrame2;
-		tv_status_frame = view->tvStatusFrame2;
 		break;
 	case 3:
 		table = view->ladder3TableWidget;
@@ -499,8 +515,6 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		traded_vol_label = view->runnerTradedVol3Label;
 		removed_label = view->removed3Label;
 		ltp_label = view->ltp3Label;
-		status_frame = view->statusFrame3;
-		tv_status_frame = view->tvStatusFrame3;
 		break;
 	}
 }
@@ -546,8 +560,6 @@ void runner_ladder_ui::clear(QString* price_strings, bool clear_combo)
 	traded_vol_label->setText("");
 	removed_label->setVisible(false);
 	ltp_label->setText("");
-	status_frame->setStyleSheet("");
-	tv_status_frame->setStyleSheet("");
 
 	for (int row = 0; row < table->rowCount(); row++) {
 		for (int col = 0; col < table->columnCount(); col++) {

@@ -24,6 +24,8 @@ public:
 	}
 
 private slots:
+	void on_actionExit_triggered();
+
 	void on_raceDateSelecter_selectionChanged();
 	void on_raceListWidget_currentRowChanged(int row);
 	void on_timeHorizontalSlider_sliderMoved(int pos);

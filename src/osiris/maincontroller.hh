@@ -22,11 +22,16 @@ static constexpr int CANDLESTICK_COL_WIDTH = 3;
 static constexpr int PL_COL_WIDTH = 45;
 
 static constexpr QColor PRICE_BG_COLOUR = QColor(255, 255, 255);
+static constexpr QColor PRICE_HIGHLIGHT_COLOUR = QColor(250, 146, 0); // Orange.
+
 static constexpr QColor LAY_BG_COLOUR = QColor(246, 221, 228);
 static constexpr QColor BACK_BG_COLOUR = QColor(191, 220, 245);
 
 static const QColor LAY_VOL_BG_COLOUR = QColor(255, 142, 172);
 static const QColor BACK_VOL_BG_COLOUR = QColor(39, 148, 228);
+
+static constexpr const char* RED_FOREGROUND_STYLE = "color: rgb(255, 0, 0);";
+static constexpr const char* GREEN_FOREGROUND_STYLE = "color: rgb(0, 128, 0);";
 
 enum class update_level
 {
@@ -45,8 +50,6 @@ struct runner_ladder_ui
 		  traded_vol_label{nullptr},
 		  removed_label{nullptr},
 		  ltp_label{nullptr},
-		  status_frame{nullptr},
-		  tv_status_frame{nullptr},
 		  follow{true},
 		  centre{true}
 	{
@@ -57,9 +60,6 @@ struct runner_ladder_ui
 	QLabel* traded_vol_label;
 	QLabel* removed_label;
 	QLabel* ltp_label;
-
-	QFrame* status_frame;
-	QFrame* tv_status_frame;
 
 	bool follow;
 	bool centre;
