@@ -20,6 +20,22 @@ static auto make_readonly_table_item() -> QTableWidgetItem*
 	return item;
 }
 
+auto main_controller::get_runner(const janus::runner_view& runner_meta) -> janus::betfair::runner*
+{
+	janus::betfair::market& market = _curr_universe.markets()[0];
+	auto& runners = market.runners();
+
+	janus::betfair::runner* runner;
+	uint64_t i = 0;
+	for (; i < runners.size(); i++) {
+		runner = &runners[i];
+		if (runner->id() == runner_meta.id())
+			return runner;
+	}
+
+	return nullptr;
+}
+
 void main_controller::populate_dates()
 {
 	QTextCharFormat format;
@@ -186,19 +202,10 @@ void main_controller::update_ladder(int ladder_index)
 		return;
 
 	auto& runner_meta = _curr_meta->runners()[index];
+	janus::betfair::runner* runner = get_runner(runner_meta);
 
-	janus::betfair::market& market = _curr_universe.markets()[0];
-	auto& runners = market.runners();
-
-	janus::betfair::runner* runner;
-	uint64_t i = 0;
-	for (; i < runners.size(); i++) {
-		runner = &runners[i];
-		if (runner->id() == runner_meta.id())
-			break;
-	}
 	// Couldn't find runner?
-	if (i == runners.size()) {
+	if (runner == nullptr) {
 		std::cerr << "Unable to find runner " << runner_meta.id() << std::endl;
 		return;
 	}
@@ -281,6 +288,7 @@ void main_controller::update_market_dynamic()
 
 	for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
 		update_ladder(i);
+		follow_ladder(i);
 	}
 }
 
@@ -349,6 +357,36 @@ void main_controller::set_index(int index)
 	}
 
 	update_market_dynamic();
+}
+
+void main_controller::follow_ladder(int index)
+{
+	int runner_index = _visible_runner_indexes[index];
+	if (runner_index == -1)
+		return;
+
+	auto& ladder_ui = _ladders[index];
+	if (!ladder_ui.follow || _curr_meta == nullptr)
+		return;
+
+	auto& runner_meta = _curr_meta->runners()[runner_index];
+	auto* runner = get_runner(runner_meta);
+
+	uint64_t ltp_index = runner->ltp();
+	// The prices are shown in inverse order.
+	uint64_t row = janus::betfair::NUM_PRICES - ltp_index - 1;
+
+	auto* table = ladder_ui.table;
+	table->scrollToItem(table->item(row, LAY_COL), QAbstractItemView::PositionAtCenter);
+}
+
+void main_controller::set_follow(int index, bool state)
+{
+	if (index >= NUM_DISPLAYED_RUNNERS)
+		throw std::runtime_error(std::string("Unexpected set_follow() for ") +
+					 std::to_string(index));
+
+	_ladders[index].follow = state;
 }
 
 void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)

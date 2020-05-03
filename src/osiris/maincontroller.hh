@@ -9,7 +9,7 @@
 #include <vector>
 
 // Number of runners displayed at any one time.
-static constexpr uint64_t NUM_DISPLAYED_RUNNERS = 4;
+static constexpr int NUM_DISPLAYED_RUNNERS = 4;
 
 static constexpr int NUM_HISTORY_COLS = 20;
 
@@ -39,6 +39,18 @@ enum class update_level
 // Represents a specific displayed runner ladder UI.
 struct runner_ladder_ui
 {
+	runner_ladder_ui()
+		: table{nullptr},
+		  combo{nullptr},
+		  traded_vol_label{nullptr},
+		  traded_vol_sec_label{nullptr},
+		  ltp_label{nullptr},
+		  status_frame{nullptr},
+		  tv_status_frame{nullptr},
+		  follow{true}
+	{
+	}
+
 	QTableWidget* table;
 	QComboBox* combo;
 	QLabel* traded_vol_label;
@@ -47,6 +59,8 @@ struct runner_ladder_ui
 
 	QFrame* status_frame;
 	QFrame* tv_status_frame;
+
+	bool follow;
 
 	// Set the runner ladder UI to the specified runner index.
 	void set(Ui::MainWindow* _view, size_t index);
@@ -70,7 +84,7 @@ public:
 		  _num_indexes{0},
 		  _curr_index{0},
 		  _visible_runner_indexes{-1},
-		  _ladders{nullptr}
+		  _ladders{}
 	{
 		init_price_strings();
 	}
@@ -110,6 +124,9 @@ public:
 	// Set the market index to the specified value.
 	void set_index(int index);
 
+	// Set whether the specified ladder should be followed or not.
+	void set_follow(int index, bool state);
+
 private:
 	main_model& _model;
 	Ui::MainWindow* _view;
@@ -138,4 +155,10 @@ private:
 
 	// Initialise price strings.
 	void init_price_strings();
+
+	// Follow ladder if follow enabled.
+	void follow_ladder(int index);
+
+	// Get runner with the specific runner metadata.
+	auto get_runner(const janus::runner_view& runner_meta) -> janus::betfair::runner*;
 };

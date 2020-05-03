@@ -27,3 +27,23 @@ void MainWindow::on_timeHorizontalSlider_sliderMoved(int pos)
 {
 	_controller.set_index(pos);
 }
+
+void MainWindow::on_follow0CheckBox_toggled(bool state)
+{
+	_controller.set_follow(0, state);
+}
+
+void MainWindow::on_follow1CheckBox_toggled(bool state)
+{
+	_controller.set_follow(1, state);
+}
+
+void MainWindow::on_follow2CheckBox_toggled(bool state)
+{
+	_controller.set_follow(2, state);
+}
+
+void MainWindow::on_follow3CheckBox_toggled(bool state)
+{
+	_controller.set_follow(3, state);
+}
