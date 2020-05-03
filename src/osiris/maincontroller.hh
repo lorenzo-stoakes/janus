@@ -102,27 +102,11 @@ public:
 	// Populate the view with initial state.
 	void init();
 
-	// Clear UI at specified update level.
-	void clear(update_level level);
-
 	// Obtain data for the specified date.
 	void select_date(QDate date);
 
 	// Select the market at the specified index in the market list.
 	void select_market(int index);
-
-	// Apply updates until (but not including) the next timestamp.
-	void apply_until_next_index();
-
-	// Update the first block of updates and apply to the current universe.
-	void get_first_update();
-
-	// Update all ladders based on current universe and all market-specific
-	// data.
-	void update_market_dynamic();
-
-	// Update the visible runner at the specified index.
-	void update_ladder(int index);
 
 	// Set the market index to the specified value.
 	void set_index(int index);
@@ -152,6 +136,9 @@ private:
 
 	bool _setting_up_combos;
 
+	// Clear UI at specified update level.
+	void clear(update_level level);
+
 	// Populate date selector, setting bold where data is available.
 	void populate_dates();
 
@@ -169,4 +156,17 @@ private:
 
 	// Get runner with the specific runner metadata.
 	auto get_runner(const janus::runner_view& runner_meta) -> janus::betfair::runner*;
+
+	// Apply updates until (but not including) the next timestamp.
+	void apply_until_next_index();
+
+	// Update the first block of updates and apply to the current universe.
+	void get_first_update();
+
+	// Update the visible runner at the specified index.
+	void update_ladder(int index);
+
+	// Update all ladders based on current universe and all market-specific
+	// data.
+	void update_market_dynamic();
 };
