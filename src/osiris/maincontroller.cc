@@ -4,6 +4,7 @@
 
 #include <QtWidgets>
 #include <ctime>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -78,14 +79,17 @@ void main_controller::clear(update_level level)
 		// fallthrough
 	case update_level::MARKET:
 		_num_market_updates = 0;
+		_num_indexes = 0;
+		_curr_index = 0;
 		_curr_universe.clear();
+		_runner_id_to_index.clear();
 
 		_view->marketNameLabel->setText("");
 		_view->postLabel->setText("");
+		_view->statusLabel->setText("");
 		_view->inplayLabel->setText("");
 		_view->nowLabel->setText("");
 		_view->tradedVolLabel->setText("");
-		_view->tradedPerSecVolLabel->setText("");
 
 		_view->timeHorizontalSlider->setValue(0);
 
@@ -135,6 +139,81 @@ void main_controller::populate_runner_combo(const std::vector<janus::runner_view
 	combo->setCurrentIndex(index);
 }
 
+void main_controller::apply_until_next_index()
+{
+	janus::dynamic_buffer& dyn_buf = _model.update_dyn_buf();
+
+	bool first = true;
+	while (dyn_buf.read_offset() < dyn_buf.size()) {
+		auto& u = dyn_buf.read<janus::update>();
+		if (u.type == janus::update_type::TIMESTAMP) {
+			// Getting to timestamp means we've consumed the
+			// entirity of this set of updates for this timesliver.
+			// timesliver.  If it's the first item in the stream
+			// then we just consume it so we don't stall forever.
+			if (!first) {
+				// Unread the timestamp so we can read it next
+				// time.
+				dyn_buf.unread<janus::update>();
+				_curr_index++;
+				return;
+			}
+		}
+		try {
+			_curr_universe.apply_update(u);
+		} catch (janus::universe_apply_error& e) {
+			std::cerr << "ERROR parsing: " << e.what() << " aborting." << std::endl;
+			return;
+		}
+		first = false;
+	}
+}
+
+void main_controller::get_first_update()
+{
+	// The first timestamp precedes any existing data, so just consume it.
+	apply_until_next_index();
+	// This moves the index to the point where we are actually reading data.
+	apply_until_next_index();
+}
+
+// Update dynamic market fields.
+void main_controller::update_market_dynamic(janus::meta_view& meta)
+{
+	janus::betfair::market& market = _curr_universe.markets()[0];
+	uint64_t timestamp = market.last_timestamp();
+	std::string now = janus::local_epoch_ms_to_string(timestamp);
+	_view->nowLabel->setText(QString::fromStdString(now));
+
+	uint64_t start_timestamp = meta.market_start_timestamp();
+	std::string start = janus::local_epoch_ms_to_string(start_timestamp);
+	_view->postLabel->setText(QString::fromStdString(start));
+
+	std::string state;
+	switch (market.state()) {
+	case janus::betfair::market_state::OPEN:
+		state = "OPEN";
+		break;
+	case janus::betfair::market_state::CLOSED:
+		state = "CLOSED";
+		break;
+	case janus::betfair::market_state::SUSPENDED:
+		state = "SUSPENDED";
+		break;
+	default:
+		state = "UNKNOWN?";
+		break;
+	}
+	_view->statusLabel->setText(QString::fromStdString(state));
+
+	if (market.inplay())
+		_view->inplayLabel->setText(QString::fromUtf8("INPLAY"));
+	else
+		_view->inplayLabel->setText(QString::fromUtf8("PRE"));
+
+	_view->tradedVolLabel->setText(QString::number(static_cast<int>(market.traded_vol())));
+}
+
 void main_controller::select_market(int index)
 {
 	if (index < 0)
@@ -146,9 +225,21 @@ void main_controller::select_market(int index)
 	auto* view = _model.get_market_at(_selected_date_ms, index);
 	std::string title = view->describe() + " (" + std::to_string(view->market_id()) + ")";
 
+	for (uint64_t i = 0; i < view->runners().size(); i++) {
+		auto& runner = view->runners()[i];
+		_runner_id_to_index[runner.id()] = i;
+	}
+
 	_num_market_updates = _model.get_market_updates(view->market_id());
-	_curr_universe.clear();
+	// Setup our market.
 	_curr_universe.apply_update(janus::make_market_id_update(view->market_id()));
+
+	// Work out how many indexes of timestamps we have to iterate through.
+	auto indexes = janus::index_market_updates(_model.update_dyn_buf(), _num_market_updates);
+	_num_indexes = indexes.size();
+
+	get_first_update();
+	update_market_dynamic(*view);
 
 	_view->marketNameLabel->setText(QString::fromStdString(title));
 

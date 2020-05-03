@@ -6,6 +6,8 @@
 
 #include <array>
 #include <cstdint>
+#include <unordered_map>
+#include <vector>
 
 // Number of runners displayed at any one time.
 static constexpr uint64_t NUM_DISPLAYED_RUNNERS = 4;
@@ -63,8 +65,10 @@ public:
 		  _selected_market_index{-1},
 		  _selected_date_ms{0},
 		  _num_market_updates{0},
-		  _visible_runner_indexes{-1}
-
+		  _num_indexes{0},
+		  _curr_index{0},
+		  _visible_runner_indexes{-1},
+		  _ladders{nullptr}
 	{
 		init_price_strings();
 	}
@@ -88,16 +92,31 @@ public:
 	// Select the market at the specified index in the market list.
 	void select_market(int index);
 
+	// Apply updates until (but not including) the next timestamp.
+	void apply_until_next_index();
+
+	// Update the first block of updates and apply to the current universe.
+	void get_first_update();
+
+	// Update all ladders based on current universe and all market-specific
+	// data.
+	void update_market_dynamic(janus::meta_view& meta);
+
 private:
 	main_model& _model;
 	Ui::MainWindow* _view;
 	int _selected_market_index;
 	uint64_t _selected_date_ms;
 	uint64_t _num_market_updates;
+	uint64_t _num_indexes;
+
+	uint64_t _curr_index;
 
 	std::array<int, NUM_DISPLAYED_RUNNERS> _visible_runner_indexes;
 	std::array<runner_ladder_ui, NUM_DISPLAYED_RUNNERS> _ladders;
 	std::array<QString, janus::betfair::NUM_PRICES> _price_strings;
+
+	std::unordered_map<uint64_t, uint64_t> _runner_id_to_index;
 
 	janus::betfair::universe<1> _curr_universe;
 
