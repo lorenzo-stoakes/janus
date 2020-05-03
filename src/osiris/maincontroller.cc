@@ -443,14 +443,13 @@ void main_controller::update_runner_ltp_list()
 		std::string_view name = runner_meta.name();
 		name_item->setText(QString::fromUtf8(name.data(), name.size()));
 
-		double ltp;
-		if (runner->state() == janus::betfair::runner_state::REMOVED)
-			ltp = 99999;
-		else
-			ltp = janus::betfair::price_range::index_to_price(runner->ltp());
-
 		auto* ltp_item = make_readonly_table_item();
-		ltp_item->setData(Qt::DisplayRole, ltp);
+		if (runner->state() == janus::betfair::runner_state::REMOVED) {
+			ltp_item->setText("NR");
+		} else {
+			double ltp = janus::betfair::price_range::index_to_price(runner->ltp());
+			ltp_item->setData(Qt::DisplayRole, ltp);
+		}
 
 		_view->runnerLTPTableWidget->insertRow(i);
 		_view->runnerLTPTableWidget->setItem(i, 0, name_item);
