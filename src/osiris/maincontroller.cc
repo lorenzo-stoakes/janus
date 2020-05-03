@@ -378,6 +378,10 @@ void main_controller::follow_ladder(int index)
 
 	auto& runner_meta = _curr_meta->runners()[runner_index];
 	auto* runner = get_runner(runner_meta);
+	if (runner == nullptr) {
+		std::cerr << "Unable to find runner " << runner_meta.id() << std::endl;
+		return;
+	}
 
 	uint64_t ltp_index = runner->ltp();
 	// The prices are shown in inverse order.
@@ -445,6 +449,10 @@ void main_controller::update_runner_ltp_list()
 	for (uint64_t i = 0; i < runner_metas.size(); i++) {
 		auto& runner_meta = runner_metas[i];
 		auto* runner = get_runner(runner_meta);
+		if (runner == nullptr) {
+			std::cerr << "Unable to find runner " << runner_meta.id() << std::endl;
+			return;
+		}
 
 		auto* name_item = make_readonly_table_item();
 		std::string_view name = runner_meta.name();
