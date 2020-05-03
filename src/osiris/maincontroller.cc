@@ -455,6 +455,8 @@ void main_controller::set_follow(int index, bool state)
 	// We centre on first follow.
 	if (state)
 		_ladders[index].centre = true;
+
+	update_market_dynamic();
 }
 
 void main_controller::set_ladder_to_runner(int ladder_index, int runner_index)
