@@ -558,7 +558,7 @@ void main_controller::timer_tick()
 
 	_playback_timestamp += PLAYBACK_INTERVAL_MS;
 
-	while (_next_timestamp < _playback_timestamp) {
+	while (_next_timestamp < _playback_timestamp && _curr_index < _num_indexes) {
 		apply_until_next_index();
 	}
 
