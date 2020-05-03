@@ -86,7 +86,8 @@ public:
 		  _num_indexes{0},
 		  _curr_index{0},
 		  _visible_runner_indexes{-1},
-		  _ladders{}
+		  _ladders{},
+		  _setting_up_combos{false}
 	{
 		init_price_strings();
 	}
@@ -129,6 +130,9 @@ public:
 	// Set whether the specified ladder should be followed or not.
 	void set_follow(int index, bool state);
 
+	// Set the specified ladder runner index.
+	void set_ladder_to_runner(int ladder_index, int runner_index);
+
 private:
 	main_model& _model;
 	Ui::MainWindow* _view;
@@ -145,6 +149,8 @@ private:
 
 	janus::betfair::universe<1> _curr_universe;
 	janus::meta_view* _curr_meta;
+
+	bool _setting_up_combos;
 
 	// Populate date selector, setting bold where data is available.
 	void populate_dates();

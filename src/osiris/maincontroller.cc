@@ -121,9 +121,11 @@ void main_controller::clear(update_level level)
 			_view->runnerLTPTableWidget->removeRow(0);
 		}
 
+		_setting_up_combos = true;
 		for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
 			_ladders[i].clear(&_price_strings[0], true);
 		}
+		_setting_up_combos = false;
 		break;
 	}
 }
@@ -145,6 +147,8 @@ void main_controller::select_date(QDate date)
 void main_controller::populate_runner_combo(const std::vector<janus::runner_view>& runners,
 					    int index)
 {
+	_setting_up_combos = true;
+
 	auto* combo = _ladders[index].combo;
 
 	for (const auto& runner : runners) {
@@ -155,6 +159,8 @@ void main_controller::populate_runner_combo(const std::vector<janus::runner_view
 	// By default when setting the runner combo the index we're looking at
 	// is also the index we set.
 	combo->setCurrentIndex(index);
+
+	_setting_up_combos = false;
 }
 
 void main_controller::apply_until_next_index()
@@ -399,6 +405,22 @@ void main_controller::set_follow(int index, bool state)
 		_ladders[index].centre = true;
 }
 
+void main_controller::set_ladder_to_runner(int ladder_index, int runner_index)
+{
+	if (_setting_up_combos)
+		return;
+
+	if (ladder_index >= NUM_DISPLAYED_RUNNERS)
+		throw std::runtime_error(std::string("Unexpected set_ladder_to_runner() for ") +
+					 std::to_string(ladder_index));
+
+	_visible_runner_indexes[ladder_index] = runner_index;
+	update_ladder(ladder_index);
+	if (_ladders[ladder_index].follow)
+		_ladders[ladder_index].centre = true;
+	follow_ladder(ladder_index);
+}
+
 void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 {
 	if (index > NUM_DISPLAYED_RUNNERS)
@@ -482,6 +504,7 @@ void runner_ladder_ui::clear(QString* price_strings, bool clear_combo)
 {
 	if (clear_combo)
 		combo->clear();
+
 	traded_vol_label->setText("");
 	traded_vol_sec_label->setText("");
 	ltp_label->setText("");
