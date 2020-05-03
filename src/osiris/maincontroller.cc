@@ -258,7 +258,18 @@ void main_controller::update_ladder(int ladder_index)
 		// Highlight just traded price in the ladder.
 		uint64_t table_index = janus::betfair::NUM_PRICES - ltp_index - 1;
 		QTableWidgetItem* price_item = ladder_ui.table->item(table_index, PRICE_COL);
-		price_item->setBackground(PRICE_HIGHLIGHT_COLOUR);
+		if (ladder_ui.last_traded_vol != traded_vol) {
+			price_item->setBackground(PRICE_HIGHLIGHT_COLOUR);
+			ladder_ui.last_traded_vol = traded_vol;
+			ladder_ui.flash_count = 0;
+		} else {
+			ladder_ui.flash_count++;
+
+			if (ladder_ui.flash_count >= MAX_FLASH_COUNT)
+				price_item->setBackground(PRICE_BG_COLOUR);
+			else
+				price_item->setBackground(PRICE_HIGHLIGHT_COLOUR);
+		}
 	}
 
 	const janus::betfair::ladder& ladder =
@@ -646,8 +657,11 @@ void runner_ladder_ui::init(QString* price_strings)
 
 void runner_ladder_ui::clear(QString* price_strings, bool clear_combo)
 {
-	if (clear_combo)
+	if (clear_combo) {
 		combo->clear();
+		last_traded_vol = 0;
+		flash_count = 0;
+	}
 
 	traded_vol_label->setText("");
 	removed_label->setVisible(false);

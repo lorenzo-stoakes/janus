@@ -35,6 +35,11 @@ static constexpr const char* GREEN_FOREGROUND_STYLE = "color: rgb(0, 128, 0);";
 
 static constexpr const uint64_t PLAYBACK_INTERVAL_MS = 50;
 
+// We increment a flash counter each time an LTP is written and the runner
+// traded volume hasn't increased, once it's past this value then we clear
+// it. This is used to flash traded price.
+static constexpr const uint64_t MAX_FLASH_COUNT = 5;
+
 enum class update_level
 {
 	FULL,
@@ -53,7 +58,9 @@ struct runner_ladder_ui
 		  removed_label{nullptr},
 		  ltp_label{nullptr},
 		  follow{true},
-		  centre{true}
+		  centre{true},
+		  last_traded_vol{0},
+		  flash_count{0}
 	{
 	}
 
@@ -65,6 +72,9 @@ struct runner_ladder_ui
 
 	bool follow;
 	bool centre;
+
+	double last_traded_vol;
+	uint64_t flash_count;
 
 	// Set the runner ladder UI to the specified runner index.
 	void set(Ui::MainWindow* _view, size_t index);
