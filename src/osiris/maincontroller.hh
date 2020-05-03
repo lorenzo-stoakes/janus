@@ -6,7 +6,6 @@
 
 #include <array>
 #include <cstdint>
-#include <unordered_map>
 #include <vector>
 
 // Number of runners displayed at any one time.
@@ -100,7 +99,10 @@ public:
 
 	// Update all ladders based on current universe and all market-specific
 	// data.
-	void update_market_dynamic(janus::meta_view& meta);
+	void update_market_dynamic();
+
+	// Update the visible runner at the specified index.
+	void update_ladder(int index);
 
 private:
 	main_model& _model;
@@ -116,9 +118,8 @@ private:
 	std::array<runner_ladder_ui, NUM_DISPLAYED_RUNNERS> _ladders;
 	std::array<QString, janus::betfair::NUM_PRICES> _price_strings;
 
-	std::unordered_map<uint64_t, uint64_t> _runner_id_to_index;
-
 	janus::betfair::universe<1> _curr_universe;
+	janus::meta_view* _curr_meta;
 
 	// Populate date selector, setting bold where data is available.
 	void populate_dates();

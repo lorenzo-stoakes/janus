@@ -82,7 +82,7 @@ void main_controller::clear(update_level level)
 		_num_indexes = 0;
 		_curr_index = 0;
 		_curr_universe.clear();
-		_runner_id_to_index.clear();
+		_curr_meta = nullptr;
 
 		_view->marketNameLabel->setText("");
 		_view->postLabel->setText("");
@@ -177,15 +177,48 @@ void main_controller::get_first_update()
 	apply_until_next_index();
 }
 
+void main_controller::update_ladder(int ladder_index)
+{
+	int index = _visible_runner_indexes[ladder_index];
+	if (index == -1)
+		return;
+
+	auto& runner_meta = _curr_meta->runners()[index];
+
+	janus::betfair::market& market = _curr_universe.markets()[0];
+	auto& runners = market.runners();
+
+	janus::betfair::runner* runner;
+	uint64_t i = 0;
+	for (; i < runners.size(); i++) {
+		runner = &runners[i];
+		if (runner->id() == runner_meta.id())
+			break;
+	}
+	// Couldn't find runner?
+	if (i == runners.size()) {
+		std::cerr << "Unable to find runner " << runner_meta.id() << std::endl;
+		return;
+	}
+
+	auto& ladder_ui = _ladders[ladder_index];
+
+	int traded_vol = static_cast<int>(runner->traded_vol());
+	ladder_ui.traded_vol_label->setText(QString::number(traded_vol));
+
+	double ltp = janus::betfair::price_range::index_to_price(runner->ltp());
+	ladder_ui.ltp_label->setText(QString::number(ltp, 'g', 10));
+}
+
 // Update dynamic market fields.
-void main_controller::update_market_dynamic(janus::meta_view& meta)
+void main_controller::update_market_dynamic()
 {
 	janus::betfair::market& market = _curr_universe.markets()[0];
 	uint64_t timestamp = market.last_timestamp();
 	std::string now = janus::local_epoch_ms_to_string(timestamp);
 	_view->nowLabel->setText(QString::fromStdString(now));
 
-	uint64_t start_timestamp = meta.market_start_timestamp();
+	uint64_t start_timestamp = _curr_meta->market_start_timestamp();
 	std::string start = janus::local_epoch_ms_to_string(start_timestamp);
 	_view->postLabel->setText(QString::fromStdString(start));
 
@@ -212,6 +245,10 @@ void main_controller::update_market_dynamic(janus::meta_view& meta)
 		_view->inplayLabel->setText(QString::fromUtf8("PRE"));
 
 	_view->tradedVolLabel->setText(QString::number(static_cast<int>(market.traded_vol())));
+
+	for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
+		update_ladder(i);
+	}
 }
 
 void main_controller::select_market(int index)
@@ -222,28 +259,21 @@ void main_controller::select_market(int index)
 	clear(update_level::MARKET);
 
 	_selected_market_index = index;
-	auto* view = _model.get_market_at(_selected_date_ms, index);
-	std::string title = view->describe() + " (" + std::to_string(view->market_id()) + ")";
+	_curr_meta = _model.get_market_at(_selected_date_ms, index);
+	std::string title =
+		_curr_meta->describe() + " (" + std::to_string(_curr_meta->market_id()) + ")";
 
-	for (uint64_t i = 0; i < view->runners().size(); i++) {
-		auto& runner = view->runners()[i];
-		_runner_id_to_index[runner.id()] = i;
-	}
-
-	_num_market_updates = _model.get_market_updates(view->market_id());
+	_num_market_updates = _model.get_market_updates(_curr_meta->market_id());
 	// Setup our market.
-	_curr_universe.apply_update(janus::make_market_id_update(view->market_id()));
+	_curr_universe.apply_update(janus::make_market_id_update(_curr_meta->market_id()));
 
 	// Work out how many indexes of timestamps we have to iterate through.
 	auto indexes = janus::index_market_updates(_model.update_dyn_buf(), _num_market_updates);
 	_num_indexes = indexes.size();
 
-	get_first_update();
-	update_market_dynamic(*view);
-
 	_view->marketNameLabel->setText(QString::fromStdString(title));
 
-	auto& runners = view->runners();
+	auto& runners = _curr_meta->runners();
 	for (uint64_t i = 0; i < runners.size(); i++) {
 		auto& runner = runners[i];
 		if (i < NUM_DISPLAYED_RUNNERS) {
@@ -259,6 +289,9 @@ void main_controller::select_market(int index)
 		name_item->setText(QString::fromUtf8(name.data(), name.size()));
 		_view->runnerLTPTableWidget->setItem(i, 0, name_item);
 	}
+
+	get_first_update();
+	update_market_dynamic();
 }
 
 void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
