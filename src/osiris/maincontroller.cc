@@ -92,6 +92,8 @@ void main_controller::clear(update_level level)
 		_view->tradedVolLabel->setText("");
 
 		_view->timeHorizontalSlider->setValue(0);
+		_view->timeHorizontalSlider->setMinimum(0);
+		_view->timeHorizontalSlider->setMaximum(0);
 
 		// fallthrough
 	case update_level::RUNNERS:
@@ -104,7 +106,7 @@ void main_controller::clear(update_level level)
 		}
 
 		for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
-			_ladders[i].clear(&_price_strings[0]);
+			_ladders[i].clear(&_price_strings[0], true);
 		}
 		break;
 	}
@@ -322,6 +324,30 @@ void main_controller::select_market(int index)
 	}
 
 	get_first_update();
+	_view->timeHorizontalSlider->setMinimum(_curr_index);
+	_view->timeHorizontalSlider->setMaximum(_num_indexes - 1);
+
+	update_market_dynamic();
+}
+
+void main_controller::set_index(int index)
+{
+	auto index_val = static_cast<uint64_t>(index);
+
+	// If we're rewinding then we need to clear and re-run up to the index.
+	// TODO(lorenzo): Make this more efficient.
+	if (index_val < _curr_index) {
+		_model.update_dyn_buf().reset_read();
+		_curr_universe.clear();
+		_curr_universe.apply_update(janus::make_market_id_update(_curr_meta->market_id()));
+		_curr_index = 0;
+		get_first_update();
+	}
+
+	while (_curr_index < index_val && _curr_index < _num_indexes) {
+		apply_until_next_index();
+	}
+
 	update_market_dynamic();
 }
 
@@ -404,9 +430,10 @@ void runner_ladder_ui::init(QString* price_strings)
 	}
 }
 
-void runner_ladder_ui::clear(QString* price_strings)
+void runner_ladder_ui::clear(QString* price_strings, bool clear_combo)
 {
-	combo->clear();
+	if (clear_combo)
+		combo->clear();
 	traded_vol_label->setText("");
 	traded_vol_sec_label->setText("");
 	ltp_label->setText("");

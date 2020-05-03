@@ -22,3 +22,8 @@ void MainWindow::on_raceListWidget_currentRowChanged(int row)
 {
 	_controller.select_market(row);
 }
+
+void MainWindow::on_timeHorizontalSlider_sliderMoved(int pos)
+{
+	_controller.set_index(pos);
+}

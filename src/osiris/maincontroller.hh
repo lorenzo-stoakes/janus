@@ -55,7 +55,7 @@ struct runner_ladder_ui
 	void init(QString* price_strings);
 
 	// Clear the contents of the runner ladder UI.
-	void clear(QString* price_strings);
+	void clear(QString* price_strings, bool clear_combo = false);
 };
 
 class main_controller
@@ -106,6 +106,9 @@ public:
 
 	// Update the visible runner at the specified index.
 	void update_ladder(int index);
+
+	// Set the market index to the specified value.
+	void set_index(int index);
 
 private:
 	main_model& _model;

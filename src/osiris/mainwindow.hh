@@ -26,6 +26,7 @@ public:
 private slots:
 	void on_raceDateSelecter_selectionChanged();
 	void on_raceListWidget_currentRowChanged(int row);
+	void on_timeHorizontalSlider_sliderMoved(int pos);
 
 private:
 	Ui::MainWindow* _ui;
