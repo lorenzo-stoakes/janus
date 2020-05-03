@@ -238,6 +238,19 @@
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
+            <widget class="QCheckBox" name="crossmatchCheckBox">
+             <property name="geometry">
+              <rect>
+               <x>10</x>
+               <y>0</y>
+               <width>101</width>
+               <height>19</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Cross-match</string>
+             </property>
+            </widget>
            </widget>
           </item>
           <item>
