@@ -116,7 +116,7 @@ auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t
 	return uncompressed.size() / sizeof(janus::update);
 }
 
-auto index_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std::vector<uint64_t>
+auto index_market_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std::vector<uint64_t>
 {
 	std::vector<uint64_t> ret;
 

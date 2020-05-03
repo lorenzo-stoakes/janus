@@ -31,5 +31,5 @@ auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t
 // Returns a vector of the indexes within the buffer which are timestamp
 // updates. This can be used to correctly delineate between blocks of
 // updates. The dynamic buffer has its read offset reset before returning.
-auto index_market_updates(dynamic_buffer& dyn_buf) -> std::vector<uint64_t>;
+auto index_market_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std::vector<uint64_t>;
 } // namespace janus
