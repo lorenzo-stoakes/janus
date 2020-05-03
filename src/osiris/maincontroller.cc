@@ -115,11 +115,7 @@ void main_controller::clear(update_level level)
 	case update_level::RUNNERS:
 		_visible_runner_indexes.fill(-1);
 
-		_view->runnerLTPTableWidget->clearContents();
-		// TODO(lorenzo): Free items!!
-		while (_view->runnerLTPTableWidget->rowCount() > 0) {
-			_view->runnerLTPTableWidget->removeRow(0);
-		}
+		clear_runner_ltp_list();
 
 		_setting_up_combos = true;
 		for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
@@ -222,8 +218,12 @@ void main_controller::update_ladder(int ladder_index)
 	int traded_vol = static_cast<int>(runner->traded_vol());
 	ladder_ui.traded_vol_label->setText(QString::number(traded_vol));
 
-	double ltp = janus::betfair::price_range::index_to_price(runner->ltp());
-	ladder_ui.ltp_label->setText(QString::number(ltp, 'g', 10));
+	if (runner->state() != janus::betfair::runner_state::REMOVED) {
+		double ltp = janus::betfair::price_range::index_to_price(runner->ltp());
+		ladder_ui.ltp_label->setText(QString::number(ltp, 'g', 10));
+	} else {
+		ladder_ui.removed_label->setVisible(true);
+	}
 
 	janus::betfair::ladder& ladder = runner->ladder();
 	QTableWidget* table = ladder_ui.table;
@@ -296,6 +296,8 @@ void main_controller::update_market_dynamic()
 		update_ladder(i);
 		follow_ladder(i);
 	}
+
+	update_runner_ltp_list();
 }
 
 void main_controller::select_market(int index)
@@ -322,19 +324,11 @@ void main_controller::select_market(int index)
 
 	auto& runners = _curr_meta->runners();
 	for (uint64_t i = 0; i < runners.size(); i++) {
-		auto& runner = runners[i];
 		if (i < NUM_DISPLAYED_RUNNERS) {
 			_visible_runner_indexes[i] = i;
 
 			populate_runner_combo(runners, i);
 		}
-
-		_view->runnerLTPTableWidget->insertRow(i);
-
-		auto* name_item = make_readonly_table_item();
-		std::string_view name = runner.name();
-		name_item->setText(QString::fromUtf8(name.data(), name.size()));
-		_view->runnerLTPTableWidget->setItem(i, 0, name_item);
 	}
 
 	get_first_update();
@@ -421,6 +415,49 @@ void main_controller::set_ladder_to_runner(int ladder_index, int runner_index)
 	follow_ladder(ladder_index);
 }
 
+// Clear the runner LTP list.
+void main_controller::clear_runner_ltp_list()
+{
+	_view->runnerLTPTableWidget->clearContents();
+	// TODO(lorenzo): Free items!!
+	while (_view->runnerLTPTableWidget->rowCount() > 0) {
+		_view->runnerLTPTableWidget->removeRow(0);
+	}
+}
+
+// Update the runner LTP list.
+void main_controller::update_runner_ltp_list()
+{
+	if (_curr_meta == nullptr)
+		return;
+
+	clear_runner_ltp_list();
+
+	// TODO(lorenzo): Lookup runners more efficiently.
+	auto& runner_metas = _curr_meta->runners();
+	for (uint64_t i = 0; i < runner_metas.size(); i++) {
+		auto& runner_meta = runner_metas[i];
+		auto* runner = get_runner(runner_meta);
+
+		auto* name_item = make_readonly_table_item();
+		std::string_view name = runner_meta.name();
+		name_item->setText(QString::fromUtf8(name.data(), name.size()));
+
+		double ltp;
+		if (runner->state() == janus::betfair::runner_state::REMOVED)
+			ltp = 99999;
+		else
+			ltp = janus::betfair::price_range::index_to_price(runner->ltp());
+
+		auto* ltp_item = make_readonly_table_item();
+		ltp_item->setData(Qt::DisplayRole, ltp);
+
+		_view->runnerLTPTableWidget->insertRow(i);
+		_view->runnerLTPTableWidget->setItem(i, 0, name_item);
+		_view->runnerLTPTableWidget->setItem(i, 1, ltp_item);
+	}
+}
+
 void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 {
 	if (index > NUM_DISPLAYED_RUNNERS)
@@ -432,7 +469,7 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		table = view->ladder0TableWidget;
 		combo = view->runner0ComboBox;
 		traded_vol_label = view->runnerTradedVol0Label;
-		traded_vol_sec_label = view->runnerTradedVolSec0Label;
+		removed_label = view->removed0Label;
 		ltp_label = view->ltp0Label;
 		status_frame = view->statusFrame0;
 		tv_status_frame = view->tvStatusFrame0;
@@ -441,7 +478,7 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		table = view->ladder1TableWidget;
 		combo = view->runner1ComboBox;
 		traded_vol_label = view->runnerTradedVol1Label;
-		traded_vol_sec_label = view->runnerTradedVolSec1Label;
+		removed_label = view->removed1Label;
 		ltp_label = view->ltp1Label;
 		status_frame = view->statusFrame1;
 		tv_status_frame = view->tvStatusFrame1;
@@ -450,7 +487,7 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		table = view->ladder2TableWidget;
 		combo = view->runner2ComboBox;
 		traded_vol_label = view->runnerTradedVol2Label;
-		traded_vol_sec_label = view->runnerTradedVolSec2Label;
+		removed_label = view->removed2Label;
 		ltp_label = view->ltp2Label;
 		status_frame = view->statusFrame2;
 		tv_status_frame = view->tvStatusFrame2;
@@ -459,7 +496,7 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		table = view->ladder3TableWidget;
 		combo = view->runner3ComboBox;
 		traded_vol_label = view->runnerTradedVol3Label;
-		traded_vol_sec_label = view->runnerTradedVolSec3Label;
+		removed_label = view->removed3Label;
 		ltp_label = view->ltp3Label;
 		status_frame = view->statusFrame3;
 		tv_status_frame = view->tvStatusFrame3;
@@ -506,7 +543,7 @@ void runner_ladder_ui::clear(QString* price_strings, bool clear_combo)
 		combo->clear();
 
 	traded_vol_label->setText("");
-	traded_vol_sec_label->setText("");
+	removed_label->setVisible(false);
 	ltp_label->setText("");
 	status_frame->setStyleSheet("");
 	tv_status_frame->setStyleSheet("");

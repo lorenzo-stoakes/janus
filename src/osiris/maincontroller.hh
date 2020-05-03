@@ -43,7 +43,7 @@ struct runner_ladder_ui
 		: table{nullptr},
 		  combo{nullptr},
 		  traded_vol_label{nullptr},
-		  traded_vol_sec_label{nullptr},
+		  removed_label{nullptr},
 		  ltp_label{nullptr},
 		  status_frame{nullptr},
 		  tv_status_frame{nullptr},
@@ -55,7 +55,7 @@ struct runner_ladder_ui
 	QTableWidget* table;
 	QComboBox* combo;
 	QLabel* traded_vol_label;
-	QLabel* traded_vol_sec_label;
+	QLabel* removed_label;
 	QLabel* ltp_label;
 
 	QFrame* status_frame;
@@ -169,4 +169,10 @@ private:
 	// Update all ladders based on current universe and all market-specific
 	// data.
 	void update_market_dynamic();
+
+	// Clear the runner LTP list.
+	void clear_runner_ltp_list();
+
+	// Update the runner LTP list.
+	void update_runner_ltp_list();
 };
