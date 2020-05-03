@@ -2,6 +2,8 @@
 
 #include <array>
 #include <cstdint>
+#include <iomanip>
+#include <string>
 #include <string_view>
 
 namespace janus
@@ -200,6 +202,20 @@ void local_unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, u
 	hour = tmval.tm_hour;
 	minute = tmval.tm_min;
 	second = tmval.tm_sec;
+}
+
+auto local_epoch_ms_to_string(uint64_t epoch_ms) -> std::string
+{
+	uint64_t year, month, day;
+	uint64_t hour, minute, second, ms;
+	janus::local_unpack_epoch_ms(epoch_ms, year, month, day, hour, minute, second, ms);
+
+	std::ostringstream oss;
+	oss << year << "-" << std::setfill('0') << std::setw(2) << month << "-" << std::setw(2)
+	    << day << " " << std::setw(2) << hour << ":" << std::setw(2) << minute << ":"
+	    << std::setw(2) << second;
+
+	return oss.str();
 }
 
 auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view
