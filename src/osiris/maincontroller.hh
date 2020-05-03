@@ -90,6 +90,7 @@ public:
 		  _curr_index{0},
 		  _curr_timestamp{0},
 		  _next_timestamp{0},
+		  _last_timestamp{0},
 		  _playback_timestamp{0},
 		  _visible_runner_indexes{-1},
 		  _ladders{},
@@ -154,6 +155,7 @@ private:
 	uint64_t _curr_index;
 	uint64_t _curr_timestamp;
 	uint64_t _next_timestamp;
+	uint64_t _last_timestamp;
 	uint64_t _playback_timestamp;
 
 	std::array<int, NUM_DISPLAYED_RUNNERS> _visible_runner_indexes;

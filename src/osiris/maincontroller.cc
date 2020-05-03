@@ -61,10 +61,6 @@ void main_controller::init_price_strings()
 
 void main_controller::init()
 {
-	// Not currently implemented so hide.
-	_view->plLabel->hide();
-	_view->hedgeAllButton->hide();
-
 	for (uint64_t i = 0; i < NUM_DISPLAYED_RUNNERS; i++) {
 		_ladders[i].set(_view, i);
 		_ladders[i].init(&_price_strings[0]);
@@ -103,10 +99,12 @@ void main_controller::clear(update_level level)
 		_curr_meta = nullptr;
 		_curr_timestamp = 0;
 		_next_timestamp = 0;
+		_last_timestamp = 0;
 		_playback_timestamp = 0;
 
 		_view->marketNameLabel->setText("");
 		_view->postLabel->setText("");
+		_view->lastLabel->setText("");
 		_view->statusLabel->setText("");
 		_view->inplayLabel->setText("");
 		_view->nowLabel->setText("");
@@ -312,6 +310,9 @@ void main_controller::update_market_dynamic()
 	std::string start = janus::local_epoch_ms_to_string(start_timestamp);
 	_view->postLabel->setText(QString::fromStdString(start));
 
+	std::string last = janus::local_epoch_ms_to_string(_last_timestamp);
+	_view->lastLabel->setText(QString::fromStdString(last));
+
 	std::string state;
 	switch (market.state()) {
 	case janus::betfair::market_state::OPEN:
@@ -370,6 +371,9 @@ void main_controller::select_market(int index)
 	// Work out how many indexes of timestamps we have to iterate through.
 	auto indexes = janus::index_market_updates(_model.update_dyn_buf(), _num_market_updates);
 	_num_indexes = indexes.size();
+	janus::update* ptr = reinterpret_cast<janus::update*>(_model.update_dyn_buf().data());
+	uint64_t last_offset = indexes[_num_indexes - 1];
+	_last_timestamp = janus::get_update_timestamp(ptr[last_offset]);
 
 	_view->marketNameLabel->setText(QString::fromStdString(title));
 
