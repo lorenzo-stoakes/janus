@@ -218,7 +218,7 @@ void main_controller::update_ladder(int ladder_index)
 	int traded_vol = static_cast<int>(runner->traded_vol());
 	ladder_ui.traded_vol_label->setText(QString::number(traded_vol));
 
-	if (runner->state() != janus::betfair::runner_state::REMOVED) {
+	if (runner->state() != janus::betfair::runner_state::REMOVED && runner->traded_vol() >= 1) {
 		double ltp = janus::betfair::price_range::index_to_price(runner->ltp());
 		ladder_ui.ltp_label->setText(QString::number(ltp, 'g', 10));
 	} else {
@@ -446,6 +446,8 @@ void main_controller::update_runner_ltp_list()
 		auto* ltp_item = make_readonly_table_item();
 		if (runner->state() == janus::betfair::runner_state::REMOVED) {
 			ltp_item->setText("NR");
+		} else if (runner->traded_vol() < 1) {
+			ltp_item->setText("NIL");
 		} else {
 			double ltp = janus::betfair::price_range::index_to_price(runner->ltp());
 			ltp_item->setData(Qt::DisplayRole, ltp);

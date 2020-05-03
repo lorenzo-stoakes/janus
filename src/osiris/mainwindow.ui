@@ -590,7 +590,7 @@
             </column>
             <column>
              <property name="text">
-              <string>LTP</string>
+              <string></string>
              </property>
              <property name="font">
               <font>
