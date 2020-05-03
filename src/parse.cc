@@ -185,6 +185,23 @@ void unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_
 	day = days_in_year - month_offset + 1;
 }
 
+void local_unpack_epoch_ms(uint64_t epoch_ms, uint64_t& year, uint64_t& month, uint64_t& day,
+			   uint64_t& hour, uint64_t& minute, uint64_t& second, uint64_t& ms)
+{
+	auto timer = static_cast<time_t>(epoch_ms / 1000); // NOLINT: Not magical.
+	struct tm tmval = {0};
+	::localtime_r(&timer, &tmval);
+
+	ms = epoch_ms % 1000; // NOLINT: Not magical.
+
+	year = tmval.tm_year + 1900;
+	month = tmval.tm_mon + 1;
+	day = tmval.tm_mday;
+	hour = tmval.tm_hour;
+	minute = tmval.tm_min;
+	second = tmval.tm_sec;
+}
+
 auto print_iso8601(char* str, uint64_t epoch_ms) -> std::string_view
 {
 	uint64_t year;

@@ -320,4 +320,21 @@ TEST(parse_test, parse_market_id)
 	// Try a long number.
 	EXPECT_EQ(janus::internal::parse_market_id("1.1234567890123", 17), 1'234'567'890'123ULL);
 }
+
+// Ensure that upack_epoch_local_ms() correctly gets local timezone
+// representation of ms since epoch value.
+TEST(parse_test, unpack_epoch_local_ms)
+{
+	std::string timestamp_str; // UNUSED
+	uint64_t epoch_ms = get_epoch_ms(2020, 4, 4, 23, 34, 56, 789, timestamp_str);
+
+	uint64_t year, month, day, hour, minute, second, ms;
+	janus::local_unpack_epoch_ms(epoch_ms, year, month, day, hour, minute, second, ms);
+
+	EXPECT_EQ(year, 2020);
+	EXPECT_EQ(month, 4);
+	EXPECT_TRUE(day == 4 || day == 5);
+	EXPECT_EQ(second, 56);
+	EXPECT_EQ(ms, 789);
+}
 } // namespace
