@@ -76,7 +76,7 @@ void main_controller::init()
 	header->setSectionResizeMode(0, QHeaderView::Stretch);
 	table->sortItems(1, Qt::AscendingOrder);
 	// Reduce LTP column size.
-	table->setColumnWidth(1, 20); // NOLINT: Not magical.
+	table->setColumnWidth(1, 30); // NOLINT: Not magical.
 
 	clear(update_level::FULL);
 	populate_dates();
