@@ -272,23 +272,30 @@ void main_controller::update_market_dynamic()
 	switch (market.state()) {
 	case janus::betfair::market_state::OPEN:
 		state = "OPEN";
+		_view->statusLabel->setStyleSheet(GREEN_FOREGROUND_STYLE);
 		break;
 	case janus::betfair::market_state::CLOSED:
 		state = "CLOSED";
+		_view->statusLabel->setStyleSheet(RED_FOREGROUND_STYLE);
 		break;
 	case janus::betfair::market_state::SUSPENDED:
 		state = "SUSPENDED";
+		_view->statusLabel->setStyleSheet(RED_FOREGROUND_STYLE);
 		break;
 	default:
 		state = "UNKNOWN?";
+		_view->statusLabel->setStyleSheet(RED_FOREGROUND_STYLE);
 		break;
 	}
 	_view->statusLabel->setText(QString::fromStdString(state));
 
-	if (market.inplay())
+	if (market.inplay()) {
 		_view->inplayLabel->setText(QString::fromUtf8("INPLAY"));
-	else
+		_view->inplayLabel->setStyleSheet(RED_FOREGROUND_STYLE);
+	} else {
 		_view->inplayLabel->setText(QString::fromUtf8("PRE"));
+		_view->inplayLabel->setStyleSheet(GREEN_FOREGROUND_STYLE);
+	}
 
 	_view->tradedVolLabel->setText(QString::number(static_cast<int>(market.traded_vol())));
 
@@ -472,8 +479,6 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		traded_vol_label = view->runnerTradedVol0Label;
 		removed_label = view->removed0Label;
 		ltp_label = view->ltp0Label;
-		status_frame = view->statusFrame0;
-		tv_status_frame = view->tvStatusFrame0;
 		break;
 	case 1:
 		table = view->ladder1TableWidget;
@@ -481,8 +486,6 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		traded_vol_label = view->runnerTradedVol1Label;
 		removed_label = view->removed1Label;
 		ltp_label = view->ltp1Label;
-		status_frame = view->statusFrame1;
-		tv_status_frame = view->tvStatusFrame1;
 		break;
 	case 2:
 		table = view->ladder2TableWidget;
@@ -490,8 +493,6 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		traded_vol_label = view->runnerTradedVol2Label;
 		removed_label = view->removed2Label;
 		ltp_label = view->ltp2Label;
-		status_frame = view->statusFrame2;
-		tv_status_frame = view->tvStatusFrame2;
 		break;
 	case 3:
 		table = view->ladder3TableWidget;
@@ -499,8 +500,6 @@ void runner_ladder_ui::set(Ui::MainWindow* view, size_t index)
 		traded_vol_label = view->runnerTradedVol3Label;
 		removed_label = view->removed3Label;
 		ltp_label = view->ltp3Label;
-		status_frame = view->statusFrame3;
-		tv_status_frame = view->tvStatusFrame3;
 		break;
 	}
 }
@@ -546,8 +545,6 @@ void runner_ladder_ui::clear(QString* price_strings, bool clear_combo)
 	traded_vol_label->setText("");
 	removed_label->setVisible(false);
 	ltp_label->setText("");
-	status_frame->setStyleSheet("");
-	tv_status_frame->setStyleSheet("");
 
 	for (int row = 0; row < table->rowCount(); row++) {
 		for (int col = 0; col < table->columnCount(); col++) {
