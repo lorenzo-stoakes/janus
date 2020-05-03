@@ -6,3 +6,4 @@ cert/
 
 # Temporary files
 3rdparty/mbedtls-2.22.0/library/st*
+*.autosave
