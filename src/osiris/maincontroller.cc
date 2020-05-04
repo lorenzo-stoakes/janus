@@ -162,7 +162,7 @@ void main_controller::populate_runner_combo(const std::vector<janus::runner_view
 	_setting_up_combos = false;
 }
 
-void main_controller::apply_until_next_index()
+auto main_controller::apply_until_next_index() -> bool
 {
 	janus::dynamic_buffer& dyn_buf = _model.update_dyn_buf();
 
@@ -174,33 +174,40 @@ void main_controller::apply_until_next_index()
 			// entirity of this set of updates for this timesliver.
 			// timesliver.  If it's the first item in the stream
 			// then we just consume it so we don't stall forever.
+			uint64_t timestamp = janus::get_update_timestamp(u);
 			if (first) {
-				_curr_timestamp = janus::get_update_timestamp(u);
-			} else {
-				_next_timestamp = janus::get_update_timestamp(u);
+				_curr_timestamp = timestamp;
+			} else if (timestamp != _curr_timestamp) {
+				_next_timestamp = timestamp;
 				// Unread the timestamp so we can read it next
 				// time.
 				dyn_buf.unread<janus::update>();
 				_curr_index++;
-				return;
+				return true;
 			}
 		}
 		try {
 			_curr_universe.apply_update(u);
 		} catch (janus::universe_apply_error& e) {
 			std::cerr << "ERROR parsing: " << e.what() << " aborting." << std::endl;
-			return;
+			return false;
 		}
 		first = false;
 	}
+
+	return false;
 }
 
-void main_controller::get_first_update()
+auto main_controller::get_first_update() -> bool
 {
 	// The first timestamp precedes any existing data, so just consume it.
-	apply_until_next_index();
+	if (!apply_until_next_index())
+		return false;
 	// This moves the index to the point where we are actually reading data.
-	apply_until_next_index();
+	if (!apply_until_next_index())
+		return false;
+
+	return true;
 }
 
 auto main_controller::gen_virtual(const janus::runner_view& runner_meta) -> janus::betfair::ladder
@@ -250,7 +257,7 @@ void main_controller::update_ladder(int ladder_index)
 	ladder_ui.removed_label->setVisible(false);
 	if (is_removed) {
 		ladder_ui.removed_label->setVisible(true);
-	} else if (runner->traded_vol() >= 1) {
+	} else {
 		uint64_t ltp_index = runner->ltp();
 		double ltp = janus::betfair::price_range::index_to_price(ltp_index);
 		ladder_ui.ltp_label->setText(QString::number(ltp, 'g', 10));
@@ -397,7 +404,9 @@ void main_controller::select_market(int index)
 		}
 	}
 
-	get_first_update();
+	if (!get_first_update())
+		std::cerr << "Error in getting first update." << std::endl;
+
 	_view->timeHorizontalSlider->setMinimum(_curr_index);
 	_view->timeHorizontalSlider->setMaximum(_num_indexes - 1);
 
@@ -422,7 +431,10 @@ void main_controller::set_index(int index)
 	}
 
 	while (_curr_index < index_val && _curr_index < _num_indexes) {
-		apply_until_next_index();
+		if (!apply_until_next_index()) {
+			std::cerr << "Error in apply next index, aborting." << std::endl;
+			break;
+		}
 	}
 
 	update_market_dynamic();
@@ -570,10 +582,13 @@ void main_controller::timer_tick()
 	_playback_timestamp += PLAYBACK_INTERVAL_MS;
 
 	while (_next_timestamp < _playback_timestamp && _curr_index < _num_indexes) {
-		uint64_t _prev_index = _curr_index;
-		apply_until_next_index();
-		if (_prev_index == _curr_index)
+		if (!apply_until_next_index()) {
+			std::cerr << "Error in processing next message, timer stopped."
+				  << std::endl;
+			_playback_timer->stop();
+			_playing = false;
 			break;
+		}
 	}
 
 	update_market_dynamic();

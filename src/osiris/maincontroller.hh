@@ -200,11 +200,13 @@ private:
 	// Get runner with the specific runner metadata.
 	auto get_runner(const janus::runner_view& runner_meta) -> janus::betfair::runner*;
 
-	// Apply updates until (but not including) the next timestamp.
-	void apply_until_next_index();
+	// Apply updates until (but not including) the next timestamp. Returns
+	// false if an error occurred.
+	auto apply_until_next_index() -> bool;
 
-	// Update the first block of updates and apply to the current universe.
-	void get_first_update();
+	// Update the first block of updates and apply to the current
+	// universe. Returns false if an error occurred.
+	auto get_first_update() -> bool;
 
 	// Update the visible runner at the specified index.
 	void update_ladder(int index);
