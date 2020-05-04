@@ -570,7 +570,10 @@ void main_controller::timer_tick()
 	_playback_timestamp += PLAYBACK_INTERVAL_MS;
 
 	while (_next_timestamp < _playback_timestamp && _curr_index < _num_indexes) {
+		uint64_t _prev_index = _curr_index;
 		apply_until_next_index();
+		if (_prev_index == _curr_index)
+			break;
 	}
 
 	update_market_dynamic();
