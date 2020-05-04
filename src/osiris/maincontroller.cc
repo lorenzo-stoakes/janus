@@ -25,10 +25,8 @@ auto main_controller::get_runner(const janus::runner_view& runner_meta) -> janus
 	janus::betfair::market& market = _curr_universe.markets()[0];
 	auto& runners = market.runners();
 
-	janus::betfair::runner* runner;
-
 	for (uint64_t i = 0; i < runners.size(); i++) {
-		runner = &runners[i];
+		janus::betfair::runner* runner = &runners[i];
 		if (runner->id() == runner_meta.id())
 			return runner;
 	}
