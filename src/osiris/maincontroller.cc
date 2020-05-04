@@ -596,6 +596,7 @@ void main_controller::timer_tick()
 		}
 	}
 
+	_view->timeHorizontalSlider->setValue(_curr_index);
 	update_market_dynamic();
 }
 
