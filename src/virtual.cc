@@ -86,7 +86,8 @@ auto calc_virtual_bets(const price_range& range, bool atl,
 			}
 		}
 		virt_price = 1. / virt_price;
-		if (virt_price < 1.01 || virt_price > 1000) // NOLINT: Not magical.
+
+		if (virt_price < 1) // NOLINT: Not magical.
 			return ret;
 
 		for (uint64_t i = 0; i < ladders.size(); i++) {
@@ -132,7 +133,16 @@ auto gen_virt_ladder(const janus::betfair::price_range& range, janus::betfair::l
 	// Merge generated ATL virtual bets.
 	for (auto [price, vol] : atl_virt_bets) {
 		// Round UP to the nearest price index as this is equivalent of a BACK bet.
-		uint64_t price_index = range.price_to_nearest_index_up(price);
+
+		uint64_t price_index;
+
+		if (price < 1.01)
+			price_index = 0;
+		else if (price > 1000)
+			price_index = NUM_PRICES - 1;
+		else
+			price_index = range.price_to_nearest_index_up(price);
+
 		double nearest_price = janus::betfair::price_range::index_to_price(price_index);
 
 		// Take into account fact our calculated prices are often not at
@@ -149,7 +159,15 @@ auto gen_virt_ladder(const janus::betfair::price_range& range, janus::betfair::l
 	// Merge generated ATB virtual bets.
 	for (auto [price, vol] : atb_virt_bets) {
 		// Round DOWN to the nearest price index as this is equivalent of a LAY bet.
-		uint64_t price_index = range.price_to_nearest_index(price);
+
+		uint64_t price_index;
+		if (price < 1.01)
+			continue;
+		else if (price > 1000)
+			price_index = NUM_PRICES - 1;
+		else
+			price_index = range.price_to_nearest_index(price);
+
 		double nearest_price = janus::betfair::price_range::index_to_price(price_index);
 
 		// Take into account fact our calculated prices are often not at
