@@ -289,22 +289,29 @@ void main_controller::update_ladder(int ladder_index)
 			back = false;
 			unmatched = -unmatched;
 		}
-		if (unmatched >= 1) {
+		if (unmatched > 0) {
+			QTableWidgetItem* item;
 			if (back) {
-				QTableWidgetItem* item = table->item(table_index, BACK_COL);
+				item = table->item(table_index, BACK_COL);
 				item->setBackground(BACK_VOL_BG_COLOUR);
-				item->setText(QString::number(static_cast<int>(unmatched)));
 			} else {
-				QTableWidgetItem* item = table->item(table_index, LAY_COL);
+				item = table->item(table_index, LAY_COL);
 				item->setBackground(LAY_VOL_BG_COLOUR);
-				item->setText(QString::number(static_cast<int>(unmatched)));
 			}
+
+			if (unmatched < 1)
+				item->setText(QString::number(unmatched, 'f', 2));
+			else
+				item->setText(QString::number(static_cast<int>(unmatched)));
 		}
 
 		double matched = ladder.matched(price_index);
-		if (matched >= 1) {
+		if (matched > 0) {
 			QTableWidgetItem* item = table->item(table_index, TRADED_COL);
-			item->setText(QString::number(static_cast<int>(matched)));
+			if (matched < 1)
+				item->setText(QString::number(matched, 'f', 2));
+			else
+				item->setText(QString::number(static_cast<int>(matched)));
 		}
 	}
 }
