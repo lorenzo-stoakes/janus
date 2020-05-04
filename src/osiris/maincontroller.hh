@@ -104,6 +104,7 @@ public:
 		  _playback_timestamp{0},
 		  _visible_runner_indexes{-1},
 		  _ladders{},
+		  _curr_meta{nullptr},
 		  _setting_up_combos{false},
 		  _playing{false},
 		  _calc_virtual{false}
