@@ -35,7 +35,7 @@ TEST(virtual_test, calc_virtual_bets)
 	// Note that we calculate _using_ ATL values but we _generate_ ATB bets.
 	auto atb_bets_d = janus::betfair::calc_virtual_bets(range, true, {ladder_n, ladder_c});
 
-	EXPECT_EQ(atb_bets_d.size(), 4);
+	EXPECT_EQ(atb_bets_d.size(), 5);
 
 	// These are explicitly cited in betfair's example.
 
@@ -54,13 +54,18 @@ TEST(virtual_test, calc_virtual_bets)
 	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_d[3].first), 1.05);
 	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_d[3].second), 189.8);
 
+	// We generate invalid prices but these are processed and scaled
+	// accordingly in gen_virt_ladder().
+	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_d[4].first), 1);
+	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_d[4].second), 1773.95);
+
 	// These values are not cited at all by the page but having tested the
 	// algorithm against real data I am confident they are correct, so test
 	// them to avoid regressions.
 
 	auto atb_bets_n = janus::betfair::calc_virtual_bets(range, true, {ladder_c, ladder_d});
 
-	EXPECT_EQ(atb_bets_n.size(), 4);
+	EXPECT_EQ(atb_bets_n.size(), 5);
 
 	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_n[0].first), 1.76);
 	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_n[0].second), 56.67);
@@ -73,6 +78,11 @@ TEST(virtual_test, calc_virtual_bets)
 
 	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_n[3].first), 1.02);
 	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_n[3].second), 1909.05);
+
+	// We generate invalid prices but these are processed and scaled
+	// accordingly in gen_virt_ladder().
+	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_n[4].first), 1);
+	EXPECT_DOUBLE_EQ(round_2dp(atb_bets_n[4].second), 49.9);
 
 	auto atb_bets_c = janus::betfair::calc_virtual_bets(range, true, {ladder_n, ladder_d});
 
