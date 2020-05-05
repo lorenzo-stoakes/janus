@@ -228,19 +228,22 @@ auto get_update_id_list(const janus::config& config, db_t& db) -> std::vector<ui
 
 // Extract per-market data from the dynamic buffer which has accumulated delta
 // stream updates.
-auto extract_by_market(janus::dynamic_buffer& dyn_buf, uint64_t num_updates) -> per_market_t
+auto extract_by_market(std::string path, janus::dynamic_buffer& dyn_buf, uint64_t num_updates)
+	-> per_market_t
 {
+	std::unordered_map<uint64_t, std::vector<janus::update>> map;
+
 	if (num_updates < 2) {
-		std::ostringstream oss;
-		oss << "Only " << num_updates << " updates, expected minimum 2?";
-		throw std::runtime_error(oss.str());
+		spdlog::warn("Only {} received from {} - expected minimum 2, ignoring.",
+			     num_updates, path);
+		return map;
 	}
 
 	// Read first update, HAS to be a timestamp.
 	auto& first = dyn_buf.read<janus::update>();
 	if (first.type != janus::update_type::TIMESTAMP) {
 		std::ostringstream oss;
-		oss << "First update is of type " << janus::update_type_str(first.type)
+		oss << path << ": First update is of type " << janus::update_type_str(first.type)
 		    << " not expected timestamp.";
 		throw std::runtime_error(oss.str());
 	}
@@ -251,13 +254,11 @@ auto extract_by_market(janus::dynamic_buffer& dyn_buf, uint64_t num_updates) -> 
 	if (second.type != janus::update_type::MARKET_ID) {
 		std::ostringstream oss;
 
-		oss << "Second update is of type " << janus::update_type_str(second.type)
+		oss << path << ": Second update is of type " << janus::update_type_str(second.type)
 		    << " not expected market ID.";
 		throw std::runtime_error(oss.str());
 	}
 	uint64_t market_id = janus::get_update_market_id(second);
-
-	std::unordered_map<uint64_t, std::vector<janus::update>> map;
 
 	for (uint64_t i = 2; i < num_updates; i++) {
 		auto& u = dyn_buf.read<janus::update>();
@@ -310,6 +311,9 @@ auto write_market_stream_data(const std::string& destdir, uint64_t id,
 // Write per-market stream data to individual binary files,
 void write_stream_data(const janus::config& config, const per_market_t& per_market)
 {
+	if (per_market.size() == 0)
+		return;
+
 	std::string destdir = config.binary_data_root + "/market/";
 
 	uint64_t markets_written = 0;
@@ -387,7 +391,7 @@ void update_from_stream_file(const janus::config& config, const janus::betfair::
 
 	spdlog::debug("Extracting per-market data...");
 
-	auto per_market = extract_by_market(dyn_buf, num_updates);
+	auto per_market = extract_by_market(source, dyn_buf, num_updates);
 	spdlog::debug("Extracted data for {} markets.", per_market.size());
 
 	spdlog::debug("Writing market data...");
