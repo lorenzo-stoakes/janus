@@ -40,11 +40,8 @@ public:
 	// (intended to be run in a separate thread).
 	auto read_next_line(int& size) -> char*;
 
-	// Betfair only allow subscriptions up to 200 markets. However betfair
-	// being 'creative' in their ability to count appear to consider a
-	// subscription to 200 markets equal to a subscription to 212. So we set
-	// to 188.
-	static constexpr int MAX_MARKETS = 188;
+	// Betfair only allow subscriptions up to 200 markets.
+	static constexpr int MAX_MARKETS = 200;
 
 private:
 	// Maximum size of data we expect to receive in internal buffer.
