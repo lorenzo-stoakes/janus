@@ -98,7 +98,7 @@ void stream::market_subscribe(const std::vector<std::string>& market_ids,
 		stream_filter_json += "\",";
 	}
 
-	stream_filter_json += "\"" + market_ids[market_ids.size() - 1] + "\"]}";
+	stream_filter_json += "\"" + market_ids[count - 1] + "\"]}";
 
 	market_subscribe(stream_filter_json, data_filter_json);
 }
