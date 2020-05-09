@@ -5,6 +5,7 @@
 ~/data/janbin
 |- meta/[market id].jan
 |- market/[market id].jan[.snap]
+|- stats/[market id].jan
 |- neptune.db (see below)
 
 ## DB file format
@@ -26,4 +27,6 @@ Per file:
 
 3. Scan all files from 2, updating DB.
 
-4. Sleep and loop.
+4. Write binary stream data and stats, appending/refreshing where necessary.
+
+5. Sleep and loop.
