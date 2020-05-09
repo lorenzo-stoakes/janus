@@ -525,17 +525,23 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 
 auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 {
-	bool force_meta = false;
-	if (argc > 1 && ::strcmp(argv[1], "--force-meta") == 0) {
-		spdlog::info("Forcing full refresh of metadata!");
-		force_meta = true;
-	}
-
 	try {
 		add_signal_handler();
 
 		spdlog::info("neptune " STR(GIT_VER));
 		janus::config config = janus::parse_config();
+
+		bool force_meta = false;
+		if (argc > 1 && ::strcmp(argv[1], "--force-meta") == 0) {
+			spdlog::info("Forcing full refresh of metadata!");
+			force_meta = true;
+		}
+
+		if (force_meta) {
+			spdlog::info("Forced metadata update, so parsing legacy metadata too...");
+			parse_all_legacy_meta(config);
+		}
+
 		return run_loop(config, force_meta) ? 0 : 1;
 	} catch (std::exception& e) {
 		spdlog::error(e.what());
