@@ -401,22 +401,32 @@ void update_from_stream_file(const janus::config& config, const janus::betfair::
 }
 
 // Run core functionality.
-auto run_core(const janus::config& config) -> bool
+auto run_core(const janus::config& config, bool force_meta) -> bool
 {
 	spdlog::debug("Reading DB file...");
 	auto db = read_db(config);
 
 	auto file_ids = janus::get_json_file_id_list(config);
 	spdlog::debug("Found {} metadata files.", file_ids.size());
-	spdlog::debug("Checking for new metadata...");
-	// Add entries for new files.
-	for (uint64_t file_id : file_ids) {
-		if (!db.contains(file_id)) {
-			// If we haven't seen the file before, parse the
-			// metadata and save it to the binary metadata
-			// directory.
+
+	if (force_meta) {
+		spdlog::debug("force-meta mode: parsing all {} metadata files...", file_ids.size());
+
+		for (uint64_t file_id : file_ids) {
 			parse_meta(config, file_id);
 			db.emplace(file_id, file_id);
+		}
+	} else {
+		spdlog::debug("Checking for new metadata...");
+		// Add entries for new files.
+		for (uint64_t file_id : file_ids) {
+			if (!db.contains(file_id)) {
+				// If we haven't seen the file before, parse the
+				// metadata and save it to the binary metadata
+				// directory.
+				parse_meta(config, file_id);
+				db.emplace(file_id, file_id);
+			}
 		}
 	}
 
@@ -441,7 +451,7 @@ auto run_core(const janus::config& config) -> bool
 }
 
 // Run core loop.
-auto run_loop(const janus::config& config) -> bool
+auto run_loop(const janus::config& config, bool force_meta) -> bool
 {
 	// On the first run, output debug info
 	bool first = true;
@@ -454,8 +464,11 @@ auto run_loop(const janus::config& config) -> bool
 		}
 
 		try {
-			if (!run_core(config))
+			if (!run_core(config, force_meta))
 				return false;
+			// We only force ALL metadata retrieval on the FIRST
+			// iteration.
+			force_meta = false;
 		} catch (std::exception& e) {
 			spdlog::error(e.what());
 			spdlog::critical("Aborting!");
@@ -473,14 +486,20 @@ auto run_loop(const janus::config& config) -> bool
 	}
 }
 
-auto main() -> int // NOLINT: Handles exceptions!
+auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 {
+	bool force_meta = false;
+	if (argc > 1 && ::strcmp(argv[1], "--force-meta") == 0) {
+		spdlog::info("Forcing full refresh of metadata!");
+		force_meta = true;
+	}
+
 	try {
 		add_signal_handler();
 
 		spdlog::info("neptune " STR(GIT_VER));
 		janus::config config = janus::parse_config();
-		return run_loop(config) ? 0 : 1;
+		return run_loop(config, force_meta) ? 0 : 1;
 	} catch (std::exception& e) {
 		spdlog::error(e.what());
 		spdlog::critical("Aborting!");
