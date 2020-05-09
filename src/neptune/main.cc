@@ -528,7 +528,13 @@ auto read_flags(int argc, char** argv, bool& force_meta) -> bool
 {
 	force_meta = false;
 	for (int i = 1; i < argc; i++) {
-		if (::strcmp(argv[i], "--force-meta") == 0) {
+		if (::strcmp(argv[i], "--help") == 0) {
+			spdlog::info("usage: {} [--help] [--force-meta]", argv[0]);
+			spdlog::info("\t      --help - Display this message.");
+			spdlog::info(
+				"\t--force-meta - Force regeneration of all metadata including legacy.");
+			return false;
+		} else if (::strcmp(argv[i], "--force-meta") == 0) {
 			spdlog::info("Forcing full refresh of metadata!");
 			force_meta = true;
 		}
