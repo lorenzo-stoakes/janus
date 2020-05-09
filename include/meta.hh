@@ -184,7 +184,7 @@ auto extract_meta_static_strings(const sajson::value& node, dynamic_buffer& dyn_
 auto extract_meta_runners(const sajson::value& node, dynamic_buffer& dyn_buf) -> uint64_t;
 } // namespace internal
 
-// Parse betfair market metadata JSON already parsed intl an AST by sajson and
+// Parse betfair market metadata JSON already parsed into an AST by sajson and
 // append data in the binary file format to the specified dynamic buffer.
 //      root: Root sajson node to parse.
 //   dyn_buf: Dynamic buffer to OUTPUT data to in binary file format.

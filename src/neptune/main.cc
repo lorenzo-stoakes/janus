@@ -9,13 +9,16 @@
 #include <csignal>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <streambuf>
 #include <string>
 #include <sys/stat.h>
 #include <thread>
 #include <vector>
+namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
 static constexpr uint64_t MAX_STREAM_BYTES = 1'000'000'000;
@@ -179,6 +182,40 @@ void parse_meta(const janus::config& config, uint64_t file_id)
 		num_markets += parse_meta_line(dest_dir, line);
 	}
 	spdlog::debug("Wrote {} markets.", num_markets);
+}
+
+// Read all legacy metadata JSON files, parse them and write binary output.
+void parse_all_legacy_meta(const janus::config& config)
+{
+	std::string legacy_root_dir = config.json_data_root + "/legacy/markets/";
+	if (!file_exists(legacy_root_dir))
+		throw std::runtime_error(std::string("Cannot find legacy market directory ") +
+					 legacy_root_dir);
+
+	std::string dest_dir = config.binary_data_root + "/meta/";
+	if (!file_exists(dest_dir))
+		throw std::runtime_error(std::string("Cannot find destination directory ") +
+					 dest_dir);
+
+	uint64_t num_markets = 0;
+	janus::dynamic_buffer dyn_buf(MAX_METADATA_BYTES);
+	for (const auto& entry : fs::directory_iterator(legacy_root_dir)) {
+		std::string path = entry.path().string() + "/meta.json";
+
+		auto file = std::ifstream(path);
+		if (!file)
+			throw std::runtime_error(std::string("Cannot open file ") + path);
+		std::string json((std::istreambuf_iterator<char>(file)),
+				 std::istreambuf_iterator<char>());
+
+		janus::betfair::parse_meta_json(path.c_str(), &json[0], json.size(), dyn_buf);
+		write_meta(dest_dir, dyn_buf);
+
+		dyn_buf.reset();
+		num_markets++;
+	}
+
+	spdlog::info("Metadata generated for {} legacy markets", num_markets);
 }
 
 // Get path for JSON stream data file.
@@ -488,17 +525,23 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 
 auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 {
-	bool force_meta = false;
-	if (argc > 1 && ::strcmp(argv[1], "--force-meta") == 0) {
-		spdlog::info("Forcing full refresh of metadata!");
-		force_meta = true;
-	}
-
 	try {
 		add_signal_handler();
 
 		spdlog::info("neptune " STR(GIT_VER));
 		janus::config config = janus::parse_config();
+
+		bool force_meta = false;
+		if (argc > 1 && ::strcmp(argv[1], "--force-meta") == 0) {
+			spdlog::info("Forcing full refresh of metadata!");
+			force_meta = true;
+		}
+
+		if (force_meta) {
+			spdlog::info("Forced metadata update, so parsing legacy metadata too...");
+			parse_all_legacy_meta(config);
+		}
+
 		return run_loop(config, force_meta) ? 0 : 1;
 	} catch (std::exception& e) {
 		spdlog::error(e.what());
