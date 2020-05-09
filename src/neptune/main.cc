@@ -523,6 +523,20 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 	}
 }
 
+// Read command-line flags. Returns false to exit immediately.
+auto read_flags(int argc, char** argv, bool& force_meta) -> bool
+{
+	force_meta = false;
+	for (int i = 1; i < argc; i++) {
+		if (::strcmp(argv[i], "--force-meta") == 0) {
+			spdlog::info("Forcing full refresh of metadata!");
+			force_meta = true;
+		}
+	}
+
+	return true;
+}
+
 auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 {
 	try {
@@ -532,10 +546,8 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 		janus::config config = janus::parse_config();
 
 		bool force_meta = false;
-		if (argc > 1 && ::strcmp(argv[1], "--force-meta") == 0) {
-			spdlog::info("Forcing full refresh of metadata!");
-			force_meta = true;
-		}
+		if (!read_flags(argc, argv, force_meta))
+			return 0;
 
 		if (force_meta) {
 			spdlog::info("Forced metadata update, so parsing legacy metadata too...");
