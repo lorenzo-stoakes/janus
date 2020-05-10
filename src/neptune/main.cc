@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <snappy.h>
 #include <sstream>
 #include <streambuf>
 #include <string>
@@ -21,7 +22,8 @@
 namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
-static constexpr uint64_t MAX_STREAM_BYTES = 1'000'000'000;
+static constexpr uint64_t MAX_STREAM_BYTES = 5'000'000'000;
+static constexpr uint64_t MAX_LEGACY_STREAM_BYTES = 10'000'000'000;
 static constexpr uint64_t SLEEP_INTERVAL_MS = 1000;
 
 // Indicates whether a signal has occured and we should abort.
@@ -184,8 +186,9 @@ void parse_meta(const janus::config& config, uint64_t file_id)
 	spdlog::debug("Wrote {} markets.", num_markets);
 }
 
-// Read all legacy metadata JSON files, parse them and write binary output.
-void parse_all_legacy_meta(const janus::config& config)
+// Read all legacy metadata JSON files, parse them and write binary
+// output. Returns false when signalled.
+auto parse_all_legacy_meta(const janus::config& config) -> bool
 {
 	std::string legacy_root_dir = config.json_data_root + "/legacy/markets/";
 	if (!file_exists(legacy_root_dir))
@@ -200,6 +203,11 @@ void parse_all_legacy_meta(const janus::config& config)
 	uint64_t num_markets = 0;
 	janus::dynamic_buffer dyn_buf(MAX_METADATA_BYTES);
 	for (const auto& entry : fs::directory_iterator(legacy_root_dir)) {
+		if (signalled.load()) {
+			spdlog::info("Signal received, aborting...");
+			return false;
+		}
+
 		std::string path = entry.path().string() + "/meta.json";
 
 		auto file = std::ifstream(path);
@@ -216,6 +224,7 @@ void parse_all_legacy_meta(const janus::config& config)
 	}
 
 	spdlog::info("Metadata generated for {} legacy markets", num_markets);
+	return true;
 }
 
 // Get path for JSON stream data file.
@@ -320,10 +329,13 @@ auto extract_by_market(std::string path, janus::dynamic_buffer& dyn_buf, uint64_
 }
 
 auto write_market_stream_data(const std::string& destdir, uint64_t id,
-			      const std::vector<janus::update>& updates) -> bool
+			      const std::vector<janus::update>& updates, bool remove_snap) -> bool
 {
 	std::string path = destdir + std::to_string(id) + ".jan";
-	if (file_exists(path + ".snap")) {
+	if (remove_snap) {
+		// Succeeds even if file doesn't exist.
+		fs::remove(path + ".snap");
+	} else if (file_exists(path + ".snap")) {
 		spdlog::warn(
 			"Received {} updates for market {} but already archived as {}.snap? Skipping.",
 			updates.size(), id, path);
@@ -346,7 +358,8 @@ auto write_market_stream_data(const std::string& destdir, uint64_t id,
 }
 
 // Write per-market stream data to individual binary files,
-void write_stream_data(const janus::config& config, const per_market_t& per_market)
+void write_stream_data(const janus::config& config, const per_market_t& per_market,
+		       bool remove_snap = false)
 {
 	if (per_market.size() == 0)
 		return;
@@ -355,7 +368,7 @@ void write_stream_data(const janus::config& config, const per_market_t& per_mark
 
 	uint64_t markets_written = 0;
 	for (const auto& [id, updates] : per_market) {
-		if (!write_market_stream_data(destdir, id, updates)) {
+		if (!write_market_stream_data(destdir, id, updates, remove_snap)) {
 			// For information output each previously written market.
 			uint64_t logged_markets = 0;
 			for (const auto& p : per_market) {
@@ -435,6 +448,192 @@ void update_from_stream_file(const janus::config& config, const janus::betfair::
 	write_stream_data(config, per_market);
 	entry.next_offset = new_offset;
 	entry.next_line = state.line;
+}
+
+// Parse all legacy JSON stream files and converts to binary. Returns false if signal interrupted.
+// TODO(lorenzo): Duplication between this function and update_from_stream_file().
+auto parse_all_legacy_stream(const janus::config& config) -> bool
+{
+	std::string legacy_root_dir = config.json_data_root + "/legacy/all/";
+	if (!file_exists(legacy_root_dir))
+		throw std::runtime_error(std::string("Cannot find legacy all streams directory ") +
+					 legacy_root_dir);
+
+	janus::dynamic_buffer dyn_buf(MAX_LEGACY_STREAM_BYTES);
+	janus::betfair::price_range range;
+
+	std::vector<std::string> filenames;
+
+	for (const auto& entry : fs::directory_iterator(legacy_root_dir)) {
+		std::string source = entry.path().string();
+		filenames.emplace_back(source);
+	}
+
+	// Sort to get chronological order.
+	std::sort(filenames.begin(), filenames.end());
+
+	spdlog::info("About to read {} legacy stream JSON files...", filenames.size());
+	for (std::string source : filenames) {
+		if (signalled.load()) {
+			spdlog::info("Signal received, aborting...");
+			return false;
+		}
+
+		auto file = std::ifstream(source, std::ios::ate);
+		if (!file)
+			throw std::runtime_error(std::string("Cannot open ") + source +
+						 " for stream update read");
+		uint64_t bytes = file.tellg();
+		file.seekg(0);
+
+		// We log at INFO level since this is an irregular operation and
+		// slow, so we will want to see progress.
+		spdlog::info("Reading from {} of size {} bytes...", source, bytes);
+
+		janus::betfair::update_state state = {
+			.range = &range,
+			.filename = source.c_str(),
+			.line = 1,
+		};
+
+		uint64_t num_lines = 0;
+		uint64_t num_updates = 0;
+		std::string line;
+		while (std::getline(file, line)) {
+			if (line.empty() || line[0] == '\0') {
+				state.line++;
+				continue;
+			}
+
+			num_updates += janus::betfair::parse_update_stream_json(
+				state, &line[0], line.size(), dyn_buf);
+			num_lines++;
+		}
+		spdlog::debug("Read {} lines ({} bytes) from {} resulting in {} updates.",
+			      num_lines, bytes, source, num_updates);
+
+		spdlog::debug("Extracting per-market data...");
+		auto per_market = extract_by_market(source, dyn_buf, num_updates);
+		spdlog::debug("Extracted data for {} markets.", per_market.size());
+
+		spdlog::debug("Writing market data, deleting any existing .snap files...");
+		write_stream_data(config, per_market, true);
+
+		dyn_buf.reset();
+	}
+
+	spdlog::info("Read {} legacy stream JSON files.", filenames.size());
+	return true;
+}
+
+// Determine whether market data in specified dynamic buffer contains a
+// MARKET_CLOSE update.
+auto market_closes(janus::dynamic_buffer& dyn_buf) -> bool
+{
+	while (dyn_buf.read_offset() != dyn_buf.size()) {
+		auto& u = dyn_buf.read<janus::update>();
+		if (u.type == janus::update_type::MARKET_CLOSE)
+			return true;
+	}
+
+	return false;
+}
+
+// Snappy-compress specified file, outputting as [path].snap, deleting the
+// existing file afterwards.
+void snappify(std::string path, janus::dynamic_buffer& dyn_buf)
+{
+	std::string dest = path + ".snap";
+
+	std::string compressed;
+	snappy::Compress(reinterpret_cast<const char*>(dyn_buf.data()), dyn_buf.size(),
+			 &compressed);
+
+	if (auto file = std::ofstream(dest, std::ios::binary)) {
+		file.write(compressed.c_str(), compressed.size());
+	} else {
+		throw std::runtime_error(std::string("Unable to snappy compress ") + path +
+					 " cannot open " + dest + " for write.");
+	}
+	fs::remove(path);
+
+	spdlog::debug("Compressed {} of size {} to {} bytes at {}", path, dyn_buf.size(),
+		      compressed.size(), dest);
+}
+
+// 'Snappify' i.e. snappy-compress markets that have seen a MARKET_CLOSE update,
+// removing the existing file and outputting the compressed file with an
+// appended .snap extension. Returns false if signalled to stop.
+auto snappify_markets(const janus::config& config) -> bool
+{
+	std::string market_dir = config.binary_data_root + "/market/";
+	if (!file_exists(market_dir))
+		throw std::runtime_error(std::string("Cannot find binary market directory ") +
+					 market_dir);
+
+	janus::dynamic_buffer dyn_buf(MAX_STREAM_BYTES);
+
+	uint64_t num_markets = 0;
+	uint64_t num_snappified = 0;
+	for (const auto& entry : fs::directory_iterator(market_dir)) {
+		if (signalled.load()) {
+			spdlog::info("Signal received, aborting...");
+			return false;
+		}
+
+		if (entry.path().extension() != ".jan")
+			continue;
+
+		std::string source = entry.path().string();
+
+		auto file = std::ifstream(source, std::ios::binary | std::ios::ate);
+		if (!file)
+			throw std::runtime_error(std::string("Cannot open ") + source +
+						 " for stream data read");
+
+		uint64_t size = file.tellg();
+		file.seekg(0);
+
+		char* ptr = static_cast<char*>(dyn_buf.reserve(size));
+		if (!file.read(ptr, size))
+			throw std::runtime_error(std::string("Error reading stream data from ") +
+						 source);
+
+		try {
+			if (market_closes(dyn_buf)) {
+				snappify(source, dyn_buf);
+				num_snappified++;
+			}
+		} catch (std::runtime_error& e) {
+			spdlog::error("Error processing {}!", source);
+			throw;
+		}
+
+		dyn_buf.reset();
+		num_markets++;
+	}
+
+	spdlog::info("Snappified {} of {} markets.", num_snappified, num_markets);
+	return true;
+}
+
+// Delete all existing binary data.
+void delete_binary_data(const janus::config& config)
+{
+	std::string market_dir = config.binary_data_root + "/market/";
+	std::string meta_dir = config.binary_data_root + "/meta/";
+	std::string neptune_db_path = config.binary_data_root + "/neptune.db";
+
+	spdlog::info("Removing neptune database file {}...", neptune_db_path);
+	fs::remove(neptune_db_path);
+
+	spdlog::info("Removing all binary metadata at {}...", meta_dir);
+	fs::remove_all(meta_dir);
+	fs::create_directory(meta_dir);
+
+	spdlog::info("Removing all binary market data at {}...", market_dir);
+	fs::remove_all(market_dir);
+	fs::create_directory(market_dir);
 }
 
 // Run core functionality.
@@ -523,6 +722,71 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 	}
 }
 
+void usage(std::string cmd)
+{
+	spdlog::info("usage:");
+	spdlog::info("{} [flags...]", cmd);
+	spdlog::info("  --help                - Display this message.");
+	spdlog::info("  --force-legacy-meta   - Force regeneration of legacy metadata.");
+	spdlog::info(
+		"  --force-meta          - Force regeneration of all metadata including legacy.");
+	spdlog::info(
+		"  --force-legacy-stream - Force regeneration of all legacy market stream data and snappify.");
+	spdlog::info("  --snappify            - Compress closed markets.");
+	spdlog::info(
+		"  --reset               - Remove all binary data and regenerates everything, including legacy.");
+}
+
+// Read command-line flags. Returns false to exit immediately.
+auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta,
+		bool& force_legacy_stream, bool& snappify, bool& reset) -> bool
+{
+	for (int i = 1; i < argc; i++) {
+		std::string arg = argv[i];
+
+		if (arg == "--help") {
+			usage(argv[0]);
+			return false;
+		} else if (arg == "--force-legacy-meta") {
+			spdlog::info("Forcing full refresh of legacy metadata!");
+			force_legacy_meta = true;
+		} else if (arg == "--force-meta") {
+			spdlog::info("Forcing full refresh of metadata!");
+			force_meta = true;
+			// If we are refreshing all metadata we will want legacy
+			// metadata too.
+			force_legacy_meta = true;
+		} else if (arg == "--force-legacy-stream") {
+			spdlog::info("Forcing full refresh of legacy stream data!");
+			force_legacy_stream = true;
+			// If we are retrieving legacy stream data we will want
+			// to snappify it afterwards.
+			snappify = true;
+		} else if (arg == "--snappify") {
+			spdlog::info("Will snappify markets which have seen market close update.");
+			snappify = true;
+		} else if (arg == "--reset") {
+			spdlog::info("COMPLETELY resetting all binary data.");
+			reset = true;
+			// Implies all other flags.
+			force_legacy_meta = true;
+			force_meta = true;
+			force_legacy_stream = true;
+			snappify = true;
+		} else if (arg.starts_with("--")) {
+			spdlog::error("Unrecognised flag '{}'", arg);
+			usage(argv[0]);
+			return false;
+		} else {
+			spdlog::error("Unrecognised parameter '{}'", arg);
+			usage(argv[0]);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 {
 	try {
@@ -531,15 +795,37 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 		spdlog::info("neptune " STR(GIT_VER));
 		janus::config config = janus::parse_config();
 
+		bool force_legacy_meta = false;
 		bool force_meta = false;
-		if (argc > 1 && ::strcmp(argv[1], "--force-meta") == 0) {
-			spdlog::info("Forcing full refresh of metadata!");
-			force_meta = true;
+		bool force_legacy_stream = false;
+		bool snappify = false;
+		bool reset = false;
+		if (!read_flags(argc, argv, force_legacy_meta, force_meta, force_legacy_stream,
+				snappify, reset))
+			return 0;
+
+		if (reset) {
+			spdlog::info("REMOVING ALL existing binary data...");
+			delete_binary_data(config);
 		}
 
-		if (force_meta) {
-			spdlog::info("Forced metadata update, so parsing legacy metadata too...");
-			parse_all_legacy_meta(config);
+		if (force_legacy_meta) {
+			spdlog::info("Forced legacy meta update, parsing data...");
+			if (!parse_all_legacy_meta(config))
+				return 0;
+		}
+
+		if (force_legacy_stream) {
+			spdlog::info("Forced legacy stream update, this might take a while...");
+			// Returns false if signal received, in that case just exit.
+			if (!parse_all_legacy_stream(config))
+				return 0;
+		}
+
+		if (snappify) {
+			spdlog::info("Snappifying markets, this might take a while...");
+			if (!snappify_markets(config))
+				return 0;
 		}
 
 		return run_loop(config, force_meta) ? 0 : 1;
