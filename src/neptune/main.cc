@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <snappy.h>
 #include <sstream>
 #include <streambuf>
 #include <string>
@@ -511,6 +512,90 @@ auto parse_all_legacy_stream(const janus::config& config) -> bool
 	return true;
 }
 
+// Determine whether market data in specified dynamic buffer contains a
+// MARKET_CLOSE update.
+auto market_closes(janus::dynamic_buffer& dyn_buf) -> bool
+{
+	while (dyn_buf.read_offset() != dyn_buf.size()) {
+		auto& u = dyn_buf.read<janus::update>();
+		if (u.type == janus::update_type::MARKET_CLOSE)
+			return true;
+	}
+
+	return false;
+}
+
+// Snappy-compress specified file, outputting as [path].snap, deleting the
+// existing file afterwards.
+void snappify(std::string path, janus::dynamic_buffer& dyn_buf)
+{
+	std::string dest = path + ".snap";
+
+	std::string compressed;
+	snappy::Compress(reinterpret_cast<const char*>(dyn_buf.data()), dyn_buf.size(),
+			 &compressed);
+
+	if (auto file = std::ofstream(dest, std::ios::binary)) {
+		file.write(compressed.c_str(), compressed.size());
+	} else {
+		throw std::runtime_error(std::string("Unable to snappy compress ") + path +
+					 " cannot open " + dest + " for write.");
+	}
+	fs::remove(path);
+
+	spdlog::debug("Compressed {} of size {} to {} bytes at {}", path, dyn_buf.size(),
+		      compressed.size(), dest);
+}
+
+// 'Snappify' i.e. snappy-compress markets that have seen a MARKET_CLOSE update,
+// removing the existing file and outputting the
+void snappify_markets(const janus::config& config)
+{
+	std::string market_dir = config.binary_data_root + "/market/";
+	if (!file_exists(market_dir))
+		throw std::runtime_error(std::string("Cannot find binary market directory ") +
+					 market_dir);
+
+	janus::dynamic_buffer dyn_buf(MAX_STREAM_BYTES);
+
+	uint64_t num_markets = 0;
+	uint64_t num_snappified = 0;
+	for (const auto& entry : fs::directory_iterator(market_dir)) {
+		if (entry.path().extension() != ".jan")
+			continue;
+
+		std::string source = entry.path().string();
+
+		auto file = std::ifstream(source, std::ios::binary | std::ios::ate);
+		if (!file)
+			throw std::runtime_error(std::string("Cannot open ") + source +
+						 " for stream data read");
+
+		uint64_t size = file.tellg();
+		file.seekg(0);
+
+		char* ptr = static_cast<char*>(dyn_buf.reserve(size));
+		if (!file.read(ptr, size))
+			throw std::runtime_error(std::string("Error reading stream data from ") +
+						 source);
+
+		try {
+			if (market_closes(dyn_buf)) {
+				snappify(source, dyn_buf);
+				num_snappified++;
+			}
+		} catch (std::runtime_error& e) {
+			spdlog::error("Error processing {}!", source);
+			throw;
+		}
+
+		dyn_buf.reset();
+		num_markets++;
+	}
+
+	spdlog::info("Snappified {} of {} markets.", num_snappified, num_markets);
+}
+
 // Run core functionality.
 auto run_core(const janus::config& config, bool force_meta) -> bool
 {
@@ -598,7 +683,8 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 }
 
 // Read command-line flags. Returns false to exit immediately.
-auto read_flags(int argc, char** argv, bool& force_meta, bool& force_legacy_stream) -> bool
+auto read_flags(int argc, char** argv, bool& force_meta, bool& force_legacy_stream, bool& snappify)
+	-> bool
 {
 	force_meta = false;
 	for (int i = 1; i < argc; i++) {
@@ -610,6 +696,7 @@ auto read_flags(int argc, char** argv, bool& force_meta, bool& force_legacy_stre
 				"  --force-meta          - Force regeneration of all metadata including legacy.");
 			spdlog::info(
 				"  --force-legacy-stream - Force regeneration of all legacy market stream data.");
+			spdlog::info("  --snappify                - Compress closed markets.");
 			return false;
 		} else if (::strcmp(argv[i], "--force-meta") == 0) {
 			spdlog::info("Forcing full refresh of metadata!");
@@ -617,6 +704,9 @@ auto read_flags(int argc, char** argv, bool& force_meta, bool& force_legacy_stre
 		} else if (::strcmp(argv[i], "--force-legacy-stream") == 0) {
 			spdlog::info("Forcing full refresh of legacy stream data!");
 			force_legacy_stream = true;
+		} else if (::strcmp(argv[i], "--snappify") == 0) {
+			spdlog::info("Will snappify markets which have seen market close update.");
+			snappify = true;
 		}
 	}
 
@@ -633,7 +723,8 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 
 		bool force_meta = false;
 		bool force_legacy_stream = false;
-		if (!read_flags(argc, argv, force_meta, force_legacy_stream))
+		bool snappify = false;
+		if (!read_flags(argc, argv, force_meta, force_legacy_stream, snappify))
 			return 0;
 
 		if (force_meta) {
@@ -646,6 +737,11 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 			// Returns false if signal received, in that case just exit.
 			if (!parse_all_legacy_stream(config))
 				return 0;
+		}
+
+		if (snappify) {
+			spdlog::info("Snappifying markets...");
+			snappify_markets(config);
 		}
 
 		return run_loop(config, force_meta) ? 0 : 1;
