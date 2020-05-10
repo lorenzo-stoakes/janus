@@ -688,7 +688,9 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 {
 	force_meta = false;
 	for (int i = 1; i < argc; i++) {
-		if (::strcmp(argv[i], "--help") == 0) {
+		std::string arg = argv[i];
+
+		if (arg == "--help") {
 			spdlog::info("usage: {} [--help] [--force-meta] [--force-legacy-stream]",
 				     argv[0]);
 			spdlog::info("  --help                - Display this message.");
@@ -700,22 +702,22 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 				"  --force-legacy-stream - Force regeneration of all legacy market stream data and snappify.");
 			spdlog::info("  --snappify            - Compress closed markets.");
 			return false;
-		} else if (::strcmp(argv[i], "--force-legacy-meta") == 0) {
+		} else if (arg == "--force-legacy-meta") {
 			spdlog::info("Forcing full refresh of legacy metadata!");
 			force_legacy_meta = true;
-		} else if (::strcmp(argv[i], "--force-meta") == 0) {
+		} else if (arg == "--force-meta") {
 			spdlog::info("Forcing full refresh of metadata!");
 			force_meta = true;
 			// If we are refreshing all metadata we will want legacy
 			// metadata too.
 			force_legacy_meta = true;
-		} else if (::strcmp(argv[i], "--force-legacy-stream") == 0) {
+		} else if (arg == "--force-legacy-stream") {
 			spdlog::info("Forcing full refresh of legacy stream data!");
 			force_legacy_stream = true;
 			// If we are retrieving legacy stream data we will want
 			// to snappify it afterwards.
 			snappify = true;
-		} else if (::strcmp(argv[i], "--snappify") == 0) {
+		} else if (arg == "--snappify") {
 			spdlog::info("Will snappify markets which have seen market close update.");
 			snappify = true;
 		}
@@ -726,9 +728,6 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 
 auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 {
-	// ivg
-	spdlog::set_level(spdlog::level::debug);
-
 	try {
 		add_signal_handler();
 
