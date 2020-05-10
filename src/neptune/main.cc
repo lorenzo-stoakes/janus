@@ -704,6 +704,9 @@ auto read_flags(int argc, char** argv, bool& force_meta, bool& force_legacy_stre
 		} else if (::strcmp(argv[i], "--force-legacy-stream") == 0) {
 			spdlog::info("Forcing full refresh of legacy stream data!");
 			force_legacy_stream = true;
+			// If we are retrieving legacy stream data we will want
+			// to snappify it afterwards.
+			snappify = true;
 		} else if (::strcmp(argv[i], "--snappify") == 0) {
 			spdlog::info("Will snappify markets which have seen market close update.");
 			snappify = true;
