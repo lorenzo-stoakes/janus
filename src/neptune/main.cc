@@ -682,6 +682,19 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 	}
 }
 
+void usage(std::string cmd)
+{
+	spdlog::info("usage:");
+	spdlog::info("{} [--help] [--force-meta] [--force-legacy-stream]", cmd);
+	spdlog::info("  --help                - Display this message.");
+	spdlog::info("  --force-legacy-meta   - Force regeneration of legacy metadata.");
+	spdlog::info(
+		"  --force-meta          - Force regeneration of all metadata including legacy.");
+	spdlog::info(
+		"  --force-legacy-stream - Force regeneration of all legacy market stream data and snappify.");
+	spdlog::info("  --snappify            - Compress closed markets.");
+}
+
 // Read command-line flags. Returns false to exit immediately.
 auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta,
 		bool& force_legacy_stream, bool& snappify) -> bool
@@ -691,16 +704,7 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 		std::string arg = argv[i];
 
 		if (arg == "--help") {
-			spdlog::info("usage: {} [--help] [--force-meta] [--force-legacy-stream]",
-				     argv[0]);
-			spdlog::info("  --help                - Display this message.");
-			spdlog::info(
-				"  --force-legacy-meta   - Force regeneration of legacy metadata.");
-			spdlog::info(
-				"  --force-meta          - Force regeneration of all metadata including legacy.");
-			spdlog::info(
-				"  --force-legacy-stream - Force regeneration of all legacy market stream data and snappify.");
-			spdlog::info("  --snappify            - Compress closed markets.");
+			usage(argv[0]);
 			return false;
 		} else if (arg == "--force-legacy-meta") {
 			spdlog::info("Forcing full refresh of legacy metadata!");
@@ -720,6 +724,14 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 		} else if (arg == "--snappify") {
 			spdlog::info("Will snappify markets which have seen market close update.");
 			snappify = true;
+		} else if (arg.starts_with("--")) {
+			spdlog::error("Unrecognised flag '{}'", arg);
+			usage(argv[0]);
+			return false;
+		} else {
+			spdlog::error("Unrecognised parameter '{}'", arg);
+			usage(argv[0]);
+			return false;
 		}
 	}
 
