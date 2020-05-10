@@ -548,8 +548,9 @@ void snappify(std::string path, janus::dynamic_buffer& dyn_buf)
 }
 
 // 'Snappify' i.e. snappy-compress markets that have seen a MARKET_CLOSE update,
-// removing the existing file and outputting the
-void snappify_markets(const janus::config& config)
+// removing the existing file and outputting the compressed file with an
+// appended .snap extension. Returns false if signalled to stop.
+auto snappify_markets(const janus::config& config) -> bool
 {
 	std::string market_dir = config.binary_data_root + "/market/";
 	if (!file_exists(market_dir))
@@ -561,6 +562,11 @@ void snappify_markets(const janus::config& config)
 	uint64_t num_markets = 0;
 	uint64_t num_snappified = 0;
 	for (const auto& entry : fs::directory_iterator(market_dir)) {
+		if (signalled.load()) {
+			spdlog::info("Signal received, aborting...");
+			return false;
+		}
+
 		if (entry.path().extension() != ".jan")
 			continue;
 
@@ -594,6 +600,7 @@ void snappify_markets(const janus::config& config)
 	}
 
 	spdlog::info("Snappified {} of {} markets.", num_snappified, num_markets);
+	return true;
 }
 
 // Run core functionality.
@@ -766,8 +773,9 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 		}
 
 		if (snappify) {
-			spdlog::info("Snappifying markets...");
-			snappify_markets(config);
+			spdlog::info("Snappifying markets, this might take a while...");
+			if (!snappify_markets(config))
+				return 0;
 		}
 
 		return run_loop(config, force_meta) ? 0 : 1;
