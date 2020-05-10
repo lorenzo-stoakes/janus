@@ -685,7 +685,7 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 void usage(std::string cmd)
 {
 	spdlog::info("usage:");
-	spdlog::info("{} [--help] [--force-meta] [--force-legacy-stream]", cmd);
+	spdlog::info("{} [flags...]", cmd);
 	spdlog::info("  --help                - Display this message.");
 	spdlog::info("  --force-legacy-meta   - Force regeneration of legacy metadata.");
 	spdlog::info(
@@ -699,7 +699,6 @@ void usage(std::string cmd)
 auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta,
 		bool& force_legacy_stream, bool& snappify) -> bool
 {
-	force_meta = false;
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 
