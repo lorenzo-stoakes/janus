@@ -58,6 +58,5 @@ Stores statistical data about the market useful for analysis and classification.
 * winner_sp                                                                       (double)
 [{[60, 30, 10, 5, 3, 1] mins before [post, inplay]}, during inplay] :             13*
 * num_updates                                                                     (uint64)
-* median_update_interval_ms                                                       (uint64)
 * mean_update_interval_ms                                                         (uint64)
 * worst_update_interval_ms                                                        (uint64)

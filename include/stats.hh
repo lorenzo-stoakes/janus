@@ -45,7 +45,6 @@ static inline auto operator&(stats_flags a, stats_flags b) -> stats_flags
 struct interval_stats
 {
 	uint64_t num_updates;
-	uint64_t median_update_interval_ms;
 	uint64_t mean_update_interval_ms;
 	uint64_t worst_update_interval_ms;
 };
