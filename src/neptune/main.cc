@@ -22,6 +22,7 @@ namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
 static constexpr uint64_t MAX_STREAM_BYTES = 1'000'000'000;
+static constexpr uint64_t MAX_LEGACY_STREAM_BYTES = 10'000'000'000;
 static constexpr uint64_t SLEEP_INTERVAL_MS = 1000;
 
 // Indicates whether a signal has occured and we should abort.
@@ -441,6 +442,75 @@ void update_from_stream_file(const janus::config& config, const janus::betfair::
 	entry.next_line = state.line;
 }
 
+// Parse all legacy JSON stream files and converts to binary. Returns false if signal interrupted.
+// TODO(lorenzo): Duplication between this function and update_from_stream_file().
+auto parse_all_legacy_stream(const janus::config& config) -> bool
+{
+	std::string legacy_root_dir = config.json_data_root + "/legacy/all/";
+	if (!file_exists(legacy_root_dir))
+		throw std::runtime_error(std::string("Cannot find legacy all streams directory ") +
+					 legacy_root_dir);
+
+	janus::dynamic_buffer dyn_buf(MAX_LEGACY_STREAM_BYTES);
+	janus::betfair::price_range range;
+
+	uint64_t num_files = 0;
+	for (const auto& entry : fs::directory_iterator(legacy_root_dir)) {
+		if (signalled.load()) {
+			spdlog::info("Signal received, aborting...");
+			return false;
+		}
+
+		std::string source = entry.path().string();
+
+		auto file = std::ifstream(source, std::ios::ate);
+		if (!file)
+			throw std::runtime_error(std::string("Cannot open ") + source +
+						 " for stream update read");
+		uint64_t bytes = file.tellg();
+		file.seekg(0);
+
+		// We log at INFO level since this is an irregular operation and
+		// slow, so we will want to see progress.
+		spdlog::info("Reading from {} of size {} bytes...", source, bytes);
+
+		janus::betfair::update_state state = {
+			.range = &range,
+			.filename = source.c_str(),
+			.line = 1,
+		};
+
+		uint64_t num_lines = 0;
+		uint64_t num_updates = 0;
+		std::string line;
+		while (std::getline(file, line)) {
+			if (line.empty() || line[0] == '\0') {
+				state.line++;
+				continue;
+			}
+
+			num_updates += janus::betfair::parse_update_stream_json(
+				state, &line[0], line.size(), dyn_buf);
+			num_lines++;
+		}
+		spdlog::debug("Read {} lines ({} bytes) from {} resulting in {} updates.",
+			      num_lines, bytes, source, num_updates);
+
+		spdlog::debug("Extracting per-market data...");
+		auto per_market = extract_by_market(source, dyn_buf, num_updates);
+		spdlog::debug("Extracted data for {} markets.", per_market.size());
+
+		spdlog::debug("Writing market data, deleting any existing .snap files...");
+		write_stream_data(config, per_market, true);
+
+		dyn_buf.reset();
+		num_files++;
+	}
+
+	spdlog::info("Read {} legacy stream JSON files.", num_files);
+	return true;
+}
+
 // Run core functionality.
 auto run_core(const janus::config& config, bool force_meta) -> bool
 {
@@ -528,19 +598,25 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 }
 
 // Read command-line flags. Returns false to exit immediately.
-auto read_flags(int argc, char** argv, bool& force_meta) -> bool
+auto read_flags(int argc, char** argv, bool& force_meta, bool& force_legacy_stream) -> bool
 {
 	force_meta = false;
 	for (int i = 1; i < argc; i++) {
 		if (::strcmp(argv[i], "--help") == 0) {
-			spdlog::info("usage: {} [--help] [--force-meta]", argv[0]);
-			spdlog::info("\t      --help - Display this message.");
+			spdlog::info("usage: {} [--help] [--force-meta] [--force-legacy-stream]",
+				     argv[0]);
+			spdlog::info("  --help                - Display this message.");
 			spdlog::info(
-				"\t--force-meta - Force regeneration of all metadata including legacy.");
+				"  --force-meta          - Force regeneration of all metadata including legacy.");
+			spdlog::info(
+				"  --force-legacy-stream - Force regeneration of all legacy market stream data.");
 			return false;
 		} else if (::strcmp(argv[i], "--force-meta") == 0) {
 			spdlog::info("Forcing full refresh of metadata!");
 			force_meta = true;
+		} else if (::strcmp(argv[i], "--force-legacy-stream") == 0) {
+			spdlog::info("Forcing full refresh of legacy stream data!");
+			force_legacy_stream = true;
 		}
 	}
 
@@ -556,12 +632,20 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 		janus::config config = janus::parse_config();
 
 		bool force_meta = false;
-		if (!read_flags(argc, argv, force_meta))
+		bool force_legacy_stream = false;
+		if (!read_flags(argc, argv, force_meta, force_legacy_stream))
 			return 0;
 
 		if (force_meta) {
 			spdlog::info("Forced metadata update, so parsing legacy metadata too...");
 			parse_all_legacy_meta(config);
+		}
+
+		if (force_legacy_stream) {
+			spdlog::info("Forced legacy stream update, this might take a while...");
+			// Returns false if signal received, in that case just exit.
+			if (!parse_all_legacy_stream(config))
+				return 0;
 		}
 
 		return run_loop(config, force_meta) ? 0 : 1;
