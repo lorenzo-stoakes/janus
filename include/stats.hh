@@ -3,15 +3,31 @@
 #include <array>
 #include <cstdint>
 
+#include "dynamic_buffer.hh"
+
 namespace janus
 {
 // Periods prior to post/inplay over which interval statistics are generated, in
 // minutes.
-static const std::array<int, 6> INTERVAL_PERIODS_MINS = {60, 30, 10, 5, 3, 1};
+
+static constexpr uint64_t NUM_STATS_INTERVALS = 6;
+static const std::array<int, NUM_STATS_INTERVALS> INTERVAL_PERIODS_MINS = {60, 30, 10, 5, 3, 1};
+
+// Represents the interval periods, indexes into the interval stats arrays.
+enum class stats_interval : uint64_t
+{
+	HOUR,
+	HALF_HOUR,
+	TEN_MINS,
+	FIVE_MINS,
+	THREE_MINS,
+	ONE_MORE,
+};
 
 // Represents 'market is X' information for a market.
 enum class stats_flags : uint64_t
 {
+	DEFAULT = 0,
 	HAVE_METADATA = 1 << 0,
 	PAST_POST = 1 << 1,
 	WENT_INPLAY = 1 << 2,
@@ -45,7 +61,7 @@ static inline auto operator&(stats_flags a, stats_flags b) -> stats_flags
 struct interval_stats
 {
 	uint64_t num_updates;
-	uint64_t mean_update_interval_ms;
+	double mean_update_interval_ms;
 	uint64_t worst_update_interval_ms;
 };
 
@@ -67,4 +83,8 @@ struct stats
 	std::array<interval_stats, 6> pre_inplay_intervals;
 	interval_stats inplay_intervals;
 };
+
+// Generate statistics from market updates contained within a dynamic buffer and
+// an optional metadata view.
+auto generate_stats(meta_view* meta, dynamic_buffer& dyn_buf) -> stats;
 } // namespace janus
