@@ -683,8 +683,8 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 }
 
 // Read command-line flags. Returns false to exit immediately.
-auto read_flags(int argc, char** argv, bool& force_meta, bool& force_legacy_stream, bool& snappify)
-	-> bool
+auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta,
+		bool& force_legacy_stream, bool& snappify) -> bool
 {
 	force_meta = false;
 	for (int i = 1; i < argc; i++) {
@@ -693,14 +693,22 @@ auto read_flags(int argc, char** argv, bool& force_meta, bool& force_legacy_stre
 				     argv[0]);
 			spdlog::info("  --help                - Display this message.");
 			spdlog::info(
+				"  --force-legacy-meta   - Force regeneration of legacy metadata.");
+			spdlog::info(
 				"  --force-meta          - Force regeneration of all metadata including legacy.");
 			spdlog::info(
-				"  --force-legacy-stream - Force regeneration of all legacy market stream data.");
-			spdlog::info("  --snappify                - Compress closed markets.");
+				"  --force-legacy-stream - Force regeneration of all legacy market stream data and snappify.");
+			spdlog::info("  --snappify            - Compress closed markets.");
 			return false;
+		} else if (::strcmp(argv[i], "--force-legacy-meta") == 0) {
+			spdlog::info("Forcing full refresh of legacy metadata!");
+			force_legacy_meta = true;
 		} else if (::strcmp(argv[i], "--force-meta") == 0) {
 			spdlog::info("Forcing full refresh of metadata!");
 			force_meta = true;
+			// If we are refreshing all metadata we will want legacy
+			// metadata too.
+			force_legacy_meta = true;
 		} else if (::strcmp(argv[i], "--force-legacy-stream") == 0) {
 			spdlog::info("Forcing full refresh of legacy stream data!");
 			force_legacy_stream = true;
@@ -718,20 +726,25 @@ auto read_flags(int argc, char** argv, bool& force_meta, bool& force_legacy_stre
 
 auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 {
+	// ivg
+	spdlog::set_level(spdlog::level::debug);
+
 	try {
 		add_signal_handler();
 
 		spdlog::info("neptune " STR(GIT_VER));
 		janus::config config = janus::parse_config();
 
+		bool force_legacy_meta = false;
 		bool force_meta = false;
 		bool force_legacy_stream = false;
 		bool snappify = false;
-		if (!read_flags(argc, argv, force_meta, force_legacy_stream, snappify))
+		if (!read_flags(argc, argv, force_legacy_meta, force_meta, force_legacy_stream,
+				snappify))
 			return 0;
 
-		if (force_meta) {
-			spdlog::info("Forced metadata update, so parsing legacy metadata too...");
+		if (force_legacy_meta) {
+			spdlog::info("Forced legacy meta update, parsing data...");
 			parse_all_legacy_meta(config);
 		}
 
