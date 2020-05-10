@@ -462,14 +462,22 @@ auto parse_all_legacy_stream(const janus::config& config) -> bool
 	janus::dynamic_buffer dyn_buf(MAX_LEGACY_STREAM_BYTES);
 	janus::betfair::price_range range;
 
-	uint64_t num_files = 0;
+	std::vector<std::string> filenames;
+
 	for (const auto& entry : fs::directory_iterator(legacy_root_dir)) {
+		std::string source = entry.path().string();
+		filenames.emplace_back(source);
+	}
+
+	// Sort to get chronological order.
+	std::sort(filenames.begin(), filenames.end());
+
+	spdlog::info("About to read {} legacy stream JSON files...", filenames.size());
+	for (std::string source : filenames) {
 		if (signalled.load()) {
 			spdlog::info("Signal received, aborting...");
 			return false;
 		}
-
-		std::string source = entry.path().string();
 
 		auto file = std::ifstream(source, std::ios::ate);
 		if (!file)
@@ -512,10 +520,9 @@ auto parse_all_legacy_stream(const janus::config& config) -> bool
 		write_stream_data(config, per_market, true);
 
 		dyn_buf.reset();
-		num_files++;
 	}
 
-	spdlog::info("Read {} legacy stream JSON files.", num_files);
+	spdlog::info("Read {} legacy stream JSON files.", filenames.size());
 	return true;
 }
 
