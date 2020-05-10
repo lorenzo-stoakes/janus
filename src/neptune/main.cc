@@ -320,10 +320,13 @@ auto extract_by_market(std::string path, janus::dynamic_buffer& dyn_buf, uint64_
 }
 
 auto write_market_stream_data(const std::string& destdir, uint64_t id,
-			      const std::vector<janus::update>& updates) -> bool
+			      const std::vector<janus::update>& updates, bool remove_snap) -> bool
 {
 	std::string path = destdir + std::to_string(id) + ".jan";
-	if (file_exists(path + ".snap")) {
+	if (remove_snap) {
+		// Succeeds even if file doesn't exist.
+		fs::remove(path + ".snap");
+	} else if (file_exists(path + ".snap")) {
 		spdlog::warn(
 			"Received {} updates for market {} but already archived as {}.snap? Skipping.",
 			updates.size(), id, path);
@@ -346,7 +349,8 @@ auto write_market_stream_data(const std::string& destdir, uint64_t id,
 }
 
 // Write per-market stream data to individual binary files,
-void write_stream_data(const janus::config& config, const per_market_t& per_market)
+void write_stream_data(const janus::config& config, const per_market_t& per_market,
+		       bool remove_snap = false)
 {
 	if (per_market.size() == 0)
 		return;
@@ -355,7 +359,7 @@ void write_stream_data(const janus::config& config, const per_market_t& per_mark
 
 	uint64_t markets_written = 0;
 	for (const auto& [id, updates] : per_market) {
-		if (!write_market_stream_data(destdir, id, updates)) {
+		if (!write_market_stream_data(destdir, id, updates, remove_snap)) {
 			// For information output each previously written market.
 			uint64_t logged_markets = 0;
 			for (const auto& p : per_market) {
