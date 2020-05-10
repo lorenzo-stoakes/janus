@@ -186,8 +186,9 @@ void parse_meta(const janus::config& config, uint64_t file_id)
 	spdlog::debug("Wrote {} markets.", num_markets);
 }
 
-// Read all legacy metadata JSON files, parse them and write binary output.
-void parse_all_legacy_meta(const janus::config& config)
+// Read all legacy metadata JSON files, parse them and write binary
+// output. Returns false when signalled.
+auto parse_all_legacy_meta(const janus::config& config) -> bool
 {
 	std::string legacy_root_dir = config.json_data_root + "/legacy/markets/";
 	if (!file_exists(legacy_root_dir))
@@ -202,6 +203,11 @@ void parse_all_legacy_meta(const janus::config& config)
 	uint64_t num_markets = 0;
 	janus::dynamic_buffer dyn_buf(MAX_METADATA_BYTES);
 	for (const auto& entry : fs::directory_iterator(legacy_root_dir)) {
+		if (signalled.load()) {
+			spdlog::info("Signal received, aborting...");
+			return false;
+		}
+
 		std::string path = entry.path().string() + "/meta.json";
 
 		auto file = std::ifstream(path);
@@ -218,6 +224,7 @@ void parse_all_legacy_meta(const janus::config& config)
 	}
 
 	spdlog::info("Metadata generated for {} legacy markets", num_markets);
+	return true;
 }
 
 // Get path for JSON stream data file.
@@ -797,7 +804,8 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 
 		if (force_legacy_meta) {
 			spdlog::info("Forced legacy meta update, parsing data...");
-			parse_all_legacy_meta(config);
+			if (!parse_all_legacy_meta(config))
+				return 0;
 		}
 
 		if (force_legacy_stream) {
