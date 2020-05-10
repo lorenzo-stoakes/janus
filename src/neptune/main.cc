@@ -603,6 +603,25 @@ auto snappify_markets(const janus::config& config) -> bool
 	return true;
 }
 
+// Delete all existing binary data.
+void delete_binary_data(const janus::config& config)
+{
+	std::string market_dir = config.binary_data_root + "/market/";
+	std::string meta_dir = config.binary_data_root + "/meta/";
+	std::string neptune_db_path = config.binary_data_root + "/neptune.db";
+
+	spdlog::info("Removing neptune database file {}...", neptune_db_path);
+	fs::remove(neptune_db_path);
+
+	spdlog::info("Removing all binary metadata at {}...", meta_dir);
+	fs::remove_all(meta_dir);
+	fs::create_directory(meta_dir);
+
+	spdlog::info("Removing all binary market data at {}...", market_dir);
+	fs::remove_all(market_dir);
+	fs::create_directory(market_dir);
+}
+
 // Run core functionality.
 auto run_core(const janus::config& config, bool force_meta) -> bool
 {
@@ -700,11 +719,13 @@ void usage(std::string cmd)
 	spdlog::info(
 		"  --force-legacy-stream - Force regeneration of all legacy market stream data and snappify.");
 	spdlog::info("  --snappify            - Compress closed markets.");
+	spdlog::info(
+		"  --reset               - Remove all binary data and regenerates everything, including legacy.");
 }
 
 // Read command-line flags. Returns false to exit immediately.
 auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta,
-		bool& force_legacy_stream, bool& snappify) -> bool
+		bool& force_legacy_stream, bool& snappify, bool& reset) -> bool
 {
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
@@ -729,6 +750,14 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 			snappify = true;
 		} else if (arg == "--snappify") {
 			spdlog::info("Will snappify markets which have seen market close update.");
+			snappify = true;
+		} else if (arg == "--reset") {
+			spdlog::info("COMPLETELY resetting all binary data.");
+			reset = true;
+			// Implies all other flags.
+			force_legacy_meta = true;
+			force_meta = true;
+			force_legacy_stream = true;
 			snappify = true;
 		} else if (arg.starts_with("--")) {
 			spdlog::error("Unrecognised flag '{}'", arg);
@@ -756,9 +785,15 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 		bool force_meta = false;
 		bool force_legacy_stream = false;
 		bool snappify = false;
+		bool reset = false;
 		if (!read_flags(argc, argv, force_legacy_meta, force_meta, force_legacy_stream,
-				snappify))
+				snappify, reset))
 			return 0;
+
+		if (reset) {
+			spdlog::info("REMOVING ALL existing binary data...");
+			delete_binary_data(config);
+		}
 
 		if (force_legacy_meta) {
 			spdlog::info("Forced legacy meta update, parsing data...");
