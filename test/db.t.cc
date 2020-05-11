@@ -22,6 +22,12 @@ TEST(db_test, basic)
 	EXPECT_EQ(market_ids[0], 170020946);
 	EXPECT_EQ(market_ids[1], 170030493);
 
+	const auto all_market_ids = janus::get_market_id_list(config);
+	ASSERT_EQ(all_market_ids.size(), 3);
+	EXPECT_EQ(all_market_ids[0], 144697391);
+	EXPECT_EQ(all_market_ids[1], 168216153);
+	EXPECT_EQ(all_market_ids[2], 170358161);
+
 	janus::dynamic_buffer dyn_buf(10'000'000);
 
 	const auto metas = janus::read_all_metadata(config, dyn_buf);

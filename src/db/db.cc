@@ -40,6 +40,12 @@ auto get_meta_market_id_list(const janus::config& config) -> std::vector<uint64_
 	return get_id_list(path);
 }
 
+auto get_market_id_list(const janus::config& config) -> std::vector<uint64_t>
+{
+	std::string path = config.binary_data_root + "/market";
+	return get_id_list(path);
+}
+
 auto read_metadata(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -> meta_view
 {
 	std::string path = config.binary_data_root + "/meta/" + std::to_string(id) + ".jan";
