@@ -62,7 +62,7 @@ private:
 class meta_view
 {
 public:
-	meta_view() : _header{nullptr} {}
+	explicit meta_view(const meta_header* header) : _header{header} {}
 	explicit meta_view(dynamic_buffer& dyn_buf);
 
 	// Provide a short description of the market.
@@ -134,6 +134,11 @@ public:
 	}
 
 	auto runners() const -> const std::vector<runner_view>&
+	{
+		return _runners;
+	}
+
+	auto runners_mutable() -> std::vector<runner_view>&
 	{
 		return _runners;
 	}
