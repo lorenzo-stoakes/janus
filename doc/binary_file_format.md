@@ -54,11 +54,8 @@ Stores statistical data about the market useful for analysis and classification.
 * start_timestamp - Duplicated from metadata but useful in stats                  (uint64)
 * inplay_timestamp                                                                (uint64)
 * last_timestamp                                                                  (uint64)
-* last_status                                                                     (uint64)
 * winner_runner_id                                                                (uint64)
-* winner_sp                                                                       (uint64)
 [{[60, 30, 10, 5, 3, 1] mins before [post, inplay]}, during inplay] :             13*
 * num_updates                                                                     (uint64)
-* median_update_interval_ms                                                       (uint64)
-* mean_update_interval_ms                                                         (uint64)
+* mean_update_interval_ms                                                         (double)
 * worst_update_interval_ms                                                        (uint64)

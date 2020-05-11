@@ -6,7 +6,9 @@
 
 namespace janus
 {
-static constexpr uint64_t MS_PER_DAY = 1000 * 60 * 60 * 24;
+static constexpr uint64_t MS_PER_MIN = 1000 * 60;
+static constexpr uint64_t MS_PER_HOUR = MS_PER_MIN * 60;
+static constexpr uint64_t MS_PER_DAY = MS_PER_HOUR * 24;
 
 namespace internal
 {

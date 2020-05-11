@@ -23,6 +23,7 @@ struct meta_header
 class runner_view
 {
 public:
+	runner_view() : _id{0}, _sort_priority{0} {}
 	explicit runner_view(dynamic_buffer& dyn_buf);
 
 	auto id() const -> uint64_t
@@ -61,6 +62,7 @@ private:
 class meta_view
 {
 public:
+	explicit meta_view(const meta_header* header) : _header{header} {}
 	explicit meta_view(dynamic_buffer& dyn_buf);
 
 	// Provide a short description of the market.
@@ -132,6 +134,11 @@ public:
 	}
 
 	auto runners() const -> const std::vector<runner_view>&
+	{
+		return _runners;
+	}
+
+	auto runners_mutable() -> std::vector<runner_view>&
 	{
 		return _runners;
 	}
