@@ -739,7 +739,7 @@ void usage(std::string cmd)
 
 // Read command-line flags. Returns false to exit immediately.
 auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta,
-		bool& force_legacy_stream, bool& snappify, bool& reset) -> bool
+		bool& force_legacy_stream, bool& compress, bool& reset) -> bool
 {
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
@@ -761,10 +761,10 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 			force_legacy_stream = true;
 			// If we are retrieving legacy stream data we will want
 			// to snappify it afterwards.
-			snappify = true;
+			compress = true;
 		} else if (arg == "--snappify") {
 			spdlog::info("Will snappify markets which have seen market close update.");
-			snappify = true;
+			compress = true;
 		} else if (arg == "--reset") {
 			spdlog::info("COMPLETELY resetting all binary data.");
 			reset = true;
@@ -772,7 +772,7 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 			force_legacy_meta = true;
 			force_meta = true;
 			force_legacy_stream = true;
-			snappify = true;
+			compress = true;
 		} else if (arg.starts_with("--")) {
 			spdlog::error("Unrecognised flag '{}'", arg);
 			usage(argv[0]);
@@ -798,10 +798,10 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 		bool force_legacy_meta = false;
 		bool force_meta = false;
 		bool force_legacy_stream = false;
-		bool snappify = false;
+		bool compress = false;
 		bool reset = false;
 		if (!read_flags(argc, argv, force_legacy_meta, force_meta, force_legacy_stream,
-				snappify, reset))
+				compress, reset))
 			return 0;
 
 		if (reset) {
@@ -822,7 +822,7 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 				return 0;
 		}
 
-		if (snappify) {
+		if (compress) {
 			spdlog::info("Snappifying markets, this might take a while...");
 			if (!snappify_markets(config))
 				return 0;
