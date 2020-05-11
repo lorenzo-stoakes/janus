@@ -637,8 +637,11 @@ void delete_binary_data(const janus::config& config)
 }
 
 // Run core functionality.
-auto run_core(const janus::config& config, bool force_meta) -> bool
+auto run_core(const janus::config& config, bool force_meta, janus::dynamic_buffer& stream_dyn_buf)
+	-> bool
 {
+	stream_dyn_buf.reset();
+
 	spdlog::debug("Reading DB file...");
 	auto db = read_db(config);
 
@@ -671,11 +674,10 @@ auto run_core(const janus::config& config, bool force_meta) -> bool
 		spdlog::debug("Found {} market stream files with new data.", update_ids.size());
 		spdlog::debug("Updating stream data...");
 
-		janus::dynamic_buffer dyn_buf(MAX_STREAM_BYTES);
 		janus::betfair::price_range range;
 
 		for (uint64_t id : update_ids) {
-			update_from_stream_file(config, range, id, db[id], dyn_buf);
+			update_from_stream_file(config, range, id, db[id], stream_dyn_buf);
 		}
 	}
 
@@ -689,7 +691,9 @@ auto run_core(const janus::config& config, bool force_meta) -> bool
 // Run core loop.
 auto run_loop(const janus::config& config, bool force_meta) -> bool
 {
-	// On the first run, output debug info
+	janus::dynamic_buffer stream_dyn_buf(MAX_STREAM_BYTES);
+
+	// On the first run, output debug info.
 	bool first = true;
 	spdlog::set_level(spdlog::level::debug);
 
@@ -700,7 +704,7 @@ auto run_loop(const janus::config& config, bool force_meta) -> bool
 		}
 
 		try {
-			if (!run_core(config, force_meta))
+			if (!run_core(config, force_meta, stream_dyn_buf))
 				return false;
 			// We only force ALL metadata retrieval on the FIRST
 			// iteration.
