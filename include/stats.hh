@@ -78,8 +78,8 @@ struct stats
 	uint64_t last_timestamp;
 	uint64_t winner_runner_id;
 
-	std::array<interval_stats, 6> pre_post_intervals;
-	std::array<interval_stats, 6> pre_inplay_intervals;
+	std::array<interval_stats, NUM_STATS_INTERVALS> pre_post_intervals;
+	std::array<interval_stats, NUM_STATS_INTERVALS> pre_inplay_intervals;
 	interval_stats inplay_intervals;
 };
 
