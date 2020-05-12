@@ -151,4 +151,25 @@ auto index_market_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std:
 	return ret;
 }
 
+auto read_market_stats(const config& config, uint64_t id) -> stats
+{
+	std::string path = config.binary_data_root + "/stats/" + std::to_string(id) + ".jan";
+
+	auto file = std::ifstream(path, std::ios::binary | std::ios::ate);
+	if (!file)
+		throw std::runtime_error(std::string("Cannot open ") + path + " for stats read");
+
+	uint64_t size = file.tellg();
+	file.seekg(0);
+	if (size != sizeof(stats))
+		throw std::runtime_error(std::string("Stats file ") + path +
+					 " not of expected size " + std::to_string(sizeof(stats)) +
+					 " is of size " + std::to_string(size));
+
+	stats ret;
+	if (!file.read(reinterpret_cast<char*>(&ret), size))
+		throw std::runtime_error(std::string("Error while reading stats file ") + path);
+
+	return ret;
+}
 } // namespace janus

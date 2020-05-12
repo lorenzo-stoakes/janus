@@ -86,4 +86,18 @@ TEST(db_test, index_updates)
 	update = janus::make_timestamp_update(123);
 	dyn_buf.add<janus::update>(update);
 }
+
+TEST(db_test, read_stats)
+{
+	janus::config config = {
+		.json_data_root = "../test/test-json",
+		.binary_data_root = "../test/test-binary",
+	};
+
+	janus::stats stats = janus::read_market_stats(config, 170358161);
+
+	// Only check a couple parameters just to make sure stats loaded.
+	EXPECT_EQ(stats.num_updates, 98941);
+	EXPECT_EQ(stats.num_runners, 10);
+}
 } // namespace
