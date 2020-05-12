@@ -12,11 +12,15 @@ namespace fs = std::filesystem;
 
 namespace janus
 {
-static auto get_id_list(const std::string& path) -> std::vector<uint64_t>
+static auto get_id_list(const std::string& path, bool uncompressed_only = false)
+	-> std::vector<uint64_t>
 {
 	std::vector<uint64_t> ret;
 
 	for (const auto& entry : fs::directory_iterator(path)) {
+		if (uncompressed_only && entry.path().extension() == ".snap")
+			continue;
+
 		std::string num_str = entry.path().stem().string();
 		ret.push_back(std::stoll(num_str));
 	}
@@ -38,6 +42,18 @@ auto get_meta_market_id_list(const janus::config& config) -> std::vector<uint64_
 {
 	std::string path = config.binary_data_root + "/meta";
 	return get_id_list(path);
+}
+
+auto get_market_id_list(const janus::config& config) -> std::vector<uint64_t>
+{
+	std::string path = config.binary_data_root + "/market";
+	return get_id_list(path);
+}
+
+auto get_uncompressed_market_id_list(const janus::config& config) -> std::vector<uint64_t>
+{
+	std::string path = config.binary_data_root + "/market";
+	return get_id_list(path, true);
 }
 
 auto read_metadata(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -> meta_view
