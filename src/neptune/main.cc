@@ -21,6 +21,7 @@
 #include <vector>
 namespace fs = std::filesystem;
 
+static constexpr uint64_t MAX_MARKET_STREAM_BYTES = 500'000'000;
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
 static constexpr uint64_t MAX_STREAM_BYTES = 5'000'000'000;
 static constexpr uint64_t MAX_LEGACY_STREAM_BYTES = 10'000'000'000;
@@ -636,6 +637,67 @@ void delete_binary_data(const janus::config& config)
 	fs::create_directory(market_dir);
 }
 
+// Output stats data for specific market.
+void write_stats(const janus::config& config, uint64_t id, janus::stats& stats)
+{
+	std::string path = config.binary_data_root + "/stats/" + std::to_string(id) + ".jan";
+	spdlog::debug("writing stats to {}...", path);
+
+	if (auto file = std::ofstream(path, std::ios::binary)) {
+		file.write(reinterpret_cast<char*>(&stats), sizeof(stats));
+	} else {
+		throw std::runtime_error(std::string("Unable to open ") + path + " for write.");
+	}
+}
+
+// Generate stats for specified market IDs.
+auto generate_stats(const janus::config& config, const std::vector<uint64_t>& ids) -> bool
+{
+	janus::dynamic_buffer dyn_buf(MAX_MARKET_STREAM_BYTES);
+	janus::dynamic_buffer meta_dyn_buf(MAX_METADATA_BYTES);
+
+	spdlog::info("Generating stats for {} markets...", ids.size());
+
+	for (uint64_t id : ids) {
+		if (signalled.load()) {
+			spdlog::info("Signal received, aborting...");
+			return false;
+		}
+
+		dyn_buf.reset();
+		meta_dyn_buf.reset();
+		janus::read_market_updates(config, dyn_buf, id);
+		janus::stats stats;
+
+		std::string meta_path =
+			config.binary_data_root + "/meta/" + std::to_string(id) + ".jan";
+		if (file_exists(meta_path)) {
+			janus::meta_view meta = janus::read_metadata(config, meta_dyn_buf, id);
+			stats = janus::generate_stats(&meta, dyn_buf);
+		} else {
+			stats = janus::generate_stats(nullptr, dyn_buf);
+		}
+
+		write_stats(config, id, stats);
+	}
+
+	return true;
+}
+
+// Generate stats output for all markets, returns false if signalled.
+auto generate_all_market_stats(const janus::config& config) -> bool
+{
+	std::vector<uint64_t> ids = janus::get_market_id_list(config);
+	return generate_stats(config, ids);
+}
+
+// Generate stats output for un-snappified markets, returns false if signalled.
+auto generate_market_stats(const janus::config& config) -> bool
+{
+	std::vector<uint64_t> ids = janus::get_uncompressed_market_id_list(config);
+	return generate_stats(config, ids);
+}
+
 // Run core functionality.
 auto run_core(const janus::config& config, bool force_meta, janus::dynamic_buffer& stream_dyn_buf)
 	-> bool
@@ -737,13 +799,16 @@ void usage(std::string cmd)
 	spdlog::info(
 		"  --force-legacy-stream - Force regeneration of all legacy market stream data and snappify.");
 	spdlog::info("  --snappify            - Compress closed markets.");
+	spdlog::info("  --stats               - Generate stats data for uncompressed markets.");
+	spdlog::info("  --all-stats           - Generate stats data for ALL markets.");
 	spdlog::info(
 		"  --reset               - Remove all binary data and regenerates everything, including legacy.");
 }
 
 // Read command-line flags. Returns false to exit immediately.
 auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta,
-		bool& force_legacy_stream, bool& compress, bool& reset) -> bool
+		bool& force_legacy_stream, bool& compress, bool& reset, bool& stats,
+		bool& all_stats) -> bool
 {
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
@@ -769,6 +834,10 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 		} else if (arg == "--snappify") {
 			spdlog::info("Will snappify markets which have seen market close update.");
 			compress = true;
+		} else if (arg == "--stats") {
+			stats = true;
+		} else if (arg == "--all-stats") {
+			all_stats = true;
 		} else if (arg == "--reset") {
 			spdlog::info("COMPLETELY resetting all binary data.");
 			reset = true;
@@ -777,6 +846,7 @@ auto read_flags(int argc, char** argv, bool& force_legacy_meta, bool& force_meta
 			force_meta = true;
 			force_legacy_stream = true;
 			compress = true;
+			all_stats = true;
 		} else if (arg.starts_with("--")) {
 			spdlog::error("Unrecognised flag '{}'", arg);
 			usage(argv[0]);
@@ -804,13 +874,26 @@ auto main(int argc, char** argv) -> int // NOLINT: Handles exceptions!
 		bool force_legacy_stream = false;
 		bool compress = false;
 		bool reset = false;
+		bool stats = false;
+		bool all_stats = false;
 		if (!read_flags(argc, argv, force_legacy_meta, force_meta, force_legacy_stream,
-				compress, reset))
+				compress, reset, stats, all_stats))
 			return 0;
 
 		if (reset) {
 			spdlog::info("REMOVING ALL existing binary data...");
 			delete_binary_data(config);
+		}
+
+		if (all_stats) {
+			spdlog::info(
+				"Generating stats for ALL markets, this may take some time...");
+			generate_all_market_stats(config);
+		}
+
+		if (stats && !all_stats) {
+			spdlog::info("Generating stats for un-snappified markets...");
+			generate_market_stats(config);
 		}
 
 		if (force_legacy_meta) {
