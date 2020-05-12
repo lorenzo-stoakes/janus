@@ -20,6 +20,10 @@ auto get_meta_market_id_list(const janus::config& config) -> std::vector<uint64_
 // epoch].jan both for metadata and stream data.
 auto get_market_id_list(const janus::config& config) -> std::vector<uint64_t>;
 
+// Retrieve list of non-snappified binary market IDs. By convention the filename
+// is [ms since epoch].jan both for metadata and stream data.
+auto get_uncompressed_market_id_list(const janus::config& config) -> std::vector<uint64_t>;
+
 // Read metadata for specific market ID from binary file.
 auto read_metadata(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -> meta_view;
 
