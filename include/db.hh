@@ -40,4 +40,7 @@ auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t
 // updates. This can be used to correctly delineate between blocks of
 // updates. The dynamic buffer has its read offset reset before returning.
 auto index_market_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std::vector<uint64_t>;
+
+// Read statistics for a specified market.
+auto read_market_stats(const config& config, uint64_t id) -> stats;
 } // namespace janus
