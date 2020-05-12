@@ -4,6 +4,9 @@
 
 namespace janus
 {
+// Maximum number of runners we might ever see.
+static constexpr uint64_t MAX_RUNNERS = 500;
+
 // Read through market updates in specified dynamic buffer, updating interval
 // stats in specified stats object.
 // TODO(lorenzo): This is too much code for 1 function and there is too much
@@ -183,7 +186,7 @@ auto generate_stats(meta_view* meta, dynamic_buffer& dyn_buf) -> stats
 		ret.start_timestamp = meta->market_start_timestamp();
 	}
 
-	std::array<uint64_t, betfair::MAX_RUNNERS> seen_runners{};
+	std::array<uint64_t, MAX_RUNNERS> seen_runners{};
 	uint64_t num_seen_runners = 0;
 	auto have_seen_runner = [&seen_runners, &num_seen_runners](uint64_t id) -> bool {
 		for (uint64_t i = 0; i < num_seen_runners; i++) {
@@ -193,7 +196,7 @@ auto generate_stats(meta_view* meta, dynamic_buffer& dyn_buf) -> stats
 		return false;
 	};
 
-	std::array<uint64_t, betfair::MAX_RUNNERS> seen_removals{};
+	std::array<uint64_t, MAX_RUNNERS> seen_removals{};
 	uint64_t num_seen_removals = 0;
 	auto have_seen_removal = [&seen_removals, &num_seen_removals](uint64_t id) -> bool {
 		for (uint64_t i = 0; i < num_seen_removals; i++) {
