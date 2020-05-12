@@ -1,0 +1,227 @@
+#pragma once
+
+namespace janus
+{
+// Represents the state of a bet.
+enum class bet_flags : uint64_t
+{
+	DEFAULT = 0,
+	SIM = 1 << 0,       // Simulated bet.
+	ACKED = 1 << 1,     // Acked by exchange (and hence has bet ID).
+	REDUCED = 1 << 2,   // Price reduced due to runner removal.
+	CANCELLED = 1 << 3, // Bet was at least partially cancelled.
+	VOIDED = 1 << 4,    // Bet was voided.
+};
+
+// Permit flags to use the | operator.
+static inline auto operator|(bet_flags a, bet_flags b) -> bet_flags
+{
+	uint64_t ret = static_cast<uint64_t>(a) | static_cast<uint64_t>(b);
+	return static_cast<bet_flags>(ret);
+}
+
+// Permit flags to use the |= operator.
+static inline auto operator|=(bet_flags& a, bet_flags b) -> bet_flags&
+{
+	a = a | b;
+	return a;
+}
+
+// Permit flags to use the & operator.
+static inline auto operator&(bet_flags a, bet_flags b) -> bet_flags
+{
+	uint64_t ret = static_cast<uint64_t>(a) & static_cast<uint64_t>(b);
+	return static_cast<bet_flags>(ret);
+}
+
+// Represents a bet throughout its lifetime
+class bet
+{
+public:
+	bet(uint64_t runner_id, double price, double stake, bool is_back, bool sim = false)
+		: _flags{sim ? bet_flags::SIM : bet_flags::DEFAULT},
+		  _runner_id{runner_id},
+		  _price{price},
+		  _orig_price{price},
+		  _stake{stake},
+		  _orig_stake{stake},
+		  _is_back{is_back},
+		  _matched{0},
+		  _bet_id{0}
+	{
+	}
+
+	// Retrieve flags associated with bet.
+	auto flags() const -> bet_flags
+	{
+		return _flags;
+	}
+
+	// Retrieve runner ID.
+	auto runner_id() const -> uint64_t
+	{
+		return _runner_id;
+	}
+
+	// Retrieve bet price. We use a double here since removals can scale
+	// prices to non-standard levels.
+	auto price() const -> double
+	{
+		return _price;
+	}
+
+	// Retrieves the original bet price.
+	auto orig_price() const -> double
+	{
+		return _orig_price;
+	}
+
+	// Retrieve stake (may be reduced if bet is cancelled/partially
+	// cancelled).
+	auto stake() const -> double
+	{
+		return _stake;
+	}
+
+	// Retrieve original bet stake.
+	auto orig_stake() const -> double
+	{
+		return _orig_stake;
+	}
+
+	// Determine if the bet was a back or a lay.
+	auto is_back() const -> bool
+	{
+		return _is_back;
+	}
+
+	// Determine the matched quantity of the bet.
+	auto matched() const -> double
+	{
+		return _matched;
+	}
+
+	// Retrieve exchange-assigned bet ID.
+	auto bet_id() const -> uint64_t
+	{
+		return _bet_id;
+	}
+
+	// Determine the unmatched quantity of the bet.
+	auto unmatched() const -> double
+	{
+		return _stake - _matched;
+	}
+
+	// Determine if there is no remaining unmatched - either the original
+	// stake has been fully matched or the remaining unmatched has been
+	// cancelled.
+	auto is_matched() const -> bool
+	{
+		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
+			return false;
+
+		double remaining = unmatched();
+		return remaining > -1e-15 && remaining < 1e-15;
+	}
+
+	// Determine if the whole of the bet was cancelled.
+	auto is_cancelled() const -> bool
+	{
+		return _stake > -1e-15 && _stake < 1e-15;
+	}
+
+	// Return profit/loss matched portion of this bet would result in.
+	auto pl(bool won) -> double
+	{
+		if (_is_back) {
+			if (won)
+				return _matched * (_price - 1);
+			else
+				return -_matched;
+		} else {
+			if (won)
+				return -_matched * (_price - 1);
+			else
+				return _matched;
+		}
+	}
+
+	// Assign exchange-assigned bet ID.
+	void set_bet_id(uint64_t id)
+	{
+		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
+			return;
+
+		_bet_id = id;
+		_flags |= bet_flags::ACKED;
+	}
+
+	// Mark a portion of the bet matched.
+	void match(double amount)
+	{
+		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
+			return;
+
+		if (amount > _stake)
+			_matched = _stake;
+		else
+			_matched = amount;
+	}
+
+	// Cancel the unmatched portion of the bet.
+	void cancel()
+	{
+		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
+			return;
+
+		// If we're fully matched there's nothing to cancel.
+		if (is_matched())
+			return;
+
+		_stake = _matched;
+		_flags |= bet_flags::CANCELLED;
+	}
+
+	// Apply an adjustment factor to the bet price.
+	// https://en-betfair.custhelp.com/app/answers/detail/a_id/408/~/exchange%3A-in-a-horse-race%2C-how-will-non-runners-be-treated%3F
+	void apply_adj_factor(double adj_factor)
+	{
+		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
+			return;
+
+		// In winner markets reductions < 2.5% are ignored.
+		if (adj_factor < 2.5)
+			return;
+
+		// Adjustment factor is expressed as a percentage.
+		double mult = adj_factor / 100.;
+		// We reduce by the percentage.
+		mult = 1. - mult;
+		// In winner markets (we assume winner markets here instead of
+		// place), the reduction factor is applied to the price overall
+		// INCLUDING stake.
+		_price *= mult;
+		_flags |= bet_flags::REDUCED;
+	}
+
+	// Void bet completely.
+	void void_bet()
+	{
+		_stake = 0;
+		_matched = 0;
+		_flags |= bet_flags::VOIDED;
+	}
+
+private:
+	bet_flags _flags;
+	uint64_t _runner_id;
+	double _price;
+	double _orig_price;
+	double _stake;
+	double _orig_stake;
+	bool _is_back;
+	double _matched;
+	uint64_t _bet_id;
+};
+} // namespace janus
