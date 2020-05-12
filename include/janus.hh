@@ -14,6 +14,7 @@
 #include "parse.hh"
 #include "price_range.hh"
 
+#include "bet.hh"
 #include "config.hh"
 #include "json.hh"
 #include "market.hh"
