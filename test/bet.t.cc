@@ -18,7 +18,7 @@ TEST(bet_test, basic)
 	EXPECT_TRUE(bet1.is_back());
 	EXPECT_DOUBLE_EQ(bet1.matched(), 0);
 	EXPECT_DOUBLE_EQ(bet1.unmatched(), 1000);
-	EXPECT_FALSE(bet1.is_matched());
+	EXPECT_FALSE(bet1.is_complete());
 	EXPECT_FALSE(bet1.is_cancelled());
 	EXPECT_DOUBLE_EQ(bet1.pl(true), 0);
 	EXPECT_DOUBLE_EQ(bet1.pl(false), 0);
@@ -28,7 +28,7 @@ TEST(bet_test, basic)
 	bet1.match(500);
 	EXPECT_DOUBLE_EQ(bet1.matched(), 500);
 	EXPECT_DOUBLE_EQ(bet1.unmatched(), 500);
-	EXPECT_FALSE(bet1.is_matched());
+	EXPECT_FALSE(bet1.is_complete());
 	EXPECT_FALSE(bet1.is_cancelled());
 	EXPECT_DOUBLE_EQ(bet1.pl(true), 105);
 	EXPECT_DOUBLE_EQ(bet1.pl(false), -500);
@@ -37,7 +37,7 @@ TEST(bet_test, basic)
 	bet1.cancel();
 	EXPECT_DOUBLE_EQ(bet1.matched(), 500);
 	EXPECT_DOUBLE_EQ(bet1.unmatched(), 0);
-	EXPECT_TRUE(bet1.is_matched());
+	EXPECT_TRUE(bet1.is_complete());
 	EXPECT_EQ(bet1.flags(), janus::bet_flags::CANCELLED);
 	EXPECT_DOUBLE_EQ(bet1.pl(true), 105);
 	EXPECT_DOUBLE_EQ(bet1.pl(false), -500);
@@ -46,7 +46,7 @@ TEST(bet_test, basic)
 	bet1.void_bet();
 	EXPECT_DOUBLE_EQ(bet1.matched(), 0);
 	EXPECT_DOUBLE_EQ(bet1.unmatched(), 0);
-	EXPECT_FALSE(bet1.is_matched());
+	EXPECT_FALSE(bet1.is_complete());
 	EXPECT_EQ(bet1.flags(), janus::bet_flags::CANCELLED | janus::bet_flags::VOIDED);
 	EXPECT_DOUBLE_EQ(bet1.pl(true), 0);
 	EXPECT_DOUBLE_EQ(bet1.pl(false), 0);
@@ -55,7 +55,7 @@ TEST(bet_test, basic)
 	bet1.cancel();
 	EXPECT_DOUBLE_EQ(bet1.matched(), 0);
 	EXPECT_DOUBLE_EQ(bet1.unmatched(), 0);
-	EXPECT_FALSE(bet1.is_matched());
+	EXPECT_FALSE(bet1.is_complete());
 	// Setting bet ID on a voided bet should be a no-op.
 	bet1.set_bet_id(999);
 	EXPECT_EQ(bet1.flags(), janus::bet_flags::CANCELLED | janus::bet_flags::VOIDED);
@@ -72,7 +72,7 @@ TEST(bet_test, basic)
 	EXPECT_FALSE(bet2.is_back());
 	EXPECT_DOUBLE_EQ(bet2.matched(), 0);
 	EXPECT_DOUBLE_EQ(bet2.unmatched(), 1000);
-	EXPECT_FALSE(bet2.is_matched());
+	EXPECT_FALSE(bet2.is_complete());
 	EXPECT_FALSE(bet2.is_cancelled());
 	EXPECT_DOUBLE_EQ(bet2.pl(true), 0);
 	EXPECT_DOUBLE_EQ(bet2.pl(false), 0);
@@ -82,7 +82,7 @@ TEST(bet_test, basic)
 	bet2.match(200);
 	EXPECT_DOUBLE_EQ(bet2.matched(), 200);
 	EXPECT_DOUBLE_EQ(bet2.unmatched(), 800);
-	EXPECT_FALSE(bet2.is_matched());
+	EXPECT_FALSE(bet2.is_complete());
 	EXPECT_FALSE(bet2.is_cancelled());
 	EXPECT_DOUBLE_EQ(bet2.pl(true), -280);
 	EXPECT_DOUBLE_EQ(bet2.pl(false), 200);

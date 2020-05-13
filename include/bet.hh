@@ -122,8 +122,8 @@ public:
 
 	// Determine if there is no remaining unmatched - either the original
 	// stake has been fully matched or the remaining unmatched has been
-	// cancelled.
-	auto is_matched() const -> bool
+	// cancelled or the bet is voided.
+	auto is_complete() const -> bool
 	{
 		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
 			return false;
@@ -179,11 +179,9 @@ public:
 	// Cancel the unmatched portion of the bet.
 	void cancel()
 	{
-		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
-			return;
-
-		// If we're fully matched there's nothing to cancel.
-		if (is_matched())
+		// If the bet is complete (fully matched/voided/cancelled)
+		// there's nothing to cancel.
+		if (is_complete())
 			return;
 
 		_stake = _matched;
