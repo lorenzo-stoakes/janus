@@ -209,7 +209,7 @@ public:
 
 		// If we have no matched component we don't need to do anything
 		// else.
-		if (_matched == 0)
+		if (_matched > -1e-15 && _matched < 1e-15)
 			return false;
 
 		// Adjustment factor is expressed as a percentage.
