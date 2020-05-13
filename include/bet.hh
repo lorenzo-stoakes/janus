@@ -47,7 +47,8 @@ public:
 		  _orig_stake{stake},
 		  _is_back{is_back},
 		  _matched{0},
-		  _bet_id{0}
+		  _bet_id{0},
+		  _target_matched{0}
 	{
 	}
 
@@ -113,22 +114,25 @@ public:
 		return _stake - _matched;
 	}
 
+	// Determine the target matched volume. Only relevat to simulated bets.
+	auto target_matched() const -> double
+	{
+		return _target_matched;
+	}
+
 	// Determine if there is no remaining unmatched - either the original
 	// stake has been fully matched or the remaining unmatched has been
-	// cancelled.
-	auto is_matched() const -> bool
+	// cancelled or the bet is voided.
+	auto is_complete() const -> bool
 	{
-		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
-			return false;
-
 		double remaining = unmatched();
-		return remaining > -1e-15 && remaining < 1e-15;
+		return dz(remaining);
 	}
 
 	// Determine if the whole of the bet was cancelled.
 	auto is_cancelled() const -> bool
 	{
-		return _stake > -1e-15 && _stake < 1e-15;
+		return dz(_stake);
 	}
 
 	// Return profit/loss matched portion of this bet would result in.
@@ -172,11 +176,9 @@ public:
 	// Cancel the unmatched portion of the bet.
 	void cancel()
 	{
-		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
-			return;
-
-		// If we're fully matched there's nothing to cancel.
-		if (is_matched())
+		// If the bet is complete (fully matched/voided/cancelled)
+		// there's nothing to cancel.
+		if (is_complete())
 			return;
 
 		_stake = _matched;
@@ -185,14 +187,30 @@ public:
 
 	// Apply an adjustment factor to the bet price.
 	// https://en-betfair.custhelp.com/app/answers/detail/a_id/408/~/exchange%3A-in-a-horse-race%2C-how-will-non-runners-be-treated%3F
-	void apply_adj_factor(double adj_factor)
+	// Returns true if bet needs to be split out and sets split_stake in this case.
+	auto apply_adj_factor(double adj_factor, double& split_stake) -> bool
 	{
+		// See rule 14.6 at
+		// https://www.betfair.com/aboutUs/Rules.and.Regulations/#rulespartb
+
 		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
-			return;
+			return false;
 
 		// In winner markets reductions < 2.5% are ignored.
 		if (adj_factor < 2.5)
-			return;
+			return false;
+
+		// Unmatched lays are cancelled, backs are kept and need to be
+		// split out.
+		if (_is_back)
+			split_stake = unmatched();
+		// Cancel unmatched for this bet either way.
+		_stake = _matched;
+
+		// If we have no matched component we don't need to do anything
+		// else.
+		if (dz(_matched))
+			return false;
 
 		// Adjustment factor is expressed as a percentage.
 		double mult = adj_factor / 100.;
@@ -203,6 +221,9 @@ public:
 		// INCLUDING stake.
 		_price *= mult;
 		_flags |= bet_flags::REDUCED;
+
+		// If fully matched then no need to split out either.
+		return _is_back && !dz(split_stake);
 	}
 
 	// Void bet completely.
@@ -211,6 +232,19 @@ public:
 		_stake = 0;
 		_matched = 0;
 		_flags |= bet_flags::VOIDED;
+	}
+
+	// Set target matched volume. Only relevat to simulated bets.
+	void set_target_matched(double target)
+	{
+		_target_matched = target;
+	}
+
+	// Set bet price. This is used in the case where the best market price
+	// is better than the requested one.
+	void set_price(double price)
+	{
+		_price = price;
 	}
 
 private:
@@ -223,5 +257,6 @@ private:
 	bool _is_back;
 	double _matched;
 	uint64_t _bet_id;
+	double _target_matched;
 };
 } // namespace janus

@@ -7,6 +7,8 @@
 
 #include "error.hh"
 
+#include "util.hh"
+
 #include "decimal7.hh"
 #include "dynamic_array.hh"
 #include "dynamic_buffer.hh"
@@ -20,6 +22,7 @@
 #include "market.hh"
 #include "meta.hh"
 #include "runner.hh"
+#include "sim.hh"
 #include "stats.hh"
 #include "universe.hh"
 #include "update.hh"
