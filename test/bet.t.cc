@@ -116,5 +116,7 @@ TEST(bet_test, basic)
 	// Sim bet.
 	janus::bet bet4(1234, 1.21, 1000, false, true);
 	EXPECT_EQ(bet4.flags(), janus::bet_flags::SIM);
+	bet4.set_target_matched(123);
+	EXPECT_EQ(bet4.target_matched(), 123);
 }
 } // namespace

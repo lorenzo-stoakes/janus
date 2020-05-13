@@ -47,7 +47,8 @@ public:
 		  _orig_stake{stake},
 		  _is_back{is_back},
 		  _matched{0},
-		  _bet_id{0}
+		  _bet_id{0},
+		  _target_matched{0}
 	{
 	}
 
@@ -111,6 +112,12 @@ public:
 	auto unmatched() const -> double
 	{
 		return _stake - _matched;
+	}
+
+	// Determine the target matched volume. Only relevat to simulated bets.
+	auto target_matched() const -> uint64_t
+	{
+		return _target_matched;
 	}
 
 	// Determine if there is no remaining unmatched - either the original
@@ -213,6 +220,12 @@ public:
 		_flags |= bet_flags::VOIDED;
 	}
 
+	// Set target matched volume. Only relevat to simulated bets.
+	void set_target_matched(uint64_t target)
+	{
+		_target_matched = target;
+	}
+
 private:
 	bet_flags _flags;
 	uint64_t _runner_id;
@@ -223,5 +236,6 @@ private:
 	bool _is_back;
 	double _matched;
 	uint64_t _bet_id;
+	uint64_t _target_matched;
 };
 } // namespace janus
