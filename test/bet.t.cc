@@ -118,5 +118,10 @@ TEST(bet_test, basic)
 	EXPECT_EQ(bet4.flags(), janus::bet_flags::SIM);
 	bet4.set_target_matched(123);
 	EXPECT_EQ(bet4.target_matched(), 123);
+
+	// Set price.
+	EXPECT_DOUBLE_EQ(bet4.price(), 1.21);
+	bet4.set_price(6.4);
+	EXPECT_DOUBLE_EQ(bet4.price(), 6.4);
 }
 } // namespace

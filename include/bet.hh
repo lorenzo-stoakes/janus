@@ -224,6 +224,13 @@ public:
 		_target_matched = target;
 	}
 
+	// Set bet price. This is used in the case where the best market price
+	// is better than the requested one.
+	void set_price(double price)
+	{
+		_price = price;
+	}
+
 private:
 	bet_flags _flags;
 	uint64_t _runner_id;
