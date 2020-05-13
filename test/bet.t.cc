@@ -46,7 +46,7 @@ TEST(bet_test, basic)
 	bet1.void_bet();
 	EXPECT_DOUBLE_EQ(bet1.matched(), 0);
 	EXPECT_DOUBLE_EQ(bet1.unmatched(), 0);
-	EXPECT_FALSE(bet1.is_complete());
+	EXPECT_TRUE(bet1.is_complete());
 	EXPECT_EQ(bet1.flags(), janus::bet_flags::CANCELLED | janus::bet_flags::VOIDED);
 	EXPECT_DOUBLE_EQ(bet1.pl(true), 0);
 	EXPECT_DOUBLE_EQ(bet1.pl(false), 0);
@@ -55,7 +55,7 @@ TEST(bet_test, basic)
 	bet1.cancel();
 	EXPECT_DOUBLE_EQ(bet1.matched(), 0);
 	EXPECT_DOUBLE_EQ(bet1.unmatched(), 0);
-	EXPECT_FALSE(bet1.is_complete());
+	EXPECT_TRUE(bet1.is_complete());
 	// Setting bet ID on a voided bet should be a no-op.
 	bet1.set_bet_id(999);
 	EXPECT_EQ(bet1.flags(), janus::bet_flags::CANCELLED | janus::bet_flags::VOIDED);

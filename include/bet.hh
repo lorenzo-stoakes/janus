@@ -125,9 +125,6 @@ public:
 	// cancelled or the bet is voided.
 	auto is_complete() const -> bool
 	{
-		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
-			return false;
-
 		double remaining = unmatched();
 		return remaining > -1e-15 && remaining < 1e-15;
 	}
