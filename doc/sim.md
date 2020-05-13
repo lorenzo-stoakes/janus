@@ -1,11 +1,11 @@
 # Sim
 
 The purpose of this class is to simulate betting within a market. It is attached
-to market state (this could be a real live market or backtested) and then
-maintains a set of bets representing the current simulated position.
+to market state and maintains a set of bets representing overall simulated
+position.
 
-This is principally useful for backtesting markets, both automated strategies
-and manual trading using backtest data.
+This is useful for backtesting markets as it allows for experiments with manual
+and automatic strategies and comparing P/L between different approaches.
 
 ## Limitations
 
