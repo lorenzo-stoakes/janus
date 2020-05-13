@@ -88,7 +88,12 @@ TEST(bet_test, basic)
 	EXPECT_DOUBLE_EQ(bet2.pl(false), 200);
 
 	// Apply adjustment factor.
-	bet2.apply_adj_factor(5);
+	double split_stake = 0;
+	EXPECT_FALSE(bet2.apply_adj_factor(5, split_stake));
+	// No part of the bet should be split as this is lay.
+	EXPECT_DOUBLE_EQ(split_stake, 0);
+	// Lay unmatched should be cancelled.
+	EXPECT_DOUBLE_EQ(bet2.unmatched(), 0);
 	EXPECT_EQ(bet2.flags(), janus::bet_flags::REDUCED);
 	EXPECT_DOUBLE_EQ(bet2.price(), 2.28);
 	EXPECT_DOUBLE_EQ(bet2.orig_price(), 2.4);
@@ -108,20 +113,39 @@ TEST(bet_test, basic)
 	EXPECT_EQ(bet3.flags(), janus::bet_flags::ACKED | janus::bet_flags::CANCELLED);
 
 	// Adjustment factor below 2.5% should do nothing.
-	bet3.apply_adj_factor(2.1);
+	EXPECT_FALSE(bet3.apply_adj_factor(2.1, split_stake));
+	EXPECT_DOUBLE_EQ(split_stake, 0);
 	EXPECT_DOUBLE_EQ(bet2.price(), 2.28);
 	EXPECT_DOUBLE_EQ(bet3.price(), 1.21);
 	EXPECT_EQ(bet3.flags(), janus::bet_flags::ACKED | janus::bet_flags::CANCELLED);
 
+	// Adjustment factor on a back should cause unmatched portion to be
+	// indicated as a split bet.
+	janus::bet bet4(1234, 6.2, 1000, true);
+	bet4.match(500);
+	EXPECT_TRUE(bet4.apply_adj_factor(5, split_stake));
+	EXPECT_DOUBLE_EQ(bet4.price(), 5.89);
+	EXPECT_DOUBLE_EQ(split_stake, 500);
+
+	// If the bet is fully unmatched, then we expect no scaling to actually
+	// take place at all (it applies to matched portion only).
+	janus::bet bet5(1234, 6.2, 1000, true);
+	EXPECT_FALSE(bet5.apply_adj_factor(5, split_stake));
+	EXPECT_DOUBLE_EQ(bet5.price(), 6.2);
+	// Try for lay too.
+	janus::bet bet6(1234, 6.2, 1000, false);
+	EXPECT_FALSE(bet6.apply_adj_factor(5, split_stake));
+	EXPECT_DOUBLE_EQ(bet6.price(), 6.2);
+
 	// Sim bet.
-	janus::bet bet4(1234, 1.21, 1000, false, true);
-	EXPECT_EQ(bet4.flags(), janus::bet_flags::SIM);
-	bet4.set_target_matched(123);
-	EXPECT_EQ(bet4.target_matched(), 123);
+	janus::bet bet7(1234, 1.21, 1000, false, true);
+	EXPECT_EQ(bet7.flags(), janus::bet_flags::SIM);
+	bet7.set_target_matched(123);
+	EXPECT_EQ(bet7.target_matched(), 123);
 
 	// Set price.
-	EXPECT_DOUBLE_EQ(bet4.price(), 1.21);
-	bet4.set_price(6.4);
-	EXPECT_DOUBLE_EQ(bet4.price(), 6.4);
+	EXPECT_DOUBLE_EQ(bet7.price(), 1.21);
+	bet7.set_price(6.4);
+	EXPECT_DOUBLE_EQ(bet7.price(), 6.4);
 }
 } // namespace

@@ -187,14 +187,30 @@ public:
 
 	// Apply an adjustment factor to the bet price.
 	// https://en-betfair.custhelp.com/app/answers/detail/a_id/408/~/exchange%3A-in-a-horse-race%2C-how-will-non-runners-be-treated%3F
-	void apply_adj_factor(double adj_factor)
+	// Returns true if bet needs to be split out and sets split_stake in this case.
+	auto apply_adj_factor(double adj_factor, double& split_stake) -> bool
 	{
+		// See rule 14.6 at
+		// https://www.betfair.com/aboutUs/Rules.and.Regulations/#rulespartb
+
 		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
-			return;
+			return false;
 
 		// In winner markets reductions < 2.5% are ignored.
 		if (adj_factor < 2.5)
-			return;
+			return false;
+
+		// Unmatched lays are cancelled, backs are kept and need to be
+		// split out.
+		if (_is_back)
+			split_stake = unmatched();
+		// Cancel unmatched for this bet either way.
+		_stake = _matched;
+
+		// If we have no matched component we don't need to do anything
+		// else.
+		if (_matched == 0)
+			return false;
 
 		// Adjustment factor is expressed as a percentage.
 		double mult = adj_factor / 100.;
@@ -205,6 +221,8 @@ public:
 		// INCLUDING stake.
 		_price *= mult;
 		_flags |= bet_flags::REDUCED;
+
+		return _is_back;
 	}
 
 	// Void bet completely.
