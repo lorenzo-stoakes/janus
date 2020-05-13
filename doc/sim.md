@@ -18,7 +18,7 @@ and automatic strategies and comparing P/L between different approaches.
   'matched'.
 
 * It does not update the market state in any way, the bets are treated
-  separately - absolutely no simulation whatsoever of the bets affect on the
+  separately - absolutely no simulation whatsoever of the bets' effect on the
   market.
 
 * It uses non-virtualised unmatched volume.
