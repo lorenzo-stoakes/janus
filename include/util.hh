@@ -12,4 +12,10 @@ static inline auto deq(double a, double b) -> bool
 	double diff = ::fabs(a - b);
 	return diff < DOUBLE_EPSILON;
 }
+
+// Compare double value to zero with small error bar.
+static inline auto dz(double val) -> bool
+{
+	return deq(val, 0);
+}
 } // namespace janus
