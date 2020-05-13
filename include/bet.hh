@@ -115,7 +115,7 @@ public:
 	}
 
 	// Determine the target matched volume. Only relevat to simulated bets.
-	auto target_matched() const -> uint64_t
+	auto target_matched() const -> double
 	{
 		return _target_matched;
 	}
@@ -219,7 +219,7 @@ public:
 	}
 
 	// Set target matched volume. Only relevat to simulated bets.
-	void set_target_matched(uint64_t target)
+	void set_target_matched(double target)
 	{
 		_target_matched = target;
 	}
@@ -234,6 +234,6 @@ private:
 	bool _is_back;
 	double _matched;
 	uint64_t _bet_id;
-	uint64_t _target_matched;
+	double _target_matched;
 };
 } // namespace janus
