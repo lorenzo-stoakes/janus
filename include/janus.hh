@@ -7,6 +7,8 @@
 
 #include "error.hh"
 
+#include "util.hh"
+
 #include "decimal7.hh"
 #include "dynamic_array.hh"
 #include "dynamic_buffer.hh"
