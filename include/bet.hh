@@ -126,13 +126,13 @@ public:
 	auto is_complete() const -> bool
 	{
 		double remaining = unmatched();
-		return deq(remaining, 0);
+		return dz(remaining);
 	}
 
 	// Determine if the whole of the bet was cancelled.
 	auto is_cancelled() const -> bool
 	{
-		return deq(_stake, 0);
+		return dz(_stake);
 	}
 
 	// Return profit/loss matched portion of this bet would result in.
@@ -209,7 +209,7 @@ public:
 
 		// If we have no matched component we don't need to do anything
 		// else.
-		if (deq(_matched, 0))
+		if (dz(_matched))
 			return false;
 
 		// Adjustment factor is expressed as a percentage.
@@ -223,7 +223,7 @@ public:
 		_flags |= bet_flags::REDUCED;
 
 		// If fully matched then no need to split out either.
-		return _is_back && !deq(split_stake, 0);
+		return _is_back && !dz(split_stake);
 	}
 
 	// Void bet completely.
