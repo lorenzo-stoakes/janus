@@ -22,6 +22,7 @@
 #include "market.hh"
 #include "meta.hh"
 #include "runner.hh"
+#include "sim.hh"
 #include "stats.hh"
 #include "universe.hh"
 #include "update.hh"
