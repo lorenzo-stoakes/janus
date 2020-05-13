@@ -137,15 +137,21 @@ TEST(bet_test, basic)
 	EXPECT_FALSE(bet6.apply_adj_factor(5, split_stake));
 	EXPECT_DOUBLE_EQ(bet6.price(), 6.2);
 
+	// A fully matched back bet should not result in any split.
+	janus::bet bet7(1234, 6.2, 1000, true);
+	bet7.match(1000);
+	EXPECT_FALSE(bet7.apply_adj_factor(5, split_stake));
+	EXPECT_DOUBLE_EQ(bet7.price(), 5.89);
+
 	// Sim bet.
-	janus::bet bet7(1234, 1.21, 1000, false, true);
-	EXPECT_EQ(bet7.flags(), janus::bet_flags::SIM);
-	bet7.set_target_matched(123);
-	EXPECT_EQ(bet7.target_matched(), 123);
+	janus::bet bet8(1234, 1.21, 1000, false, true);
+	EXPECT_EQ(bet8.flags(), janus::bet_flags::SIM);
+	bet8.set_target_matched(123);
+	EXPECT_EQ(bet8.target_matched(), 123);
 
 	// Set price.
-	EXPECT_DOUBLE_EQ(bet7.price(), 1.21);
-	bet7.set_price(6.4);
-	EXPECT_DOUBLE_EQ(bet7.price(), 6.4);
+	EXPECT_DOUBLE_EQ(bet8.price(), 1.21);
+	bet8.set_price(6.4);
+	EXPECT_DOUBLE_EQ(bet8.price(), 6.4);
 }
 } // namespace

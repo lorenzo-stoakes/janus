@@ -222,7 +222,8 @@ public:
 		_price *= mult;
 		_flags |= bet_flags::REDUCED;
 
-		return _is_back;
+		// If fully matched then no need to split out either.
+		return _is_back && !(split_stake > -1e-15 && split_stake < 1e-15);
 	}
 
 	// Void bet completely.
