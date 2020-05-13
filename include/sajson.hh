@@ -33,6 +33,7 @@
 #include <limits.h>
 #include <limits>
 #include <math.h>
+#include <ostream>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -2809,5 +2810,29 @@ document parse(const AllocationStrategy& strategy, const StringType& string)
 
 	return parser<typename AllocationStrategy::allocator>(input, std::move(allocator))
 		.get_document();
+}
+
+inline std::ostream& operator<<(std::ostream& os, type t)
+{
+	switch (t) {
+	case TYPE_INTEGER:
+		return os << "<integer>";
+	case TYPE_DOUBLE:
+		return os << "<double>";
+	case TYPE_NULL:
+		return os << "<null>";
+	case TYPE_FALSE:
+		return os << "<false>";
+	case TYPE_TRUE:
+		return os << "<true>";
+	case TYPE_STRING:
+		return os << "<string>";
+	case TYPE_ARRAY:
+		return os << "<array>";
+	case TYPE_OBJECT:
+		return os << "<object>";
+	default:
+		return os << "<unknown type";
+	}
 }
 } // namespace sajson
