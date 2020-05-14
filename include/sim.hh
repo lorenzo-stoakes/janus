@@ -45,6 +45,9 @@ public:
 	// returns 0.
 	auto pl() -> double;
 
+	// Add a bet to hedge at the specified price for the specified runner ID.
+	auto hedge(uint64_t runner_id, double price) -> bool;
+
 private:
 	betfair::price_range& _range;
 	betfair::market& _market;
@@ -52,7 +55,7 @@ private:
 	dynamic_array<bool, betfair::MAX_RUNNERS> _removed;
 	uint64_t _next_bet_id;
 
-	// Implementation of add_bet() with option to bypsas checks.
+	// Implementation of add_bet() with option to bypass checks.
 	auto add_bet(uint64_t runner_id, double price, double stake, bool is_back, bool bypass)
 		-> bet*;
 
@@ -84,5 +87,10 @@ private:
 	// Checks through each of the runners for removals and applies the
 	// adjustment factor where appropriate.
 	void apply_removals();
+
+	// Determine the volume-weighted average prices on back and lay
+	// side. Returns false if no prices.
+	auto get_vwap_back_lay(uint64_t runner_id, double& vwap_back, double& vwap_lay,
+			       double& vol_back, double& vol_lay) -> bool;
 };
 } // namespace janus

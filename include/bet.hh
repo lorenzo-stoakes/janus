@@ -173,6 +173,14 @@ public:
 			_matched = amount;
 	}
 
+	// Match the bet, increasing stake if matched exceeds stake.
+	void match_unsafe(double amount)
+	{
+		_matched = amount;
+		if (amount > _stake)
+			_stake = amount;
+	}
+
 	// Cancel the unmatched portion of the bet.
 	void cancel()
 	{

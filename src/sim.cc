@@ -102,14 +102,16 @@ auto sim::add_bet(uint64_t runner_id, double price, double stake, bool is_back, 
 	if (!bypass && _market.inplay())
 		return nullptr;
 
-	bet& bet = _bets.emplace_back(runner_id, price, stake, is_back, true);
-	bet.set_bet_id(_next_bet_id++);
-
 	betfair::runner& runner = find_runner(runner_id);
 	// Can only bet on active runners.
 	if (!bypass && runner.state() != betfair::runner_state::ACTIVE)
 		return nullptr;
 
+	bet& bet = _bets.emplace_back(runner_id, price, stake, is_back, true);
+	bet.set_bet_id(_next_bet_id++);
+
+	// Note that this will set the correct best available price if the input
+	// price is suboptimal.
 	double target_matched = get_target_matched(bet, runner);
 	if (target_matched < 0) {
 		// When the market has moved past our bet this simulation
@@ -251,5 +253,127 @@ auto sim::pl() -> double
 	}
 
 	return ret;
+}
+
+/*
+ * Calculate hedge side, volume at specified price level against input back/lay
+ * price/volume pairs.
+ *
+ * Our aim is to create a bet which results in the same profit
+ * regardless of outcome (we ignore commission rates for the purposes of
+ * this calculation).
+ *
+ * If we are hedging on the lay side:
+ *
+ * P/L if back is:
+ * (£_back - 1) * vol_back - (£_lay - 1) * vol_lay - (£_hedge - 1) * vol_hedge
+ *
+ * P/L if lay is:
+ * vol_lay + vol_hedge - vol_back
+ *
+ * ∴ (£_back - 1) * vol_back - (£_lay - 1) * vol_lay - (£_hedge - 1) * vol_hedge =
+ *     vol_lay + vol_hedge - vol_back
+ * ∴ £_back * vol_back - £_lay * vol_lay - £_hedge * vol_hedge = 0
+ * ∴ vol_hedge = (£_back * vol_back - £_lay * vol_lay) / £_hedge
+ *
+ * If we are hedging on the back side:
+ *
+ * P/L if back is:
+ * (£_back - 1) * vol_back - (£_lay - 1) * vol_lay + (£_hedge - 1) * vol_hedge
+ *
+ * P/L if lay is:
+ * vol_lay - vol_hedge - vol_back
+ *
+ * ∴ (£_back - 1) * vol_back - (£_lay - 1) * vol_lay + (£_hedge - 1) * vol_hedge =
+ *    vol_lay - vol_hedge - vol_back
+ * ∴ £_back * vol_back - £_lay * vol_lay + £_hedge * vol_hedge = 0
+ * ∴ vol_hedge = (£_lay * vol_lay - £_back * vol_back) / £_hedge
+ *
+ * ∴ vol_hedge = |(£_lay * vol_lay - £_back * vol_back) / £_hedge|
+ * ∴   is_back = vol_lay >= vol_back (when equal we could choose either, back by convention).
+ *
+ * Note that £_hedge is the parameter 'price' - the specified hedge price.
+ */
+static auto calc_hedge(double price_back, double vol_back, double price_lay, double vol_lay,
+		       double price) -> std::pair<bool, double>
+{
+	// We assume the caller confirms price is valid value.
+
+	bool is_back = vol_lay >= vol_back;
+	double stake = ::fabs(price_lay * vol_lay - price_back * vol_back) / price;
+	return std::make_pair(is_back, stake);
+}
+
+auto sim::get_vwap_back_lay(uint64_t runner_id, double& vwap_back, double& vwap_lay,
+			    double& vol_back, double& vol_lay) -> bool
+{
+	// We calculate the average price weighted by volume for both back and
+	// lay. This is useful because you can treat an entire set of back/lay
+	// bets on a runner as equivalent to a single pair of VWAPs on the back
+	// and lay side.
+
+	vol_back = 0;
+	vol_lay = 0;
+	double sum_back = 0, sum_lay = 0;
+	for (uint64_t i = 0; i < _bets.size(); i++) {
+		bet& bet = _bets[i];
+
+		if (bet.runner_id() != runner_id)
+			continue;
+
+		double matched = bet.matched();
+
+		if (bet.is_back()) {
+			sum_back += bet.price() * matched;
+			vol_back += matched;
+		} else {
+			sum_lay += bet.price() * matched;
+			vol_lay += matched;
+		}
+	}
+
+	vwap_back = vol_back > 0 ? sum_back / vol_back : 0;
+	vwap_lay = vol_lay > 0 ? sum_lay / vol_lay : 0;
+
+	return !dz(vwap_back) || !dz(vwap_lay);
+}
+
+auto sim::hedge(uint64_t runner_id, double price) -> bool
+{
+	// Ignore invalid prices.
+	if (price < 1.01 || price > 1000)
+		return false;
+
+	// Firstly obtain the Volume-Weighted Average Price for MATCHED back and
+	// lay for this runner - this pair is equivalent to all matched back and
+	// lay bets on the runner.
+
+	double vwap_back, vwap_lay;
+	double vol_back, vol_lay;
+	if (!get_vwap_back_lay(runner_id, vwap_back, vwap_lay, vol_back, vol_lay))
+		return false;
+
+	// Then determine the stake size and side required to match the
+
+	auto [is_back, stake] = calc_hedge(vwap_back, vol_back, vwap_lay, vol_lay, price);
+
+	if (dz(stake))
+		return false;
+
+	auto* bet = add_bet(runner_id, price, stake, is_back, true);
+	if (bet == nullptr)
+		return false;
+
+	// Scale bet stake/matched such that return remains the same in the
+	// case where orig_price and price differ (i.e. a better price was
+	// obtained.)
+	// P/L 1 = orig_price * orig_vol
+	// P/L 2 = new_price * vol_new
+	// ∴ orig_price * orig_vol = new_price * vol_new
+	// ∴ vol_new = orig_vol * orig_price / new_price
+	double scaled = stake * price / bet->price();
+	bet->match_unsafe(scaled);
+
+	return true;
 }
 } // namespace janus
