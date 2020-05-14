@@ -52,7 +52,7 @@ private:
 	dynamic_array<bool, betfair::MAX_RUNNERS> _removed;
 	uint64_t _next_bet_id;
 
-	// Implementation of add_bet() with option to bypsas checks.
+	// Implementation of add_bet() with option to bypass checks.
 	auto add_bet(uint64_t runner_id, double price, double stake, bool is_back, bool bypass)
 		-> bet*;
 
