@@ -106,6 +106,10 @@ TEST(sim_test, basic)
 	EXPECT_DOUBLE_EQ(bet1->price(), 6.2 * (1. - 0.079));
 	EXPECT_DOUBLE_EQ(bet2->price(), 6.4 * (1. - 0.079));
 
+	// Trying to add to a removed runner shouldn't work.
+	EXPECT_EQ(sim->add_bet(456, 6.4, 1000, false), nullptr);
+	ASSERT_EQ(sim->bets().size(), 4);
+
 	// bet 2 should have had its unmatched portion split into a new bet.
 	EXPECT_DOUBLE_EQ(bet2->unmatched(), 0);
 	ASSERT_EQ(sim->bets().size(), 4);

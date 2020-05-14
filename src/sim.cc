@@ -102,13 +102,13 @@ auto sim::add_bet(uint64_t runner_id, double price, double stake, bool is_back, 
 	if (!bypass && _market.inplay())
 		return nullptr;
 
-	bet& bet = _bets.emplace_back(runner_id, price, stake, is_back, true);
-	bet.set_bet_id(_next_bet_id++);
-
 	betfair::runner& runner = find_runner(runner_id);
 	// Can only bet on active runners.
 	if (!bypass && runner.state() != betfair::runner_state::ACTIVE)
 		return nullptr;
+
+	bet& bet = _bets.emplace_back(runner_id, price, stake, is_back, true);
+	bet.set_bet_id(_next_bet_id++);
 
 	double target_matched = get_target_matched(bet, runner);
 	if (target_matched < 0) {
