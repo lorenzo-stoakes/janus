@@ -110,6 +110,11 @@ TEST(sim_test, basic)
 	EXPECT_EQ(sim->add_bet(456, 6.4, 1000, false), nullptr);
 	ASSERT_EQ(sim->bets().size(), 4);
 
+	// We shouldn't be able to add a bet to an inplay market either.
+	market1.set_inplay(true);
+	EXPECT_EQ(sim->add_bet(123, 6.4, 1000, false), nullptr);
+	ASSERT_EQ(sim->bets().size(), 4);
+
 	// bet 2 should have had its unmatched portion split into a new bet.
 	EXPECT_DOUBLE_EQ(bet2->unmatched(), 0);
 	ASSERT_EQ(sim->bets().size(), 4);
