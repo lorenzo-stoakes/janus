@@ -248,8 +248,8 @@ auto sim::pl() -> double
 
 	for (uint64_t i = 0; i < _bets.size(); i++) {
 		bet& bet = _bets[i];
-		bool won = runner_won(bet);
-		ret += bet.pl(won);
+		double delta = bet.pl(runner_won(bet));
+		ret += delta;
 	}
 
 	return ret;
