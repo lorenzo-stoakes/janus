@@ -1,18 +1,11 @@
 #include "janus.hh"
+#include "test_util.hh"
 
-#include <cmath>
 #include <cstdint>
 #include <gtest/gtest.h>
 
 namespace
 {
-// Quick and dirty function to round a number to 2 decimal places.
-static double round_2dp(double n)
-{
-	uint64_t nx100 = ::llround(n * 100.);
-	return static_cast<double>(nx100) / 100;
-}
-
 // Test that an empty set of updates results in zero stats.
 TEST(stats_test, empty_updates)
 {

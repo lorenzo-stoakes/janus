@@ -1,19 +1,12 @@
 #include "janus.hh"
+#include "test_util.hh"
 
-#include <cmath>
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <vector>
 
 namespace
 {
-// Quick and dirty function to round a number to 2 decimal places.
-static double round_2dp(double n)
-{
-	uint64_t nx100 = ::llround(n * 100.);
-	return static_cast<double>(nx100) / 100;
-}
-
 // Test that calc_virtual_bets() correctly generates virtual bets from raw
 // ladders.
 TEST(virtual_test, calc_virtual_bets)

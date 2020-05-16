@@ -231,8 +231,6 @@ auto sim::runner_won(bet& bet) -> bool
 
 auto sim::pl() -> double
 {
-	double ret = 0;
-
 	// Ensure at least one of the runners won otherwise we return 0.
 	bool saw_won = false;
 	betfair::market::runners_t& runners = _market.runners();
@@ -246,10 +244,12 @@ auto sim::pl() -> double
 	if (!saw_won)
 		return 0;
 
+	double ret = 0;
 	for (uint64_t i = 0; i < _bets.size(); i++) {
 		bet& bet = _bets[i];
-		bool won = runner_won(bet);
-		ret += bet.pl(won);
+		double delta = bet.pl(runner_won(bet));
+
+		ret += delta;
 	}
 
 	return ret;
@@ -338,8 +338,32 @@ auto sim::get_vwap_back_lay(uint64_t runner_id, double& vwap_back, double& vwap_
 	return !dz(vwap_back) || !dz(vwap_lay);
 }
 
+auto sim::hedge_all(double price) -> bool
+{
+	bool ret = true;
+	betfair::market::runners_t& runners = _market.runners();
+	for (uint64_t i = 0; i < runners.size(); i++) {
+		betfair::runner& runner = runners[i];
+		if (runner.state() != betfair::runner_state::ACTIVE)
+			continue;
+
+		// Avoid infinite loop. Shouldn't be possible.
+		uint64_t id = runner.id();
+		if (id == 0)
+			throw std::runtime_error("Runner with 0 ID??");
+
+		if (!hedge(id, price))
+			ret = false;
+	}
+
+	return ret;
+}
+
 auto sim::hedge(uint64_t runner_id, double price) -> bool
 {
+	if (runner_id == 0)
+		return hedge_all(price);
+
 	// Firstly obtain the Volume-Weighted Average Price for MATCHED back and
 	// lay for this runner - this pair is equivalent to all matched back and
 	// lay bets on the runner.
