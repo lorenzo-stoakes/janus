@@ -173,12 +173,19 @@ public:
 			_matched = amount;
 	}
 
-	// Match the bet, increasing stake if matched exceeds stake.
-	void match_unsafe(double amount)
+	// Scale the stake and matched components of the SIMULATED bet such that
+	// matching at a better price than requested on hedge maintains the same
+	// payout.
+	void scale_stake_sim(double mult)
 	{
-		_matched = amount;
-		if (amount > _stake)
-			_stake = amount;
+		if ((_flags & bet_flags::SIM) != bet_flags::SIM)
+			throw std::runtime_error("Trying to scale non-sim bet??");
+
+		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
+			return;
+
+		_matched *= mult;
+		_stake *= mult;
 	}
 
 	// Cancel the unmatched portion of the bet.
