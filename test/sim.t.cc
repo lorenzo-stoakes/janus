@@ -1,18 +1,10 @@
 #include "janus.hh"
+#include "test_util.hh"
 
-#include <cmath>
 #include <gtest/gtest.h>
 
 namespace
 {
-// Quick and dirty function to round a number to 2 decimal places.
-// TODO: Duplicated!
-static double round_2dp(double n)
-{
-	uint64_t nx100 = ::llround(n * 100.);
-	return static_cast<double>(nx100) / 100;
-}
-
 // Test that basic sim functionality works correctly.
 TEST(sim_test, basic)
 {

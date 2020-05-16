@@ -1,6 +1,6 @@
 #include "janus.hh"
+#include "test_util.hh"
 
-#include <cmath>
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <vector>
@@ -8,13 +8,6 @@
 namespace
 {
 const static janus::betfair::price_range range;
-
-// Quick and dirty function to round a number to 2 decimal places.
-static double round_2dp(double n)
-{
-	uint64_t nx100 = ::llround(n * 100.);
-	return static_cast<double>(nx100) / 100;
-}
 
 // Quick and dirty helper function to find first instance of the specified
 // update type in a dynamic buffer. Updates dynamic buffer read offset.
