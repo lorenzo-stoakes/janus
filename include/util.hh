@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cmath>
+#include <fstream>
+#include <string>
 
 namespace janus
 {
@@ -17,5 +19,12 @@ static inline auto deq(double a, double b) -> bool
 static inline auto dz(double val) -> bool
 {
 	return deq(val, 0);
+}
+
+// Does the file at the specified path exist?
+static inline auto file_exists(const std::string& path) -> bool
+{
+	std::ifstream f(path);
+	return f.good();
 }
 } // namespace janus
