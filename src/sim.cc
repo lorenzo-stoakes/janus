@@ -340,10 +340,6 @@ auto sim::get_vwap_back_lay(uint64_t runner_id, double& vwap_back, double& vwap_
 
 auto sim::hedge(uint64_t runner_id, double price) -> bool
 {
-	// Ignore invalid prices.
-	if (price < 1.01 || price > 1000)
-		return false;
-
 	// Firstly obtain the Volume-Weighted Average Price for MATCHED back and
 	// lay for this runner - this pair is equivalent to all matched back and
 	// lay bets on the runner.
@@ -353,7 +349,17 @@ auto sim::hedge(uint64_t runner_id, double price) -> bool
 	if (!get_vwap_back_lay(runner_id, vwap_back, vwap_lay, vol_back, vol_lay))
 		return false;
 
-	// Then determine the stake size and side required to match the
+	if (price < 0) {
+		// Negative price indicates we should hedge at best price we can.
+		bool is_hedge_back = vol_lay >= vol_back;
+		// The price will get scaled accordingly.
+		if (is_hedge_back)
+			price = 1.01;
+		else
+			price = 1000.;
+	} else if (price < 1.01 || price > 1000) { // Ignore invalid prices.
+		return false;
+	}
 
 	auto [is_back, stake] = calc_hedge(vwap_back, vol_back, vwap_lay, vol_lay, price);
 
@@ -367,12 +373,18 @@ auto sim::hedge(uint64_t runner_id, double price) -> bool
 	// Scale bet stake/matched such that return remains the same in the
 	// case where orig_price and price differ (i.e. a better price was
 	// obtained.)
-	// P/L 1 = orig_price * orig_vol
-	// P/L 2 = new_price * vol_new
+	// Payout 1 = orig_price * orig_vol
+	// Payout 2 = new_price * vol_new
 	// ∴ orig_price * orig_vol = new_price * vol_new
 	// ∴ vol_new = orig_vol * orig_price / new_price
-	double scaled = stake * price / bet->price();
-	bet->match_unsafe(scaled);
+	double mult = price / bet->price();
+
+	if (!deq(mult, 1)) {
+		bet->scale_stake_sim(mult);
+		// If we have scaled we have to update the sim to take into account that
+		// the scaled portion could now include some unmatched component.
+		update_bet(*bet);
+	}
 
 	return true;
 }

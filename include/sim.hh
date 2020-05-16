@@ -45,8 +45,9 @@ public:
 	// returns 0.
 	auto pl() -> double;
 
-	// Add a bet to hedge at the specified price for the specified runner ID.
-	auto hedge(uint64_t runner_id, double price) -> bool;
+	// Add a bet to hedge at the specified price (or if not specified best
+	// available price) for the specified runner ID.
+	auto hedge(uint64_t runner_id, double price = -1) -> bool;
 
 private:
 	betfair::price_range& _range;
@@ -64,12 +65,14 @@ private:
 
 	// Determine the matched volume for the bet's runner at the bet
 	// price. If the market has moved such that this price has now swapped
-	// side the function returns -1.
+	// side the function returns -1. If better price available, sets bet to
+	// that price.
 	auto get_matched(bet& bet, betfair::runner& runner) -> double;
 
 	// Determine the target matched volume for the bet's runner at the bet
 	// price. If the market has moved such that this price has now swapped
-	// side the function returns -1.
+	// side the function returns -1. If better price available, sets bet to
+	// that price.
 	auto get_target_matched(bet& bet, betfair::runner& runner) -> double;
 
 	// Look up specific runner in the attached market.
