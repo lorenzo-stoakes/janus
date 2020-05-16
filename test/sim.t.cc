@@ -356,4 +356,95 @@ TEST(sim_test, hedge_unmatched_back)
 	EXPECT_DOUBLE_EQ(bet.price(), 8);
 	EXPECT_DOUBLE_EQ(round_2dp(bet.stake()), 8.75);
 }
+
+// Test that hedging all runners works correctly.
+TEST(sim_test, hedge_all)
+{
+	auto run = [&](uint64_t winner_index) {
+		janus::betfair::price_range range;
+
+		janus::betfair::market market1(123456);
+
+		janus::betfair::runner& runner1 = market1.add_runner(123);
+		janus::betfair::ladder& ladder1 = runner1.ladder();
+
+		janus::betfair::runner& runner2 = market1.add_runner(456);
+		janus::betfair::ladder& ladder2 = runner2.ladder();
+
+		janus::betfair::runner& runner3 = market1.add_runner(789);
+		janus::betfair::ladder& ladder3 = runner3.ladder();
+
+		// An empty market being hedged should result in nothing.
+		auto sim = std::make_unique<janus::sim>(range, market1);
+		EXPECT_FALSE(sim->hedge());
+		EXPECT_EQ(sim->bets().size(), 0);
+
+		// Lay 300 @ 6.4, add inventory for back at 3.6.
+		ladder1.set_unmatched_at(range.price_to_nearest_index(6.4), 300);
+		sim->add_bet(123, 6.4, 300, false);
+		ladder1.clear_unmatched_at(range.price_to_nearest_index(6.4));
+		// Add inventory to hedge with.
+		ladder1.set_unmatched_at(range.price_to_nearest_index(3.6), -300);
+
+		// Back 150 @ 5.8, add inventory for lay at 5.2.
+		ladder2.set_unmatched_at(range.price_to_nearest_index(5.8), -150);
+		sim->add_bet(456, 5.8, 150, true);
+		ladder2.clear_unmatched_at(range.price_to_nearest_index(5.8));
+		// Add inventory to hedge with.
+		ladder2.set_unmatched_at(range.price_to_nearest_index(5.2), 150);
+
+		// Back 10 @ 2.2, add inventory for lay at 9.
+		ladder3.set_unmatched_at(range.price_to_nearest_index(2.2), -10);
+		sim->add_bet(789, 2.2, 10, true);
+		ladder3.clear_unmatched_at(range.price_to_nearest_index(2.2));
+		// Add inventory to hedge with.
+		ladder3.set_unmatched_at(range.price_to_nearest_index(9), 10);
+
+		EXPECT_EQ(sim->bets().size(), 3);
+
+		EXPECT_TRUE(sim->hedge());
+		ASSERT_EQ(sim->bets().size(), 6);
+
+		// Loss-making hedge.
+		janus::bet& hedge1 = sim->bets()[3];
+		EXPECT_TRUE(hedge1.is_back());
+		EXPECT_DOUBLE_EQ(hedge1.price(), 3.6);
+		EXPECT_DOUBLE_EQ(round_2dp(hedge1.stake()), 533.33);
+
+		// Profitable hedge.
+		janus::bet& hedge2 = sim->bets()[4];
+		EXPECT_FALSE(hedge2.is_back());
+		EXPECT_DOUBLE_EQ(hedge2.price(), 5.2);
+		EXPECT_DOUBLE_EQ(round_2dp(hedge2.stake()), 167.31);
+
+		// Loss-making hedge.
+		janus::bet& hedge3 = sim->bets()[5];
+		EXPECT_FALSE(hedge3.is_back());
+		EXPECT_DOUBLE_EQ(hedge3.price(), 9);
+		EXPECT_DOUBLE_EQ(round_2dp(hedge3.stake()), 2.44);
+
+		switch (winner_index) {
+		case 0:
+			runner1.set_won();
+			break;
+		case 1:
+			runner2.set_won();
+			break;
+		case 2:
+			runner3.set_won();
+			break;
+		default:
+			EXPECT_TRUE(false) << "Can't happen!";
+			return;
+		}
+
+		EXPECT_DOUBLE_EQ(round_2dp(sim->pl()), -223.58);
+	};
+
+	// No matter which runner won we should be hedged so the outcome should
+	// be the same.
+	run(0);
+	run(1);
+	run(2);
+}
 } // namespace

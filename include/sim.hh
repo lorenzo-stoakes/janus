@@ -46,8 +46,9 @@ public:
 	auto pl() -> double;
 
 	// Add a bet to hedge at the specified price (or if not specified best
-	// available price) for the specified runner ID.
-	auto hedge(uint64_t runner_id, double price = -1) -> bool;
+	// available price) for the specified runner ID (or if not specified all
+	// runners).
+	auto hedge(uint64_t runner_id = 0, double price = -1) -> bool;
 
 private:
 	betfair::price_range& _range;
@@ -95,5 +96,10 @@ private:
 	// side. Returns false if no prices.
 	auto get_vwap_back_lay(uint64_t runner_id, double& vwap_back, double& vwap_lay,
 			       double& vol_back, double& vol_lay) -> bool;
+
+	// Apply hedge to all ACTIVE runners at the specified price (can take
+	// best price if set to -1). Returns true if hedge succeeded for each
+	// runner.
+	auto hedge_all(double price) -> bool;
 };
 } // namespace janus
