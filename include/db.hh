@@ -36,6 +36,9 @@ auto read_all_metadata(const config& config, dynamic_buffer& dyn_buf) -> std::ve
 // updates retrieved.
 auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -> uint64_t;
 
+// Read market updates into a string object.
+auto read_market_updates(const config& config, uint64_t id) -> std::string;
+
 // Returns a vector of the indexes within the buffer which are timestamp
 // updates. This can be used to correctly delineate between blocks of
 // updates. The dynamic buffer has its read offset reset before returning.
