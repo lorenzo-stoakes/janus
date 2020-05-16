@@ -64,12 +64,14 @@ private:
 
 	// Determine the matched volume for the bet's runner at the bet
 	// price. If the market has moved such that this price has now swapped
-	// side the function returns -1.
+	// side the function returns -1. If better price available, sets bet to
+	// that price.
 	auto get_matched(bet& bet, betfair::runner& runner) -> double;
 
 	// Determine the target matched volume for the bet's runner at the bet
 	// price. If the market has moved such that this price has now swapped
-	// side the function returns -1.
+	// side the function returns -1. If better price available, sets bet to
+	// that price.
 	auto get_target_matched(bet& bet, betfair::runner& runner) -> double;
 
 	// Look up specific runner in the attached market.
