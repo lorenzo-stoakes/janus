@@ -154,4 +154,29 @@ TEST(bet_test, basic)
 	bet8.set_price(6.4);
 	EXPECT_DOUBLE_EQ(bet8.price(), 6.4);
 }
+
+// Test that scale_stake_sim() behaves as expected.
+TEST(bet_test, scale_stake_sim)
+{
+	// Standard scaled bet.
+	janus::bet bet1(1234, 100, 1000, false, true);
+	EXPECT_DOUBLE_EQ(bet1.stake(), 1000);
+	bet1.match(500);
+	EXPECT_DOUBLE_EQ(bet1.matched(), 500);
+	EXPECT_NO_THROW(bet1.scale_stake_sim(0.29));
+	EXPECT_DOUBLE_EQ(bet1.stake(), 290);
+	EXPECT_DOUBLE_EQ(bet1.matched(), 145);
+
+	// Nothing should happen with voided bets.
+	janus::bet bet2(1234, 100, 1000, false, true);
+	bet2.match(500);
+	bet2.void_bet();
+	EXPECT_NO_THROW(bet2.scale_stake_sim(0.29));
+	EXPECT_DOUBLE_EQ(bet2.stake(), 0);
+	EXPECT_DOUBLE_EQ(bet2.matched(), 0);
+
+	// Non-sim bets should throw.
+	janus::bet bet3(1234, 100, 1000, false);
+	ASSERT_THROW(bet3.scale_stake_sim(0.29), std::runtime_error);
+}
 } // namespace
