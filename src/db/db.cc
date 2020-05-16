@@ -91,7 +91,7 @@ auto read_all_metadata(const config& config, dynamic_buffer& dyn_buf) -> std::ve
 	return ret;
 }
 
-auto read_market_updates(const config& config, uint64_t id) -> std::string
+auto read_market_updates_string(const config& config, uint64_t id) -> std::string
 {
 	std::string path = config.binary_data_root + "/market/" + std::to_string(id) + ".jan";
 
@@ -127,9 +127,17 @@ auto read_market_updates(const config& config, uint64_t id) -> std::string
 
 auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -> uint64_t
 {
-	std::string str = read_market_updates(config, id);
+	std::string str = read_market_updates_string(config, id);
 	dyn_buf.add_raw(str.c_str(), str.size());
 	return str.size() / sizeof(janus::update);
+}
+
+auto read_market_updates(const config& config, uint64_t id) -> dynamic_buffer
+{
+	std::string str = read_market_updates_string(config, id);
+	dynamic_buffer ret(str.size());
+	ret.add_raw(str.c_str(), str.size());
+	return ret;
 }
 
 auto index_market_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std::vector<uint64_t>
