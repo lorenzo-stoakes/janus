@@ -45,8 +45,9 @@ public:
 	// returns 0.
 	auto pl() -> double;
 
-	// Add a bet to hedge at the specified price for the specified runner ID.
-	auto hedge(uint64_t runner_id, double price) -> bool;
+	// Add a bet to hedge at the specified price (or if not specified best
+	// available price) for the specified runner ID.
+	auto hedge(uint64_t runner_id, double price = -1) -> bool;
 
 private:
 	betfair::price_range& _range;

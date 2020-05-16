@@ -182,4 +182,186 @@ TEST(sim_test, hedge)
 	EXPECT_FALSE(sim->hedge(123, 5.8));
 	EXPECT_EQ(sim->bets().size(), 5);
 }
+
+// Test that the hedge() function works correctly with unspecified price (use
+// best available).
+TEST(sim_test, hedge_unspecified_price)
+{
+	janus::betfair::price_range range;
+
+	janus::betfair::market market1(123456);
+	janus::betfair::runner& runner1 = market1.add_runner(123);
+	janus::betfair::ladder& ladder1 = runner1.ladder();
+
+	auto sim = std::make_unique<janus::sim>(range, market1);
+
+	// Backs: 90 @ 7.2, 30 @ 6.4.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(7.2), -90);
+	sim->add_bet(123, 7.2, 90, true);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(7.2));
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6.4), -30);
+	sim->add_bet(123, 6.4, 30, true);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6.4));
+
+	// Lays: 50 @ 6.2, 30 @ 6.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6.2), 50);
+	sim->add_bet(123, 6.2, 50, false);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6.2));
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6), 30);
+	sim->add_bet(123, 6, 30, false);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6));
+
+	EXPECT_EQ(sim->bets().size(), 4);
+
+	// Now hedge @ 5.8.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(5.8), 61);
+	// We set -1 to get best available price (5.8).
+	EXPECT_TRUE(sim->hedge(123, -1));
+	ASSERT_EQ(sim->bets().size(), 5);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(5.8));
+	janus::bet& bet = sim->bets()[4];
+	EXPECT_EQ(bet.runner_id(), 123);
+	EXPECT_FALSE(bet.is_back());
+	EXPECT_DOUBLE_EQ(bet.price(), 5.8);
+	EXPECT_DOUBLE_EQ(round_2dp(bet.stake()), 60.34);
+
+	// A further hedge should fail.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(5.8), 61);
+	EXPECT_FALSE(sim->hedge(123, 5.8));
+	EXPECT_EQ(sim->bets().size(), 5);
+}
+
+// Test that the hedge() function works correctly with unspecified price (use
+// best available) with back hedge bet.
+TEST(sim_test, hedge_unspecified_price_back)
+{
+	janus::betfair::price_range range;
+
+	janus::betfair::market market1(123456);
+	janus::betfair::runner& runner1 = market1.add_runner(123);
+	janus::betfair::ladder& ladder1 = runner1.ladder();
+
+	auto sim = std::make_unique<janus::sim>(range, market1);
+
+	// Backs: 90 @ 7.2, 30 @ 6.4.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(7.2), -90);
+	sim->add_bet(123, 7.2, 90, true);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(7.2));
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6.4), -30);
+	sim->add_bet(123, 6.4, 30, true);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6.4));
+
+	// Lays: 50 @ 6.2, 100 @ 6.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6.2), 50);
+	sim->add_bet(123, 6.2, 50, false);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6.2));
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6), 100);
+	sim->add_bet(123, 6, 100, false);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6));
+
+	EXPECT_EQ(sim->bets().size(), 4);
+
+	// Now hedge @ unspecified price (should resolve to 5.8).
+	ladder1.set_unmatched_at(range.price_to_nearest_index(5.8), -1);
+	EXPECT_TRUE(sim->hedge(123));
+	ASSERT_EQ(sim->bets().size(), 5);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(5.8));
+	janus::bet& bet = sim->bets()[4];
+	EXPECT_EQ(bet.runner_id(), 123);
+	EXPECT_TRUE(bet.is_back());
+	EXPECT_DOUBLE_EQ(bet.price(), 5.8);
+	EXPECT_DOUBLE_EQ(round_2dp(bet.stake()), 12.07);
+
+	// A further hedge should fail.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(5.8), 61);
+	EXPECT_FALSE(sim->hedge(123, 5.8));
+	EXPECT_EQ(sim->bets().size(), 5);
+}
+
+// Test that the hedge() function works correctly with unspecified price (use
+// best available) with back hedge bet.
+TEST(sim_test, hedge_unspecified_price_lay)
+{
+	janus::betfair::price_range range;
+
+	janus::betfair::market market1(123456);
+	janus::betfair::runner& runner1 = market1.add_runner(123);
+	janus::betfair::ladder& ladder1 = runner1.ladder();
+
+	auto sim = std::make_unique<janus::sim>(range, market1);
+
+	// Backs: 190 @ 7.2, 30 @ 6.4.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(7.2), -190);
+	sim->add_bet(123, 7.2, 190, true);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(7.2));
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6.4), -30);
+	sim->add_bet(123, 6.4, 30, true);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6.4));
+
+	// Lays: 50 @ 6.2, 100 @ 6.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6.2), 50);
+	sim->add_bet(123, 6.2, 50, false);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6.2));
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6), 100);
+	sim->add_bet(123, 6, 100, false);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6));
+
+	EXPECT_EQ(sim->bets().size(), 4);
+
+	// Now hedge @ unspecified price (should resolve to 6.4).
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6.4), 1);
+	EXPECT_TRUE(sim->hedge(123));
+	ASSERT_EQ(sim->bets().size(), 5);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6.4));
+	janus::bet& bet = sim->bets()[4];
+	EXPECT_EQ(bet.runner_id(), 123);
+	EXPECT_FALSE(bet.is_back());
+	EXPECT_DOUBLE_EQ(bet.price(), 6.4);
+	EXPECT_DOUBLE_EQ(round_2dp(bet.stake()), 101.56);
+	EXPECT_TRUE(bet.is_complete());
+
+	// A further hedge should fail.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(5.8), 61);
+	EXPECT_FALSE(sim->hedge(123, 5.8));
+	EXPECT_EQ(sim->bets().size(), 5);
+}
+
+// Test that a bet at a higher price but unmatched works as expected.
+TEST(sim_test, hedge_unmatched_back)
+{
+	janus::betfair::price_range range;
+
+	janus::betfair::market market1(123456);
+	janus::betfair::runner& runner1 = market1.add_runner(123);
+	janus::betfair::ladder& ladder1 = runner1.ladder();
+
+	auto sim = std::make_unique<janus::sim>(range, market1);
+
+	// Backs: 90 @ 7.2, 30 @ 6.4.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(7.2), -90);
+	sim->add_bet(123, 7.2, 90, true);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(7.2));
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6.4), -30);
+	sim->add_bet(123, 6.4, 30, true);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6.4));
+
+	// Lays: 50 @ 6.2, 100 @ 6.
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6.2), 50);
+	sim->add_bet(123, 6.2, 50, false);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6.2));
+	ladder1.set_unmatched_at(range.price_to_nearest_index(6), 100);
+	sim->add_bet(123, 6, 100, false);
+	ladder1.clear_unmatched_at(range.price_to_nearest_index(6));
+
+	EXPECT_EQ(sim->bets().size(), 4);
+
+	// Now hedge @ 8.
+	EXPECT_TRUE(sim->hedge(123, 8));
+	ASSERT_EQ(sim->bets().size(), 5);
+	janus::bet& bet = sim->bets()[4];
+	EXPECT_EQ(bet.runner_id(), 123);
+	EXPECT_TRUE(bet.is_back());
+	EXPECT_DOUBLE_EQ(bet.price(), 8);
+	EXPECT_DOUBLE_EQ(round_2dp(bet.stake()), 8.75);
+}
 } // namespace
