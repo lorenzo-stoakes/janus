@@ -102,6 +102,9 @@ TEST(db_test, read_stats)
 		.binary_data_root = "../test/test-binary",
 	};
 
+	EXPECT_TRUE(janus::have_market_stats(config, 170358161));
+	EXPECT_FALSE(janus::have_market_stats(config, 123));
+
 	janus::stats stats = janus::read_market_stats(config, 170358161);
 
 	// Only check a couple parameters just to make sure stats loaded.

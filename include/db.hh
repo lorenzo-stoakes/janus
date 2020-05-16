@@ -47,6 +47,9 @@ auto read_market_updates_string(const config& config, uint64_t id) -> std::strin
 // updates. The dynamic buffer has its read offset reset before returning.
 auto index_market_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std::vector<uint64_t>;
 
+// Do we have statistics for a specified market?
+auto have_market_stats(const config& config, uint64_t id) -> bool;
+
 // Read statistics for a specified market.
 auto read_market_stats(const config& config, uint64_t id) -> stats;
 } // namespace janus

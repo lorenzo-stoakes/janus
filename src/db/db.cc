@@ -159,6 +159,12 @@ auto index_market_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std:
 	return ret;
 }
 
+auto have_market_stats(const config& config, uint64_t id) -> bool
+{
+	std::string path = config.binary_data_root + "/stats/" + std::to_string(id) + ".jan";
+	return file_exists(path);
+}
+
 auto read_market_stats(const config& config, uint64_t id) -> stats
 {
 	std::string path = config.binary_data_root + "/stats/" + std::to_string(id) + ".jan";
