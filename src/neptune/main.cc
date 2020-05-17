@@ -469,6 +469,7 @@ auto parse_all_legacy_stream(const janus::config& config) -> bool
 	std::sort(filenames.begin(), filenames.end());
 
 	spdlog::info("About to read {} legacy stream JSON files...", filenames.size());
+	uint64_t file_num = 1;
 	for (std::string source : filenames) {
 		if (signalled.load()) {
 			spdlog::info("Signal received, aborting...");
@@ -484,7 +485,8 @@ auto parse_all_legacy_stream(const janus::config& config) -> bool
 
 		// We log at INFO level since this is an irregular operation and
 		// slow, so we will want to see progress.
-		spdlog::info("Reading from {} of size {} bytes...", source, bytes);
+		spdlog::info("Reading from {} of size {} bytes... ({}/{})", source, bytes, file_num,
+			     filenames.size());
 
 		janus::betfair::update_state state = {
 			.range = &range,
@@ -516,6 +518,7 @@ auto parse_all_legacy_stream(const janus::config& config) -> bool
 		write_stream_data(config, per_market, true);
 
 		dyn_buf.reset();
+		file_num++;
 	}
 
 	spdlog::info("Read {} legacy stream JSON files.", filenames.size());
