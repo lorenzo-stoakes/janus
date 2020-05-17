@@ -3,6 +3,7 @@
 #include "sajson.hh"
 
 #include <cstring>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -509,5 +510,110 @@ auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 
 	state.line++;
 	return static_cast<uint64_t>(num_updates);
+}
+
+auto print_update(update& update) -> std::string
+{
+	// We have a convention - each printout is on a single line and of the
+	// format: [update type]::[update details], even if there are no update
+	// details. This makes the output more greppable.
+
+	std::ostringstream oss;
+	switch (update.type) {
+	case update_type::TIMESTAMP:
+	{
+		oss << "TIMESTAMP::";
+		uint64_t timestamp = get_update_timestamp(update);
+		oss << timestamp << ":";
+		char timestamp_buf[25]; // NOLINT: Not magical
+		oss << print_iso8601(timestamp_buf, timestamp);
+		break;
+	}
+	case update_type::MARKET_ID:
+		oss << "MARKET ID::";
+		oss << get_update_market_id(update);
+		break;
+	case update_type::RUNNER_ID:
+		oss << "RUNNER ID::";
+		oss << get_update_runner_id(update);
+		break;
+	case update_type::MARKET_CLEAR:
+		oss << "MARKET CLEAR::";
+		break;
+	case update_type::MARKET_OPEN:
+		oss << "MARKET OPEN::";
+		break;
+	case update_type::MARKET_CLOSE:
+		oss << "MARKET CLOSE::";
+		break;
+	case update_type::MARKET_SUSPEND:
+		oss << "MARKET SUSPEND::";
+		break;
+	case update_type::MARKET_INPLAY:
+		oss << "MARKET INPLAY::";
+		break;
+	case update_type::MARKET_TRADED_VOL:
+		oss << "MARKET TRADED VOLUME::";
+		oss << get_update_market_traded_vol(update);
+		break;
+	case update_type::RUNNER_REMOVAL:
+		oss << "RUNNER REMOVAL::";
+		oss << get_update_runner_adj_factor(update);
+		break;
+	case update_type::RUNNER_CLEAR_UNMATCHED:
+		oss << "RUNNER CLEAR UNMATCHED::";
+		break;
+	case update_type::RUNNER_TRADED_VOL:
+		oss << "RUNNER TRADED VOLUME::";
+		oss << get_update_runner_traded_vol(update);
+		break;
+	case update_type::RUNNER_LTP:
+	{
+		oss << "RUNNER LTP::";
+		uint64_t price_index = get_update_runner_ltp(update);
+		double price = betfair::price_range::index_to_price(price_index);
+		oss << price;
+		break;
+	}
+	case update_type::RUNNER_MATCHED:
+	{
+		oss << "RUNNER MATCHED::";
+		auto [price_index, vol] = get_update_runner_matched(update);
+		double price = betfair::price_range::index_to_price(price_index);
+		oss << vol;
+		oss << " @ ";
+		oss << price;
+		break;
+	}
+	case update_type::RUNNER_UNMATCHED_ATL:
+	{
+		oss << "RUNNER UNMATCHED ATL::";
+		auto [price_index, vol] = get_update_runner_unmatched_atl(update);
+		double price = betfair::price_range::index_to_price(price_index);
+		oss << vol;
+		oss << " @ ";
+		oss << price;
+		break;
+	}
+	case update_type::RUNNER_UNMATCHED_ATB:
+	{
+		oss << "RUNNER UNMATCHED ATB::";
+		auto [price_index, vol] = get_update_runner_unmatched_atb(update);
+		double price = betfair::price_range::index_to_price(price_index);
+		oss << vol;
+		oss << " @ ";
+		oss << price;
+		break;
+	}
+	case update_type::RUNNER_SP:
+		oss << "RUNNER SP::";
+		oss << get_update_runner_sp(update);
+		break;
+	case update_type::RUNNER_WON:
+		oss << "RUNNER WON::";
+		break;
+	}
+
+	return oss.str();
 }
 } // namespace janus::betfair
