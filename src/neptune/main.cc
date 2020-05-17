@@ -299,6 +299,8 @@ auto extract_by_market(std::string path, janus::dynamic_buffer& dyn_buf, uint64_
 		throw std::runtime_error(oss.str());
 	}
 	uint64_t market_id = janus::get_update_market_id(second);
+	// Push the first timestamp.
+	map[market_id].push_back(janus::make_timestamp_update(timestamp));
 
 	for (uint64_t i = 2; i < num_updates; i++) {
 		auto& u = dyn_buf.read<janus::update>();
