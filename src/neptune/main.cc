@@ -23,7 +23,7 @@ namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_MARKET_STREAM_BYTES = 500'000'000;
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
-static constexpr uint64_t MAX_STREAM_BYTES = 5'000'000'000;
+static constexpr uint64_t MAX_STREAM_BYTES = 10'000'000'000;
 static constexpr uint64_t MAX_LEGACY_STREAM_BYTES = 10'000'000'000;
 static constexpr uint64_t SLEEP_INTERVAL_MS = 1000;
 
