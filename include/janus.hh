@@ -7,6 +7,7 @@
 
 #include "error.hh"
 
+#include "channel.hh"
 #include "util.hh"
 
 #include "decimal7.hh"
