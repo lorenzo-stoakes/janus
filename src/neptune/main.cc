@@ -263,6 +263,9 @@ auto get_update_id_list(const janus::config& config, db_t& db) -> std::vector<ui
 			ret.push_back(p.first);
 	}
 
+	// Sort in chronological order.
+	std::sort(ret.begin(), ret.end());
+
 	return ret;
 }
 
