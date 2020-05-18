@@ -57,9 +57,8 @@ TEST(analyse_test, basic)
 		.core = -1,
 	};
 
-	auto update_worker = [&](int core, const janus::betfair::market& market,
-				 const janus::sim& sim, worker_state& state,
-				 spdlog::logger* logger) -> bool {
+	auto update_worker = [&](int core, const janus::betfair::market& market, janus::sim& sim,
+				 worker_state& state, spdlog::logger* logger) -> bool {
 		state.num_updates++;
 		state.market_id = market.id();
 		state.traded_vol = market.traded_vol();
@@ -84,7 +83,7 @@ TEST(analyse_test, basic)
 		.failed = false,
 	};
 
-	auto market_reducer = [&](int core, const worker_state& worker_state, const janus::sim& sim,
+	auto market_reducer = [&](int core, const worker_state& worker_state, janus::sim& sim,
 				  bool worker_aborted, market_agg_state& state,
 				  spdlog::logger* logger) -> bool {
 		state.workers.push_back(worker_state);

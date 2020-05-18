@@ -22,11 +22,10 @@ class analyser
 {
 public:
 	using predicate_fn_t = std::function<bool(const meta_view&, const stats&)>;
-	using update_worker_fn_t = std::function<bool(int, const betfair::market&, const sim&,
+	using update_worker_fn_t = std::function<bool(int, const betfair::market&, sim&,
 						      TWorkerState&, spdlog::logger*)>;
-	using market_reducer_fn_t =
-		std::function<bool(int, const TWorkerState&, const janus::sim& sim, bool,
-				   TMarketAggState&, spdlog::logger*)>;
+	using market_reducer_fn_t = std::function<bool(int, const TWorkerState&, sim&, bool,
+						       TMarketAggState&, spdlog::logger*)>;
 	using node_reducer_fn_t = std::function<bool(int, const TMarketAggState&, bool,
 						     TNodeAggState&, spdlog::logger*)>;
 	using reducer_fn_t = std::function<TResult(const std::vector<TNodeAggState>&)>;
