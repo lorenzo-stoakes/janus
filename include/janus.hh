@@ -7,6 +7,7 @@
 
 #include "error.hh"
 
+#include "channel.hh"
 #include "util.hh"
 
 #include "decimal7.hh"
@@ -38,3 +39,5 @@
 #include "network/rng.hh"
 
 #include "db.hh"
+
+#include "analyse.hh"

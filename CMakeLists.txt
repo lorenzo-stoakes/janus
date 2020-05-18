@@ -147,6 +147,25 @@ target_link_libraries(checker
 	snappy
 )
 
+# Dump
+
+file(GLOB_RECURSE DUMP_SOURCES
+	"src/dump/*.cc"
+)
+add_executable(dump
+	${JANUS_SOURCES}
+	${DUMP_SOURCES}
+	${DB_SOURCES}
+)
+target_compile_options(dump
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
+)
+
+target_link_libraries(dump
+	m
+	snappy
+)
+
 # Tests
 
 include(GoogleTest)
@@ -177,6 +196,7 @@ target_link_libraries(testrunner
 	m
 	mbed
 	snappy
+	pthread
 )
 else()
 target_link_libraries(testrunner
@@ -186,6 +206,7 @@ target_link_libraries(testrunner
 	mbed
 	snappy
 	ubsan
+	pthread
 )
 endif()
 

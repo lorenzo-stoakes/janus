@@ -400,5 +400,8 @@ struct update_state
 //   returns: Number of updates emitted.
 auto parse_update_stream_json(update_state& state, char* str, uint64_t size,
 			      dynamic_buffer& dyn_buf) -> uint64_t;
+
+// Print human-readable update to string.
+auto print_update(update& update) -> std::string;
 } // namespace betfair
 } // namespace janus

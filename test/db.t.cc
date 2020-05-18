@@ -62,6 +62,14 @@ TEST(db_test, basic)
 
 	// check we can handle snappy-compressed archived stream updates too.
 	EXPECT_EQ(janus::read_market_updates(config, dyn_buf, 168216153), 109648);
+
+	janus::dynamic_buffer dyn_buf2 = janus::read_market_updates(config, 170358161);
+	EXPECT_EQ(dyn_buf2.size(), 1843 * sizeof(janus::update));
+	EXPECT_EQ(dyn_buf2.cap(), 1843 * sizeof(janus::update));
+
+	janus::dynamic_buffer dyn_buf3 = janus::read_market_updates(config, 168216153);
+	EXPECT_EQ(dyn_buf3.size(), 109648 * sizeof(janus::update));
+	EXPECT_EQ(dyn_buf3.cap(), 109648 * sizeof(janus::update));
 }
 
 // Test that we can correctly index timestamp indexes.
@@ -93,6 +101,9 @@ TEST(db_test, read_stats)
 		.json_data_root = "../test/test-json",
 		.binary_data_root = "../test/test-binary",
 	};
+
+	EXPECT_TRUE(janus::have_market_stats(config, 170358161));
+	EXPECT_FALSE(janus::have_market_stats(config, 123));
 
 	janus::stats stats = janus::read_market_stats(config, 170358161);
 

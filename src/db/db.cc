@@ -91,7 +91,7 @@ auto read_all_metadata(const config& config, dynamic_buffer& dyn_buf) -> std::ve
 	return ret;
 }
 
-auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -> uint64_t
+auto read_market_updates_string(const config& config, uint64_t id) -> std::string
 {
 	std::string path = config.binary_data_root + "/market/" + std::to_string(id) + ".jan";
 
@@ -109,27 +109,35 @@ auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t
 	uint64_t size = file.tellg();
 	file.seekg(0);
 
+	std::string str(size, '\0');
+	if (!file.read(&str[0], size))
+		throw std::runtime_error(std::string("Error reading market updates from ") + path);
+
 	// Simple case - just read the data and put it in the dynamic buffer.
-	if (!is_compressed) {
-		char* ptr = static_cast<char*>(dyn_buf.reserve(size));
-		if (!file.read(ptr, size))
-			throw std::runtime_error(std::string("Error reading market updates from ") +
-						 path);
-
-		return size / sizeof(janus::update);
-	}
-
-	std::string compressed(size, '\0');
-	if (!file.read(&compressed[0], size))
-		throw std::runtime_error(
-			std::string("Error reading compressed market updates from ") + path);
+	if (!is_compressed)
+		return str;
 
 	std::string uncompressed;
-	if (!snappy::Uncompress(compressed.c_str(), compressed.size(), &uncompressed))
+	if (!snappy::Uncompress(&str[0], str.size(), &uncompressed))
 		throw std::runtime_error(std::string("Unable to decompress ") + path +
 					 " file corrupted?");
-	dyn_buf.add_raw(uncompressed.c_str(), uncompressed.size());
-	return uncompressed.size() / sizeof(janus::update);
+
+	return uncompressed;
+}
+
+auto read_market_updates(const config& config, dynamic_buffer& dyn_buf, uint64_t id) -> uint64_t
+{
+	std::string str = read_market_updates_string(config, id);
+	dyn_buf.add_raw(str.c_str(), str.size());
+	return str.size() / sizeof(janus::update);
+}
+
+auto read_market_updates(const config& config, uint64_t id) -> dynamic_buffer
+{
+	std::string str = read_market_updates_string(config, id);
+	dynamic_buffer ret(str.size());
+	ret.add_raw(str.c_str(), str.size());
+	return ret;
 }
 
 auto index_market_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std::vector<uint64_t>
@@ -149,6 +157,12 @@ auto index_market_updates(dynamic_buffer& dyn_buf, uint64_t num_updates) -> std:
 	// Reset before we return so future use isn't offset.
 	dyn_buf.reset_read();
 	return ret;
+}
+
+auto have_market_stats(const config& config, uint64_t id) -> bool
+{
+	std::string path = config.binary_data_root + "/stats/" + std::to_string(id) + ".jan";
+	return file_exists(path);
 }
 
 auto read_market_stats(const config& config, uint64_t id) -> stats

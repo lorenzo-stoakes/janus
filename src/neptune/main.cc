@@ -23,7 +23,7 @@ namespace fs = std::filesystem;
 
 static constexpr uint64_t MAX_MARKET_STREAM_BYTES = 500'000'000;
 static constexpr uint64_t MAX_METADATA_BYTES = 100'000;
-static constexpr uint64_t MAX_STREAM_BYTES = 5'000'000'000;
+static constexpr uint64_t MAX_STREAM_BYTES = 10'000'000'000;
 static constexpr uint64_t MAX_LEGACY_STREAM_BYTES = 10'000'000'000;
 static constexpr uint64_t SLEEP_INTERVAL_MS = 1000;
 
@@ -63,20 +63,13 @@ static void add_signal_handler()
 	::sigaction(SIGINT, &action_interrupt, nullptr);
 }
 
-// Does the file at the specified path exist?
-static auto file_exists(const std::string& path) -> bool
-{
-	std::ifstream f(path);
-	return f.good();
-}
-
 // Read database file containing information about imported data.
 auto read_db(const janus::config& config) -> db_t
 {
 	std::string path = config.binary_data_root + "/neptune.db";
 
 	std::vector<db_entry> entries;
-	if (file_exists(path)) {
+	if (janus::file_exists(path)) {
 		auto file = std::ifstream(path, std::ios::binary | std::ios::ate);
 		if (!file)
 			throw std::runtime_error(std::string("Cannot open ") + path);
@@ -160,14 +153,14 @@ void parse_meta(const janus::config& config, uint64_t file_id)
 {
 	std::string source_path =
 		config.json_data_root + "/meta/" + std::to_string(file_id) + ".json";
-	if (!file_exists(source_path))
+	if (!janus::file_exists(source_path))
 		throw std::runtime_error(std::string("Cannot find metadata JSON file ") +
 					 source_path);
 
 	spdlog::debug("Found new metadata file {}", source_path);
 
 	std::string dest_dir = config.binary_data_root + "/meta/";
-	if (!file_exists(dest_dir))
+	if (!janus::file_exists(dest_dir))
 		throw std::runtime_error(std::string("Cannot find destination directory ") +
 					 dest_dir);
 
@@ -192,12 +185,12 @@ void parse_meta(const janus::config& config, uint64_t file_id)
 auto parse_all_legacy_meta(const janus::config& config) -> bool
 {
 	std::string legacy_root_dir = config.json_data_root + "/legacy/markets/";
-	if (!file_exists(legacy_root_dir))
+	if (!janus::file_exists(legacy_root_dir))
 		throw std::runtime_error(std::string("Cannot find legacy market directory ") +
 					 legacy_root_dir);
 
 	std::string dest_dir = config.binary_data_root + "/meta/";
-	if (!file_exists(dest_dir))
+	if (!janus::file_exists(dest_dir))
 		throw std::runtime_error(std::string("Cannot find destination directory ") +
 					 dest_dir);
 
@@ -270,6 +263,9 @@ auto get_update_id_list(const janus::config& config, db_t& db) -> std::vector<ui
 			ret.push_back(p.first);
 	}
 
+	// Sort in chronological order.
+	std::sort(ret.begin(), ret.end());
+
 	return ret;
 }
 
@@ -306,6 +302,8 @@ auto extract_by_market(std::string path, janus::dynamic_buffer& dyn_buf, uint64_
 		throw std::runtime_error(oss.str());
 	}
 	uint64_t market_id = janus::get_update_market_id(second);
+	// Push the first timestamp.
+	map[market_id].push_back(janus::make_timestamp_update(timestamp));
 
 	for (uint64_t i = 2; i < num_updates; i++) {
 		auto& u = dyn_buf.read<janus::update>();
@@ -336,7 +334,7 @@ auto write_market_stream_data(const std::string& destdir, uint64_t id,
 	if (remove_snap) {
 		// Succeeds even if file doesn't exist.
 		fs::remove(path + ".snap");
-	} else if (file_exists(path + ".snap")) {
+	} else if (janus::file_exists(path + ".snap")) {
 		spdlog::warn(
 			"Received {} updates for market {} but already archived as {}.snap? Skipping.",
 			updates.size(), id, path);
@@ -456,7 +454,7 @@ void update_from_stream_file(const janus::config& config, const janus::betfair::
 auto parse_all_legacy_stream(const janus::config& config) -> bool
 {
 	std::string legacy_root_dir = config.json_data_root + "/legacy/all/";
-	if (!file_exists(legacy_root_dir))
+	if (!janus::file_exists(legacy_root_dir))
 		throw std::runtime_error(std::string("Cannot find legacy all streams directory ") +
 					 legacy_root_dir);
 
@@ -474,6 +472,7 @@ auto parse_all_legacy_stream(const janus::config& config) -> bool
 	std::sort(filenames.begin(), filenames.end());
 
 	spdlog::info("About to read {} legacy stream JSON files...", filenames.size());
+	uint64_t file_num = 1;
 	for (std::string source : filenames) {
 		if (signalled.load()) {
 			spdlog::info("Signal received, aborting...");
@@ -489,7 +488,8 @@ auto parse_all_legacy_stream(const janus::config& config) -> bool
 
 		// We log at INFO level since this is an irregular operation and
 		// slow, so we will want to see progress.
-		spdlog::info("Reading from {} of size {} bytes...", source, bytes);
+		spdlog::info("Reading from {} of size {} bytes... ({}/{})", source, bytes, file_num,
+			     filenames.size());
 
 		janus::betfair::update_state state = {
 			.range = &range,
@@ -521,6 +521,7 @@ auto parse_all_legacy_stream(const janus::config& config) -> bool
 		write_stream_data(config, per_market, true);
 
 		dyn_buf.reset();
+		file_num++;
 	}
 
 	spdlog::info("Read {} legacy stream JSON files.", filenames.size());
@@ -568,7 +569,7 @@ void snappify(std::string path, janus::dynamic_buffer& dyn_buf)
 auto snappify_markets(const janus::config& config) -> bool
 {
 	std::string market_dir = config.binary_data_root + "/market/";
-	if (!file_exists(market_dir))
+	if (!janus::file_exists(market_dir))
 		throw std::runtime_error(std::string("Cannot find binary market directory ") +
 					 market_dir);
 
@@ -671,7 +672,7 @@ auto generate_stats(const janus::config& config, const std::vector<uint64_t>& id
 
 		std::string meta_path =
 			config.binary_data_root + "/meta/" + std::to_string(id) + ".jan";
-		if (file_exists(meta_path)) {
+		if (janus::file_exists(meta_path)) {
 			janus::meta_view meta = janus::read_metadata(config, meta_dyn_buf, id);
 			stats = janus::generate_stats(&meta, dyn_buf);
 		} else {
