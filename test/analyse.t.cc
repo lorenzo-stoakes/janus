@@ -57,8 +57,16 @@ TEST(analyse_test, basic)
 		.core = -1,
 	};
 
+	struct node_agg_state
+	{
+		int num_iters;
+		std::vector<worker_state> workers;
+		bool failed;
+	};
+
 	auto update_worker = [&](int core, const janus::betfair::market& market, janus::sim& sim,
-				 worker_state& state, spdlog::logger* logger) -> bool {
+				 const node_agg_state& node_agg_state, worker_state& state,
+				 spdlog::logger* logger) -> bool {
 		state.num_updates++;
 		state.market_id = market.id();
 		state.traded_vol = market.traded_vol();
@@ -98,13 +106,6 @@ TEST(analyse_test, basic)
 		}
 
 		return true;
-	};
-
-	struct node_agg_state
-	{
-		int num_iters;
-		std::vector<worker_state> workers;
-		bool failed;
 	};
 
 	const node_agg_state zero_node_agg_state = {

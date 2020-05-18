@@ -104,7 +104,7 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 			TWorkerState state = _zero_worker_state;
 			// If we can't even update our very first state then
 			// just skip this market.
-			if (!_update_worker(core, market, sim, state, logger.get()))
+			if (!_update_worker(core, market, sim, node_agg_state, state, logger.get()))
 				continue;
 
 			try {
@@ -124,8 +124,8 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 
 				// We skip inplay updates currently.
 				if (u.type == update_type::TIMESTAMP && !market.inplay()) {
-					if (!_update_worker(core, market, sim, state,
-							    logger.get())) {
+					if (!_update_worker(core, market, sim, node_agg_state,
+							    state, logger.get())) {
 						worker_aborted = true;
 						break;
 					}
