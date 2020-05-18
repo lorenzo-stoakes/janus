@@ -196,6 +196,7 @@ target_link_libraries(testrunner
 	m
 	mbed
 	snappy
+	pthread
 )
 else()
 target_link_libraries(testrunner
@@ -205,6 +206,7 @@ target_link_libraries(testrunner
 	mbed
 	snappy
 	ubsan
+	pthread
 )
 endif()
 
