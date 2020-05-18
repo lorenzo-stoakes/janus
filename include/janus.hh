@@ -39,3 +39,5 @@
 #include "network/rng.hh"
 
 #include "db.hh"
+
+#include "analyse.hh"
