@@ -3,6 +3,7 @@
 #include "sajson.hh"
 
 #include <cstring>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -519,6 +520,8 @@ auto print_update(update& update) -> std::string
 	// details. This makes the output more greppable.
 
 	std::ostringstream oss;
+	oss << std::fixed;
+
 	switch (update.type) {
 	case update_type::TIMESTAMP:
 	{
