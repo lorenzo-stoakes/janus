@@ -21,7 +21,7 @@ enum class stats_interval : uint64_t
 	TEN_MINS,
 	FIVE_MINS,
 	THREE_MINS,
-	ONE_MORE,
+	ONE_MIN,
 };
 
 // Represents 'market is X' information for a market.
