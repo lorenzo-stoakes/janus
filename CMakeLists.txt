@@ -129,6 +129,26 @@ target_link_libraries(osiris
 	Qt5::Charts
 )
 
+# Apollo
+
+file(GLOB_RECURSE APOLLO_SOURCES
+	"src/apollo/*.cc"
+)
+add_executable(apollo
+	${JANUS_SOURCES}
+	${DB_SOURCES}
+	${APOLLO_SOURCES}
+)
+target_compile_options(apollo
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
+)
+
+target_link_libraries(apollo
+	m
+	pthread
+	snappy
+)
+
 # Checker
 
 file(GLOB_RECURSE CHECKER_SOURCES
