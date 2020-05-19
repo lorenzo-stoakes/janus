@@ -23,8 +23,8 @@ class analyser
 public:
 	using predicate_fn_t = std::function<bool(const meta_view&, const stats&)>;
 	using update_worker_fn_t =
-		std::function<bool(int, const betfair::market&, sim&, const TNodeAggState&,
-				   TWorkerState&, spdlog::logger*)>;
+		std::function<bool(int, const meta_view&, const betfair::market&, sim&,
+				   const TNodeAggState&, TWorkerState&, spdlog::logger*)>;
 	using market_reducer_fn_t = std::function<bool(int, const TWorkerState&, sim&, bool,
 						       TMarketAggState&, spdlog::logger*)>;
 	using node_reducer_fn_t = std::function<bool(int, const TMarketAggState&, bool,

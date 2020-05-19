@@ -65,7 +65,8 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 			buf.reset_read();
 			universe.clear();
 
-			uint64_t market_id = _meta_views[offset + i].market_id();
+			const meta_view& meta = _meta_views[offset + i];
+			uint64_t market_id = meta.market_id();
 			universe.apply_update(janus::make_market_id_update(market_id));
 
 			// Get first set of data. First timestamp will be prior
@@ -104,7 +105,8 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 			TWorkerState state = _zero_worker_state;
 			// If we can't even update our very first state then
 			// just skip this market.
-			if (!_update_worker(core, market, sim, node_agg_state, state, logger.get()))
+			if (!_update_worker(core, meta, market, sim, node_agg_state, state,
+					    logger.get()))
 				continue;
 
 			try {
@@ -124,7 +126,7 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 
 				// We skip inplay updates currently.
 				if (u.type == update_type::TIMESTAMP && !market.inplay()) {
-					if (!_update_worker(core, market, sim, node_agg_state,
+					if (!_update_worker(core, meta, market, sim, node_agg_state,
 							    state, logger.get())) {
 						worker_aborted = true;
 						break;
