@@ -65,7 +65,7 @@ TEST(analyse_test, basic)
 	};
 
 	auto update_worker = [&](int core, const janus::meta_view& meta,
-				 const janus::betfair::market& market, janus::sim& sim,
+				 janus::betfair::market& market, janus::sim& sim,
 				 const node_agg_state& node_agg_state, worker_state& state,
 				 spdlog::logger* logger) -> bool {
 		state.num_updates++;
