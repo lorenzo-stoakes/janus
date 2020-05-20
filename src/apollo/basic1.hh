@@ -27,7 +27,7 @@ public:
 private:
 	struct worker_state
 	{
-		double pl;
+		bool bet;
 	};
 
 	struct market_agg_state
@@ -46,7 +46,7 @@ private:
 	};
 
 	const worker_state zero_worker_state = {
-		.pl = 0,
+		.bet = false,
 	};
 
 	const market_agg_state zero_market_agg_state = {
@@ -95,6 +95,38 @@ private:
 				  const node_agg_state& node_agg_state, worker_state& state,
 				  spdlog::logger* logger) -> bool
 	{
+		if (state.bet || market.state() != betfair::market_state::OPEN)
+			return true;
+
+		uint64_t start_timestamp = meta.market_start_timestamp();
+		uint64_t market_timestamp = market.last_timestamp();
+		if (market_timestamp >= start_timestamp)
+			return true;
+
+		uint64_t diff = start_timestamp - market_timestamp;
+		if (diff <= 5 * 60 * 1000)
+			return true;
+
+		uint64_t fav_index = 0;
+		uint64_t fav_price_index = betfair::NUM_PRICES;
+		for (uint64_t i = 0; i < market.runners().size(); i++) {
+			auto& runner = market[i];
+			if (runner.state() != betfair::runner_state::ACTIVE)
+				continue;
+
+			uint64_t price_index = runner.ladder().best_atb().first;
+
+			if (price_index < fav_price_index) {
+				fav_price_index = price_index;
+				fav_index = i;
+			}
+		}
+
+		if (fav_price_index != betfair::NUM_PRICES) {
+			sim.add_bet(market[fav_index].id(), 1.01, 1000, true);
+			state.bet = true;
+		}
+
 		return true;
 	}
 
@@ -102,6 +134,7 @@ private:
 				   bool worker_aborted, market_agg_state& state,
 				   spdlog::logger* logger) -> bool
 	{
+		state.pl += sim.pl();
 		return true;
 	}
 
@@ -109,6 +142,7 @@ private:
 				 bool market_reducer_aborted, node_agg_state& state,
 				 spdlog::logger* logger) -> bool
 	{
+		state.pl = market_agg_state.pl;
 		return false;
 	}
 
@@ -117,6 +151,10 @@ private:
 		result ret = {
 			.pl = 0,
 		};
+
+		for (const auto& state : states) {
+			ret.pl += state.pl;
+		}
 
 		return ret;
 	}
