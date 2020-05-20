@@ -109,7 +109,7 @@ private:
 				 bool market_reducer_aborted, node_agg_state& state,
 				 spdlog::logger* logger) -> bool
 	{
-		return true;
+		return false;
 	}
 
 	static auto reducer(const std::vector<node_agg_state>& states) -> result
