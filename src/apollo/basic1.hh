@@ -4,8 +4,6 @@
 
 #include <vector>
 
-#include <iostream>
-
 namespace janus::apollo
 {
 class basic1
