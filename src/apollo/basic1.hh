@@ -100,11 +100,7 @@ private:
 
 		uint64_t start_timestamp = meta.market_start_timestamp();
 		uint64_t market_timestamp = market.last_timestamp();
-		if (market_timestamp >= start_timestamp)
-			return true;
-
-		uint64_t diff = start_timestamp - market_timestamp;
-		if (diff <= 5 * 60 * 1000)
+		if (market_timestamp < start_timestamp)
 			return true;
 
 		uint64_t fav_index = 0;
