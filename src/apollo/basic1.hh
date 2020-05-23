@@ -2,6 +2,8 @@
 
 #include "janus.hh"
 
+#include <array>
+#include <iostream>
 #include <vector>
 
 namespace janus::apollo
@@ -15,11 +17,17 @@ public:
 	{
 	}
 
-	auto run() -> double
+	void run()
 	{
 		const janus::config& config = janus::parse_config();
 
-		return _analyser.run(config).pl;
+		auto res = _analyser.run(config);
+
+		betfair::price_range range;
+		for (uint64_t price_index = 0; price_index < betfair::NUM_PRICES; price_index++) {
+			std::cout << res.pls[price_index] << "\t"
+				  << range.index_to_price(price_index) << std::endl;
+		}
 	}
 
 private:
@@ -35,12 +43,13 @@ private:
 
 	struct node_agg_state
 	{
-		double pl;
+		uint64_t last_price_index;
+		std::array<double, betfair::NUM_PRICES> pls;
 	};
 
 	struct result
 	{
-		double pl;
+		std::array<double, betfair::NUM_PRICES> pls;
 	};
 
 	const worker_state zero_worker_state = {
@@ -52,7 +61,8 @@ private:
 	};
 
 	const node_agg_state zero_node_agg_state = {
-		.pl = 0,
+		.last_price_index = 0,
+		.pls = {0},
 	};
 
 	analyser<worker_state, market_agg_state, node_agg_state, result> _analyser;
@@ -116,7 +126,9 @@ private:
 			}
 		}
 
-		if (fav_price_index != betfair::NUM_PRICES) {
+		// <= 2 only.
+		if (fav_price_index != betfair::NUM_PRICES &&
+		    fav_price_index <= node_agg_state.last_price_index) {
 			sim.add_bet(market[fav_index].id(), 1.01, 1000, true);
 			state.bet = true;
 		}
@@ -136,18 +148,21 @@ private:
 				 bool market_reducer_aborted, node_agg_state& state,
 				 spdlog::logger* logger) -> bool
 	{
-		state.pl = market_agg_state.pl;
-		return false;
+		state.pls[state.last_price_index++] = market_agg_state.pl;
+		return state.last_price_index < betfair::NUM_PRICES;
 	}
 
 	static auto reducer(const std::vector<node_agg_state>& states) -> result
 	{
 		result ret = {
-			.pl = 0,
+			.pls = {0},
 		};
 
 		for (const auto& state : states) {
-			ret.pl += state.pl;
+			for (uint64_t price_index = 0; price_index < betfair::NUM_PRICES;
+			     price_index++) {
+				ret.pls[price_index] += state.pls[price_index];
+			}
 		}
 
 		return ret;
