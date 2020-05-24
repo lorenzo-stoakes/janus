@@ -363,7 +363,7 @@ private:
 				return true;
 
 			bet& enter_bet = sim.bets()[0];
-			if (enter_bet.is_complete())
+			if ((enter_bet.flags() & bet_flags::VOIDED) == bet_flags::VOIDED)
 				return true;
 
 			if (conf.exit_strat == exit_strategy::MAX_DURATION) {
