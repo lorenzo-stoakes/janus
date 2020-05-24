@@ -563,7 +563,7 @@ private:
 	{
 		state.pls[state.config_index++] = market_agg_state.pl;
 
-		if (state.config_index % 100 == 0) {
+		if (state.config_index % 10 == 0) {
 			logger->info("Core {}: Processing index {}/{}", core, state.config_index,
 				     TOTAL_NUM_CONFIGS);
 		}
