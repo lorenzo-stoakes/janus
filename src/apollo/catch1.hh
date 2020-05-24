@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+//#define DUMP_CONFIG
+
 // TODO(lorenzo): Terrible mess, first draft stuff!
 
 namespace janus::apollo
@@ -78,8 +80,55 @@ struct config
 
 static std::array<config, TOTAL_NUM_CONFIGS> configs;
 
+static inline void print_config(uint64_t index, config& conf)
+{
+	std::cout << index << "\t" << conf.max_loss_ticks << "\t" << conf.pre_post_secs << "\t"
+		  << conf.max_after_post_secs << "\t" << conf.min_vol << "\t"
+		  << conf.trigger_num_ticks << "\t" << conf.interval_ms << "\t";
+	if (conf.back)
+		std::cout << "back"
+			  << "\t";
+	else
+		std::cout << "lay"
+			  << "\t";
+
+	if (conf.oppose)
+		std::cout << "oppose"
+			  << "\t";
+	else
+		std::cout << "no-oppose"
+			  << "\t";
+
+	switch (conf.exit_strat) {
+	case exit_strategy::NONE:
+		std::cout << "NONE"
+			  << "\t";
+		break;
+	case exit_strategy::PROFIT_TICKS:
+		std::cout << "PROFIT_TICKS"
+			  << "\t";
+		std::cout << conf.exit_num_ticks;
+		break;
+	case exit_strategy::MAX_DURATION:
+		std::cout << "MAX_DURATION"
+			  << "\t";
+		std::cout << conf.exit_duration_ms;
+		break;
+	case exit_strategy::UNTIL_STABLE:
+		std::cout << "UNTIL_STABLE"
+			  << "\t";
+		break;
+	}
+
+	std::cout << std::endl;
+}
+
 static inline void init_configs10(config& conf, uint64_t& index)
 {
+#ifdef DUMP_CONFIG
+	print_config(index, conf);
+#endif
+
 	configs[index++] = conf;
 }
 
