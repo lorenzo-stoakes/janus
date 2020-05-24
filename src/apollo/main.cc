@@ -1,4 +1,5 @@
 #include "basic1.hh"
+#include "catch1.hh"
 #include "janus.hh"
 
 #include <iomanip>
@@ -15,6 +16,10 @@ auto main(int argc, char** argv) -> int
 	std::string strat_name = argv[1];
 	if (strat_name == "basic1") {
 		janus::apollo::basic1 s;
+		s.run();
+	} else if (strat_name == "catch1") {
+		janus::apollo::init_configs();
+		janus::apollo::catch1 s;
 		s.run();
 	} else {
 		std::cerr << "Unknown strategy '" << strat_name << "'??" << std::endl;
