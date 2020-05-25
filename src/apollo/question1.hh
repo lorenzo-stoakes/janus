@@ -124,7 +124,7 @@ public:
 		for (uint64_t i = 0; i < TOTAL_NUM_CONFIGS_QUESTION; i++) {
 			std::cout << i << "\t" << res.num_exceeded[i] << "\t"
 				  << res.favs_exceeded[i] << "\t" << res.init_favs_exceeded[i]
-				  << std::endl;
+				  << "\t" << res.num_markets_analysed[i] << std::endl;
 		}
 	}
 
@@ -146,6 +146,7 @@ private:
 		uint64_t num_exceeded;
 		uint64_t favs_exceeded;
 		uint64_t init_favs_exceeded;
+		uint64_t num_markets_analysed;
 	};
 
 	struct node_agg_state
@@ -154,6 +155,7 @@ private:
 		std::array<uint64_t, TOTAL_NUM_CONFIGS_QUESTION> num_exceeded;
 		std::array<uint64_t, TOTAL_NUM_CONFIGS_QUESTION> favs_exceeded;
 		std::array<uint64_t, TOTAL_NUM_CONFIGS_QUESTION> init_favs_exceeded;
+		std::array<uint64_t, TOTAL_NUM_CONFIGS_QUESTION> num_markets_analysed;
 	};
 
 	struct result
@@ -161,6 +163,7 @@ private:
 		std::array<uint64_t, TOTAL_NUM_CONFIGS_QUESTION> num_exceeded;
 		std::array<uint64_t, TOTAL_NUM_CONFIGS_QUESTION> favs_exceeded;
 		std::array<uint64_t, TOTAL_NUM_CONFIGS_QUESTION> init_favs_exceeded;
+		std::array<uint64_t, TOTAL_NUM_CONFIGS_QUESTION> num_markets_analysed;
 	};
 
 	const worker_state zero_worker_state = {
@@ -175,9 +178,10 @@ private:
 	};
 
 	const market_agg_state zero_market_agg_state = {
-		.num_exceeded = 0,
-		.favs_exceeded = 0,
-		.init_favs_exceeded = 0,
+		.num_exceeded = {0},
+		.favs_exceeded = {0},
+		.init_favs_exceeded = {0},
+		.num_markets_analysed = {0},
 	};
 
 	const node_agg_state zero_node_agg_state = {
@@ -185,6 +189,7 @@ private:
 		.num_exceeded = {0},
 		.favs_exceeded = {0},
 		.init_favs_exceeded = {0},
+		.num_markets_analysed = {0},
 	};
 
 	analyser<worker_state, market_agg_state, node_agg_state, result> _analyser;
@@ -337,6 +342,7 @@ private:
 		// been removed in the last 5 mins and our results are invalid,
 		// abort.
 		if (num_removed > state.num_removed) {
+			state.started = false;
 			state.any_exceeded = false;
 			state.fav_exceeded = false;
 			state.init_fav_exceeded = false;
@@ -354,6 +360,11 @@ private:
 				   bool worker_aborted, market_agg_state& state,
 				   spdlog::logger* logger) -> bool
 	{
+		if (!worker_state.started)
+			return true;
+
+		state.num_markets_analysed++;
+
 		if (worker_state.any_exceeded)
 			state.num_exceeded++;
 		if (worker_state.fav_exceeded)
@@ -371,6 +382,8 @@ private:
 		state.num_exceeded[state.config_index] = market_agg_state.num_exceeded;
 		state.favs_exceeded[state.config_index] = market_agg_state.favs_exceeded;
 		state.init_favs_exceeded[state.config_index] = market_agg_state.init_favs_exceeded;
+		state.num_markets_analysed[state.config_index] =
+			market_agg_state.num_markets_analysed;
 		state.config_index++;
 
 		return state.config_index < TOTAL_NUM_CONFIGS_QUESTION;
@@ -382,6 +395,7 @@ private:
 			.num_exceeded = {0},
 			.favs_exceeded = {0},
 			.init_favs_exceeded = {0},
+			.num_markets_analysed = {0},
 		};
 
 		for (auto& state : states) {
@@ -389,6 +403,7 @@ private:
 				ret.num_exceeded[i] += state.num_exceeded[i];
 				ret.favs_exceeded[i] += state.favs_exceeded[i];
 				ret.init_favs_exceeded[i] += state.init_favs_exceeded[i];
+				ret.num_markets_analysed[i] += state.num_markets_analysed[i];
 			}
 		}
 
