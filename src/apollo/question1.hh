@@ -7,15 +7,13 @@
 #include <iostream>
 #include <vector>
 
-#define DUMP_CONFIG
+//#define DUMP_CONFIG
 
 /*
  *
  *  1. How often does _any_ runner with starting odds of <= 12 come in by 10
  *     ticks or more in the 5 minutes before post + time before inplay based on
  *     best ATB (excluding removals) with minimum market traded volume of 30k?
- *     (Note that it must come in this much from the price at the point of 5
- *     minutes to post).
  */
 
 namespace janus::apollo
@@ -342,14 +340,6 @@ private:
 			for (uint64_t i = 0; i < runners.size(); i++) {
 				state.exceeded[i] = false;
 			}
-
-			std::array<char, 25> iso8601_buf; // NOLINT: Not magical.
-			auto timestamp_str =
-				print_iso8601(&iso8601_buf[0], market.last_timestamp());
-
-			logger->warn(
-				"Core {}: Market {}: Timestamp {}: Saw {} removals previously {}, aborting.",
-				core, market.id(), timestamp_str, num_removed, state.num_removed);
 
 			return false;
 		}
