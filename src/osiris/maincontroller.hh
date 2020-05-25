@@ -38,7 +38,7 @@ static constexpr const uint64_t PLAYBACK_INTERVAL_MS = 50;
 // We increment a flash counter each time an LTP is written and the runner
 // traded volume hasn't increased, once it's past this value then we clear
 // it. This is used to flash traded price.
-static constexpr const uint64_t MAX_FLASH_COUNT = 5;
+static constexpr const uint64_t MAX_FLASH_COUNT = 2;
 
 enum class update_level
 {
