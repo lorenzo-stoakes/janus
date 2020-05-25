@@ -303,8 +303,11 @@ private:
 
 			uint64_t curr_price = runner.ladder().best_atb().first;
 			bool steamed = curr_price < init_price;
-			if ((!conf.check_back && steamed) || (conf.check_back && !steamed))
+			if ((!conf.check_back && steamed) || (conf.check_back && !steamed)) {
+				// Reset so we get _any_ X tick move.
+				state.init_prices[i] = curr_price;
 				continue;
+			}
 
 			uint64_t delta;
 			if (steamed)
