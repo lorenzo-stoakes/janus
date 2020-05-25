@@ -39,45 +39,67 @@ public:
 		std::string direction = CHECK_BACK ? "steamed" : "drifted";
 		std::cout << res.num_exceeded << " markets " << direction << " by "
 			  << THRESHOLD_TICKS << " ticks or more." << std::endl;
+		std::cout << res.init_favs_exceeded << " of those were favourites at the outset."
+			  << std::endl;
+		std::cout << res.favs_exceeded << " of those were favourites when they "
+			  << direction << "." << std::endl;
 	}
 
 private:
 	struct worker_state
 	{
 		bool started;
-		bool exceeded;
+		bool any_exceeded;
+		bool fav_exceeded;
+		bool init_fav_exceeded;
+		uint64_t init_fav_id;
 		uint64_t num_removed;
 		std::array<uint64_t, MAX_RUNNERS> init_prices;
+		std::array<bool, MAX_RUNNERS> exceeded;
 	};
 
 	struct market_agg_state
 	{
 		uint64_t num_exceeded;
+		uint64_t favs_exceeded;
+		uint64_t init_favs_exceeded;
 	};
 
 	struct node_agg_state
 	{
 		uint64_t num_exceeded;
+		uint64_t favs_exceeded;
+		uint64_t init_favs_exceeded;
 	};
 
 	struct result
 	{
 		uint64_t num_exceeded;
+		uint64_t favs_exceeded;
+		uint64_t init_favs_exceeded;
 	};
 
 	const worker_state zero_worker_state = {
 		.started = false,
-		.exceeded = false,
+		.any_exceeded = false,
+		.fav_exceeded = false,
+		.init_fav_exceeded = false,
+		.init_fav_id = 0,
 		.num_removed = 0,
 		.init_prices = {0},
+		.exceeded = {0},
 	};
 
 	const market_agg_state zero_market_agg_state = {
 		.num_exceeded = 0,
+		.favs_exceeded = 0,
+		.init_favs_exceeded = 0,
 	};
 
 	const node_agg_state zero_node_agg_state = {
 		.num_exceeded = 0,
+		.favs_exceeded = 0,
+		.init_favs_exceeded = 0,
 	};
 
 	analyser<worker_state, market_agg_state, node_agg_state, result> _analyser;
@@ -118,8 +140,7 @@ private:
 				  const node_agg_state& node_agg_state, worker_state& state,
 				  spdlog::logger* logger) -> bool
 	{
-		if (state.exceeded || market.state() != betfair::market_state::OPEN ||
-		    market.inplay())
+		if (market.state() != betfair::market_state::OPEN || market.inplay())
 			return true;
 
 		uint64_t start_timestamp = meta.market_start_timestamp();
@@ -137,6 +158,9 @@ private:
 			if (diff > START_PRE_POST_MS)
 				return true;
 
+			uint64_t min_price = 350;
+			uint64_t fav_id = 0;
+
 			auto& runners = market.runners();
 			for (uint64_t i = 0; i < runners.size(); i++) {
 				auto& runner = runners[i];
@@ -152,8 +176,15 @@ private:
 				    MAX_RUNNER_PRICEX100)
 					continue;
 
+				if (price_index < min_price) {
+					min_price = price_index;
+					fav_id = runner.id();
+				}
+
 				state.init_prices[i] = price_index;
 			}
+
+			state.init_fav_id = fav_id;
 			state.started = true;
 
 			return true;
@@ -163,6 +194,10 @@ private:
 
 		uint64_t num_removed = 0;
 		auto& runners = market.runners();
+
+		uint64_t min_seen = 350;
+		uint64_t min_exceeded = 350;
+
 		for (uint64_t i = 0; i < runners.size(); i++) {
 			auto& runner = runners[i];
 
@@ -190,17 +225,34 @@ private:
 			else
 				delta = curr_price - init_price;
 
+			if (curr_price < min_seen)
+				min_seen = curr_price;
+
 			if (delta > THRESHOLD_TICKS) {
-				state.exceeded = true;
-				break;
+				state.exceeded[i] = true;
+				state.any_exceeded = true;
+
+				if (runner.id() == state.init_fav_id)
+					state.init_fav_exceeded = true;
+
+				if (curr_price < min_exceeded)
+					min_exceeded = curr_price;
 			}
 		}
+
+		if (min_seen != 350 && min_seen == min_exceeded)
+			state.fav_exceeded = true;
 
 		// If we have more removals than we started with, a runner has
 		// been removed in the last 5 mins and our results are invalid,
 		// abort.
 		if (num_removed > state.num_removed) {
-			state.exceeded = false;
+			state.any_exceeded = false;
+			state.fav_exceeded = false;
+			state.init_fav_exceeded = false;
+			for (uint64_t i = 0; i < runners.size(); i++) {
+				state.exceeded[i] = false;
+			}
 
 			std::array<char, 25> iso8601_buf; // NOLINT: Not magical.
 			auto timestamp_str =
@@ -220,8 +272,12 @@ private:
 				   bool worker_aborted, market_agg_state& state,
 				   spdlog::logger* logger) -> bool
 	{
-		if (worker_state.exceeded)
+		if (worker_state.any_exceeded)
 			state.num_exceeded++;
+		if (worker_state.fav_exceeded)
+			state.favs_exceeded++;
+		if (worker_state.init_fav_exceeded)
+			state.init_favs_exceeded++;
 
 		return true;
 	}
@@ -231,6 +287,8 @@ private:
 				 spdlog::logger* logger) -> bool
 	{
 		state.num_exceeded = market_agg_state.num_exceeded;
+		state.favs_exceeded = market_agg_state.favs_exceeded;
+		state.init_favs_exceeded = market_agg_state.init_favs_exceeded;
 
 		// Only 1 iteration.
 		return false;
@@ -240,10 +298,14 @@ private:
 	{
 		result ret = {
 			.num_exceeded = 0,
+			.favs_exceeded = 0,
+			.init_favs_exceeded = 0,
 		};
 
 		for (auto& state : states) {
 			ret.num_exceeded += state.num_exceeded;
+			ret.favs_exceeded += state.favs_exceeded;
+			ret.init_favs_exceeded += state.init_favs_exceeded;
 		}
 
 		return ret;
