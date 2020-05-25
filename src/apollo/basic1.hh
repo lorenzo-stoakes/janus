@@ -129,7 +129,7 @@ private:
 		// <= 2 only.
 		if (fav_price_index != betfair::NUM_PRICES &&
 		    fav_price_index <= node_agg_state.last_price_index) {
-			sim.add_bet(market[fav_index].id(), 1.01, 1000, true);
+			sim.add_bet(market[fav_index].id(), 1.01, 10, true);
 			state.bet = true;
 		}
 
