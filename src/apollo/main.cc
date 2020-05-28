@@ -19,7 +19,7 @@ auto main(int argc, char** argv) -> int
 		janus::apollo::basic1 s;
 		s.run();
 	} else if (strat_name == "catch1") {
-		janus::apollo::init_configs();
+		janus::apollo::init_configs_catch();
 		janus::apollo::catch1 s;
 		s.run();
 	} else if (strat_name == "question1") {

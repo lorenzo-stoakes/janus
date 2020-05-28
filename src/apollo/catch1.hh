@@ -63,7 +63,7 @@ static constexpr uint64_t TOTAL_NUM_CONFIGS =
 	NUM_TRIGGER_NUM_TICKS * NUM_INTERVAL_MS * NUM_BACK_LAY * NUM_OPPOSE *
 	(NUM_EXIT_STRAT_NO_PARAMS + NUM_EXIT_TICKS + NUM_EXIT_DURATION_MS);
 
-struct config
+struct config_catch
 {
 	uint64_t max_loss_ticks;      // Maximum number of ticks of loss we will accept.
 	uint64_t pre_post_secs;       // Point at which pre-post we start tracking.
@@ -78,9 +78,9 @@ struct config
 	uint64_t exit_duration_ms;    // If MAX_DURATION exit strat, max duration.
 };
 
-static std::array<config, TOTAL_NUM_CONFIGS> configs;
+static std::array<config_catch, TOTAL_NUM_CONFIGS> configs_catch;
 
-static inline void print_config(uint64_t index, config& conf)
+static inline void print_config(uint64_t index, config_catch& conf)
 {
 	std::cout << index << "\t" << conf.max_loss_ticks << "\t" << conf.pre_post_secs << "\t"
 		  << conf.max_after_post_secs << "\t" << conf.min_vol << "\t"
@@ -123,102 +123,102 @@ static inline void print_config(uint64_t index, config& conf)
 	std::cout << std::endl;
 }
 
-static inline void init_configs10(config& conf, uint64_t& index)
+static inline void init_configs_catch10(config_catch& conf, uint64_t& index)
 {
 #ifdef DUMP_CONFIG
 	print_config(index, conf);
 #endif
 
-	configs[index++] = conf;
+	configs_catch[index++] = conf;
 }
 
-static inline void init_configs9(config& conf, uint64_t& index)
+static inline void init_configs_catch9(config_catch& conf, uint64_t& index)
 {
 	conf.exit_strat = exit_strategy::NONE;
-	init_configs10(conf, index);
+	init_configs_catch10(conf, index);
 
 	conf.exit_strat = exit_strategy::PROFIT_TICKS;
 	for (uint64_t i = 0; i < NUM_EXIT_TICKS; i++) {
 		conf.exit_num_ticks = exit_num_ticks_params[i];
-		init_configs10(conf, index);
+		init_configs_catch10(conf, index);
 	}
 
 	conf.exit_strat = exit_strategy::MAX_DURATION;
 	for (uint64_t i = 0; i < NUM_EXIT_TICKS; i++) {
 		conf.exit_duration_ms = exit_duration_ms_params[i];
-		init_configs10(conf, index);
+		init_configs_catch10(conf, index);
 	}
 
 	conf.exit_strat = exit_strategy::UNTIL_STABLE;
-	init_configs10(conf, index);
+	init_configs_catch10(conf, index);
 }
 
-static inline void init_configs8(config& conf, uint64_t& index)
+static inline void init_configs_catch8(config_catch& conf, uint64_t& index)
 {
 	conf.oppose = false;
-	init_configs9(conf, index);
+	init_configs_catch9(conf, index);
 
 	conf.oppose = true;
-	init_configs9(conf, index);
+	init_configs_catch9(conf, index);
 }
 
-static inline void init_configs7(config& conf, uint64_t& index)
+static inline void init_configs_catch7(config_catch& conf, uint64_t& index)
 {
 	conf.back = false;
-	init_configs8(conf, index);
+	init_configs_catch8(conf, index);
 
 	conf.back = true;
-	init_configs8(conf, index);
+	init_configs_catch8(conf, index);
 }
 
-static inline void init_configs6(config& conf, uint64_t& index)
+static inline void init_configs_catch6(config_catch& conf, uint64_t& index)
 {
 	for (uint64_t i = 0; i < NUM_INTERVAL_MS; i++) {
 		conf.interval_ms = interval_ms_params[i];
-		init_configs7(conf, index);
+		init_configs_catch7(conf, index);
 	}
 }
 
-static inline void init_configs5(config& conf, uint64_t& index)
+static inline void init_configs_catch5(config_catch& conf, uint64_t& index)
 {
 	for (uint64_t i = 0; i < NUM_TRIGGER_NUM_TICKS; i++) {
 		conf.trigger_num_ticks = trigger_num_ticks_params[i];
-		init_configs6(conf, index);
+		init_configs_catch6(conf, index);
 	}
 }
 
-static inline void init_configs4(config& conf, uint64_t& index)
+static inline void init_configs_catch4(config_catch& conf, uint64_t& index)
 {
 	for (uint64_t i = 0; i < NUM_MIN_VOLS; i++) {
 		conf.min_vol = min_vol_params[i];
-		init_configs5(conf, index);
+		init_configs_catch5(conf, index);
 	}
 }
 
-static inline void init_configs3(config& conf, uint64_t& index)
+static inline void init_configs_catch3(config_catch& conf, uint64_t& index)
 {
 	for (uint64_t i = 0; i < NUM_MAX_AFTER_POST_SECS; i++) {
 		conf.max_after_post_secs = max_after_post_secs_params[i];
-		init_configs4(conf, index);
+		init_configs_catch4(conf, index);
 	}
 }
 
-static inline void init_configs2(config& conf, uint64_t& index)
+static inline void init_configs_catch2(config_catch& conf, uint64_t& index)
 {
 	for (uint64_t i = 0; i < NUM_PRE_POST_SECS; i++) {
 		conf.pre_post_secs = pre_post_secs_params[i];
-		init_configs3(conf, index);
+		init_configs_catch3(conf, index);
 	}
 }
 
-static inline void init_configs()
+static inline void init_configs_catch()
 {
 	uint64_t index = 0;
 
 	for (uint64_t i = 0; i < NUM_MAX_LOSS_TICKS; i++) {
-		config conf = {0};
+		config_catch conf = {0};
 		conf.max_loss_ticks = max_loss_ticks_params[i];
-		init_configs2(conf, index);
+		init_configs_catch2(conf, index);
 	}
 
 	if (index != TOTAL_NUM_CONFIGS)
@@ -348,7 +348,7 @@ private:
 		if (market.state() != betfair::market_state::OPEN)
 			return true;
 
-		const config& conf = configs[node_agg_state.config_index];
+		const config_catch& conf = configs_catch[node_agg_state.config_index];
 
 		// We're already done.
 		if (state.exited)
