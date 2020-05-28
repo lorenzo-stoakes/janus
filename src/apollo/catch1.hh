@@ -496,7 +496,7 @@ private:
 		if (timestamp > start)
 			return true;
 		uint64_t diff = start - timestamp;
-		if (diff > conf.pre_post_secs)
+		if (diff > conf.pre_post_secs * 1000)
 			return true;
 
 		uint64_t interval_ms = conf.interval_ms;
