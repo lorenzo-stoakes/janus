@@ -31,7 +31,7 @@ static constexpr uint64_t NUM_TICKS_DUAL = 3;
 const static std::array<uint64_t, NUM_TICKS_DUAL> num_ticks_params_dual = {10, 5, 3};
 
 static constexpr uint64_t NUM_MIN_VOLS_DUAL = 2;
-const static std::array<double, NUM_MIN_VOLS> min_vol_params_dual = {50000, 30000};
+const static std::array<double, NUM_MIN_VOLS_DUAL> min_vol_params_dual = {50000, 30000};
 
 static constexpr uint64_t NUM_REVERSE_DUAL = 3;
 
