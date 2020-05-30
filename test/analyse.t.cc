@@ -93,8 +93,8 @@ TEST(analyse_test, basic)
 	};
 
 	auto market_reducer = [&](int core, const worker_state& worker_state, janus::sim& sim,
-				  bool worker_aborted, market_agg_state& state,
-				  spdlog::logger* logger) -> bool {
+				  janus::betfair::market& market, bool worker_aborted,
+				  market_agg_state& state, spdlog::logger* logger) -> bool {
 		state.workers.push_back(worker_state);
 		if (worker_state.failed) {
 			logger->error("Core {}: market reducer failed!", core);

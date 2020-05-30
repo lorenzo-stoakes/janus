@@ -28,7 +28,7 @@ struct config_question
 };
 
 static constexpr uint64_t NUM_START_PRE_POST_MS = 3;
-const static std::array<uint64_t, NUM_MAX_LOSS_TICKS> start_pre_post_ms_params = {
+const static std::array<uint64_t, NUM_START_PRE_POST_MS> start_pre_post_ms_params = {
 	5 * 60 * 1000, 3 * 60 * 1000, 60 * 1000};
 
 static constexpr uint64_t NUM_MIN_MARKET_VOL = 3;
@@ -357,8 +357,8 @@ private:
 	}
 
 	static auto market_reducer(int core, const worker_state& worker_state, janus::sim& sim,
-				   bool worker_aborted, market_agg_state& state,
-				   spdlog::logger* logger) -> bool
+				   betfair::market& market, bool worker_aborted,
+				   market_agg_state& state, spdlog::logger* logger) -> bool
 	{
 		if (!worker_state.started)
 			return true;

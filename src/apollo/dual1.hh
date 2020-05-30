@@ -31,7 +31,7 @@ static constexpr uint64_t NUM_TICKS_DUAL = 3;
 const static std::array<uint64_t, NUM_TICKS_DUAL> num_ticks_params_dual = {10, 5, 3};
 
 static constexpr uint64_t NUM_MIN_VOLS_DUAL = 2;
-const static std::array<double, NUM_MIN_VOLS> min_vol_params_dual = {50000, 30000};
+const static std::array<double, NUM_MIN_VOLS_DUAL> min_vol_params_dual = {50000, 30000};
 
 static constexpr uint64_t NUM_REVERSE_DUAL = 3;
 
@@ -143,14 +143,14 @@ private:
 	struct node_agg_state
 	{
 		uint64_t config_index;
-		std::array<double, TOTAL_NUM_CONFIGS> num_enters;
-		std::array<double, TOTAL_NUM_CONFIGS> pls;
+		std::array<double, TOTAL_NUM_CONFIGS_DUAL> num_enters;
+		std::array<double, TOTAL_NUM_CONFIGS_DUAL> pls;
 	};
 
 	struct result
 	{
-		std::array<double, TOTAL_NUM_CONFIGS> num_enters;
-		std::array<double, TOTAL_NUM_CONFIGS> pls;
+		std::array<double, TOTAL_NUM_CONFIGS_DUAL> num_enters;
+		std::array<double, TOTAL_NUM_CONFIGS_DUAL> pls;
 	};
 
 	const worker_state zero_worker_state = {
@@ -328,8 +328,8 @@ private:
 	}
 
 	static auto market_reducer(int core, const worker_state& worker_state, janus::sim& sim,
-				   bool worker_aborted, market_agg_state& state,
-				   spdlog::logger* logger) -> bool
+				   betfair::market& market, bool worker_aborted,
+				   market_agg_state& state, spdlog::logger* logger) -> bool
 	{
 		state.pl += sim.pl();
 		if (worker_state.entered)
