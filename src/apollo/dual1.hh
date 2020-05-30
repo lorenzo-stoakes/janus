@@ -6,7 +6,8 @@
 #include <iostream>
 #include <vector>
 
-// #define DUMP_CONFIG_DUAL
+//#define DUMP_CONFIG_DUAL
+//#define PRINT_PL_DUAL
 
 namespace janus::apollo
 {
@@ -130,6 +131,11 @@ private:
 	struct worker_state
 	{
 		bool entered;
+		uint64_t market_id;
+		uint64_t enter_price_index;
+		uint64_t enter_timestamp;
+		uint64_t enter_id;
+
 		std::array<uint64_t, 100> prev_price;
 		std::array<int, 100> prev_dir;
 	};
@@ -155,6 +161,11 @@ private:
 
 	const worker_state zero_worker_state = {
 		.entered = false,
+		.market_id = 0,
+		.enter_price_index = 0,
+		.enter_timestamp = 0,
+		.enter_id = 0,
+
 		.prev_price = {0},
 		.prev_dir = {0},
 	};
@@ -165,7 +176,7 @@ private:
 	};
 
 	const node_agg_state zero_node_agg_state = {
-		.config_index = 0,
+		.config_index = 19,
 		.num_enters = {0},
 		.pls = {0},
 	};
@@ -208,8 +219,7 @@ private:
 				  const node_agg_state& node_agg_state, worker_state& state,
 				  spdlog::logger* logger) -> bool
 	{
-		if (state.entered || market.state() != betfair::market_state::OPEN ||
-		    market.inplay())
+		if (market.state() != betfair::market_state::OPEN || market.inplay())
 			return true;
 
 		const config_dual& conf = configs_dual[node_agg_state.config_index];
@@ -217,7 +227,19 @@ private:
 		uint64_t start_timestamp = meta.market_start_timestamp();
 		uint64_t market_timestamp = market.last_timestamp();
 
-		if (market_timestamp >= start_timestamp)
+		if (market_timestamp >= start_timestamp) {
+			sim.hedge();
+
+			auto& bets = sim.bets();
+			for (uint64_t i = 0; i < bets.size(); i++) {
+				auto& bet = bets[i];
+				bet.cancel();
+			}
+
+			return true;
+		}
+
+		if (state.entered)
 			return true;
 
 		uint64_t diff = start_timestamp - market_timestamp;
@@ -278,8 +300,15 @@ private:
 				lay_id = fav_id;
 			}
 
+			state.market_id = meta.market_id();
+
 			if (conf.both || !conf.reverse) {
 				sim.add_bet(back_id, 1.01, STAKE_SIZE_DOUBLE, true);
+
+				state.enter_price_index = fav_price_index;
+				state.enter_timestamp = market_timestamp;
+				state.enter_id = back_id;
+
 				sim.add_bet(back_id,
 					    betfair::price_range::index_to_price(fav_price_index -
 										 conf.num_ticks),
@@ -295,6 +324,11 @@ private:
 					    betfair::price_range::index_to_price(fav_price_index +
 										 conf.num_ticks),
 					    STAKE_SIZE_DOUBLE, true);
+
+				state.enter_price_index = fav_price_index;
+				state.enter_timestamp = market_timestamp;
+				state.enter_id = lay_id;
+
 				// sim.hedge(lay_id, betfair::price_range::index_to_price(
 				//			  fav_price_index + conf.num_ticks));
 			}
@@ -331,9 +365,24 @@ private:
 				   betfair::market& market, bool worker_aborted,
 				   market_agg_state& state, spdlog::logger* logger) -> bool
 	{
-		state.pl += sim.pl();
-		if (worker_state.entered)
+		if (worker_state.entered) {
 			state.num_enters++;
+			double pl = sim.pl();
+
+			state.pl += pl;
+
+#ifdef PRINT_PL_DUAL
+			betfair::runner* runner = market.find_runner(worker_state.enter_id);
+			double sp = runner == nullptr ? 0 : runner->sp();
+
+			logger->info("{}\t{}\t{}\t{}\t{}\t{}", core, worker_state.market_id,
+				     worker_state.enter_timestamp,
+				     betfair::price_range::index_to_price(
+					     worker_state.enter_price_index),
+				     sp, pl);
+#endif
+		}
+
 		return true;
 	}
 
@@ -343,9 +392,10 @@ private:
 	{
 		state.pls[state.config_index] = market_agg_state.pl;
 		state.num_enters[state.config_index] = market_agg_state.num_enters;
-		state.config_index++;
+		// state.config_index++;
 
-		return state.config_index < TOTAL_NUM_CONFIGS_DUAL;
+		// return state.config_index < TOTAL_NUM_CONFIGS_DUAL;
+		return false;
 	}
 
 	static auto reducer(const std::vector<node_agg_state>& states) -> result
