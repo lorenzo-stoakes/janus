@@ -1,5 +1,6 @@
 #include "basic1.hh"
 #include "catch1.hh"
+#include "dual1.hh"
 #include "janus.hh"
 #include "question1.hh"
 
@@ -19,12 +20,16 @@ auto main(int argc, char** argv) -> int
 		janus::apollo::basic1 s;
 		s.run();
 	} else if (strat_name == "catch1") {
-		janus::apollo::init_configs();
+		janus::apollo::init_configs_catch();
 		janus::apollo::catch1 s;
 		s.run();
 	} else if (strat_name == "question1") {
 		janus::apollo::init_configs_question();
 		janus::apollo::question1 s;
+		s.run();
+	} else if (strat_name == "dual1") {
+		janus::apollo::init_configs_dual();
+		janus::apollo::dual1 s;
 		s.run();
 	} else {
 		std::cerr << "Unknown strategy '" << strat_name << "'??" << std::endl;
