@@ -9,12 +9,13 @@
 #include <vector>
 
 //#define DUMP_CONFIG
+#define PRINT_PL
 
 // TODO(lorenzo): Terrible mess, first draft stuff!
 
 namespace janus::apollo
 {
-static constexpr double STAKE_SIZE = 10;
+static constexpr double STAKE_SIZE = 500;
 static constexpr uint64_t FAV_NUM_HISTORY = 100;
 static constexpr uint64_t MIN_STABLE_COUNT = 10;
 static constexpr uint64_t MAX_STABLE_DELTA = 1;
@@ -29,39 +30,36 @@ enum class exit_strategy
 
 // Node blank = ~7ms, ~600 markets/node = ~5s per iteration.
 
-static constexpr uint64_t NUM_MAX_LOSS_TICKS = 3;
-const static std::array<uint64_t, NUM_MAX_LOSS_TICKS> max_loss_ticks_params = {3, 5, 10};
+static constexpr uint64_t NUM_MAX_LOSS_TICKS = 1;
+const static std::array<uint64_t, NUM_MAX_LOSS_TICKS> max_loss_ticks_params = {3};
 
-static constexpr uint64_t NUM_PRE_POST_SECS = 3;
-const static std::array<uint64_t, NUM_PRE_POST_SECS> pre_post_secs_params = {300, 180, 60};
+static constexpr uint64_t NUM_PRE_POST_SECS = 1;
+const static std::array<uint64_t, NUM_PRE_POST_SECS> pre_post_secs_params = {180};
 static constexpr uint64_t NUM_MAX_AFTER_POST_SECS = 1;
 const static std::array<uint64_t, NUM_MAX_AFTER_POST_SECS> max_after_post_secs_params = {0};
 
-static constexpr uint64_t NUM_MIN_VOLS = 2;
-const static std::array<double, NUM_MIN_VOLS> min_vol_params = {50000, 30000};
+static constexpr uint64_t NUM_MIN_VOLS = 1;
+const static std::array<double, NUM_MIN_VOLS> min_vol_params = {50000};
 
-static constexpr uint64_t NUM_TRIGGER_NUM_TICKS = 2;
-const static std::array<uint64_t, NUM_TRIGGER_NUM_TICKS> trigger_num_ticks_params = {2, 4};
+static constexpr uint64_t NUM_TRIGGER_NUM_TICKS = 1;
+const static std::array<uint64_t, NUM_TRIGGER_NUM_TICKS> trigger_num_ticks_params = {2};
 
-static constexpr uint64_t NUM_INTERVAL_MS = 3;
-const static std::array<uint64_t, NUM_INTERVAL_MS> interval_ms_params = {100, 300, 1000};
+static constexpr uint64_t NUM_INTERVAL_MS = 1;
+const static std::array<uint64_t, NUM_INTERVAL_MS> interval_ms_params = {100};
 
-static constexpr uint64_t NUM_BACK_LAY = 2; // back, lay.
+static constexpr uint64_t NUM_MAX_FAV_PRICEX100 = 3;
+const static std::array<uint64_t, NUM_MAX_FAV_PRICEX100> max_fav_pricex100_params = {0};
 
-static constexpr uint64_t NUM_OPPOSE = 2;
+static constexpr uint64_t NUM_BACK_LAY = 1; // lay.
 
-static constexpr uint64_t NUM_EXIT_STRAT_NO_PARAMS = 2;
+static constexpr uint64_t NUM_OPPOSE = 1;
 
-static constexpr uint64_t NUM_EXIT_TICKS = 3;
-const static std::array<uint64_t, NUM_EXIT_TICKS> exit_num_ticks_params = {3, 5, 10};
-
-static constexpr uint64_t NUM_EXIT_DURATION_MS = 3;
-const static std::array<uint64_t, NUM_EXIT_DURATION_MS> exit_duration_ms_params = {300, 500, 1000};
+static constexpr uint64_t NUM_EXIT_STRAT_NO_PARAMS = 1;
 
 static constexpr uint64_t TOTAL_NUM_CONFIGS =
 	NUM_MAX_LOSS_TICKS * NUM_PRE_POST_SECS * NUM_MAX_AFTER_POST_SECS * NUM_MIN_VOLS *
 	NUM_TRIGGER_NUM_TICKS * NUM_INTERVAL_MS * NUM_BACK_LAY * NUM_OPPOSE *
-	(NUM_EXIT_STRAT_NO_PARAMS + NUM_EXIT_TICKS + NUM_EXIT_DURATION_MS);
+	NUM_EXIT_STRAT_NO_PARAMS * NUM_MAX_FAV_PRICEX100;
 
 struct config_catch
 {
@@ -76,6 +74,7 @@ struct config_catch
 	exit_strategy exit_strat;     // How we handle exit.
 	uint64_t exit_num_ticks;      // If PROFIT_TICKS exit strat, number of ticks.
 	uint64_t exit_duration_ms;    // If MAX_DURATION exit strat, max duration.
+	uint64_t max_fav_pricex100;   // Maximum price of favourite *100.
 };
 
 static std::array<config_catch, TOTAL_NUM_CONFIGS> configs_catch;
@@ -123,7 +122,7 @@ static inline void print_config(uint64_t index, config_catch& conf)
 	std::cout << std::endl;
 }
 
-static inline void init_configs_catch10(config_catch& conf, uint64_t& index)
+static inline void init_configs_catch11(config_catch& conf, uint64_t& index)
 {
 #ifdef DUMP_CONFIG
 	print_config(index, conf);
@@ -132,32 +131,22 @@ static inline void init_configs_catch10(config_catch& conf, uint64_t& index)
 	configs_catch[index++] = conf;
 }
 
+static inline void init_configs_catch10(config_catch& conf, uint64_t& index)
+{
+	for (uint64_t i = 0; i < NUM_MAX_FAV_PRICEX100; i++) {
+		conf.max_fav_pricex100 = max_fav_pricex100_params[i];
+		init_configs_catch11(conf, index);
+	}
+}
+
 static inline void init_configs_catch9(config_catch& conf, uint64_t& index)
 {
 	conf.exit_strat = exit_strategy::NONE;
-	init_configs_catch10(conf, index);
-
-	conf.exit_strat = exit_strategy::PROFIT_TICKS;
-	for (uint64_t i = 0; i < NUM_EXIT_TICKS; i++) {
-		conf.exit_num_ticks = exit_num_ticks_params[i];
-		init_configs_catch10(conf, index);
-	}
-
-	conf.exit_strat = exit_strategy::MAX_DURATION;
-	for (uint64_t i = 0; i < NUM_EXIT_TICKS; i++) {
-		conf.exit_duration_ms = exit_duration_ms_params[i];
-		init_configs_catch10(conf, index);
-	}
-
-	conf.exit_strat = exit_strategy::UNTIL_STABLE;
 	init_configs_catch10(conf, index);
 }
 
 static inline void init_configs_catch8(config_catch& conf, uint64_t& index)
 {
-	conf.oppose = false;
-	init_configs_catch9(conf, index);
-
 	conf.oppose = true;
 	init_configs_catch9(conf, index);
 }
@@ -165,9 +154,6 @@ static inline void init_configs_catch8(config_catch& conf, uint64_t& index)
 static inline void init_configs_catch7(config_catch& conf, uint64_t& index)
 {
 	conf.back = false;
-	init_configs_catch8(conf, index);
-
-	conf.back = true;
 	init_configs_catch8(conf, index);
 }
 
@@ -242,13 +228,16 @@ public:
 
 		result res = _analyser.run(config);
 		for (uint64_t i = 0; i < TOTAL_NUM_CONFIGS; i++) {
-			std::cout << res.pls[i] << "\t" << i << std::endl;
+			std::cout << res.pls[i] << "\t" << res.num_enters[i] << "\t" << i
+				  << std::endl;
 		}
 	}
 
 private:
 	struct worker_state
 	{
+		uint64_t market_id;
+
 		bool entered;
 		bool exited;
 
@@ -256,6 +245,7 @@ private:
 		uint64_t fav_id;
 
 		uint64_t enter_timestamp;
+		uint64_t enter_price_index;
 
 		uint64_t last_enter_index;
 		uint64_t stable_count;
@@ -267,6 +257,7 @@ private:
 
 	struct market_agg_state
 	{
+		uint64_t num_enters;
 		double pl;
 	};
 
@@ -274,14 +265,18 @@ private:
 	{
 		uint64_t config_index;
 		std::array<double, TOTAL_NUM_CONFIGS> pls;
+		std::array<uint64_t, TOTAL_NUM_CONFIGS> num_enters;
 	};
 
 	struct result
 	{
 		std::array<double, TOTAL_NUM_CONFIGS> pls;
+		std::array<uint64_t, TOTAL_NUM_CONFIGS> num_enters;
 	};
 
 	const worker_state zero_worker_state = {
+		.market_id = 0,
+
 		.entered = false,
 		.exited = false,
 
@@ -289,6 +284,7 @@ private:
 		.fav_id = 0,
 
 		.enter_timestamp = 0,
+		.enter_price_index = 0,
 
 		.last_enter_index = 0,
 		.stable_count = 0,
@@ -299,12 +295,14 @@ private:
 	};
 
 	const market_agg_state zero_market_agg_state = {
+		.num_enters = 0,
 		.pl = 0,
 	};
 
 	const node_agg_state zero_node_agg_state = {
 		.config_index = 0,
 		.pls = {0},
+		.num_enters = {0},
 	};
 
 	analyser<worker_state, market_agg_state, node_agg_state, result> _analyser;
@@ -345,6 +343,8 @@ private:
 				  const node_agg_state& node_agg_state, worker_state& state,
 				  spdlog::logger* logger) -> bool
 	{
+		state.market_id = meta.market_id();
+
 		if (market.state() != betfair::market_state::OPEN)
 			return true;
 
@@ -532,6 +532,10 @@ private:
 			break;
 		}
 
+		uint64_t pricex100 = betfair::price_range::index_to_pricex100(fav_index);
+		if (conf.max_fav_pricex100 > 0 && pricex100 > conf.max_fav_pricex100)
+			return true;
+
 		// OK now we're at the point where we make a bet.
 
 		bool is_back = back;
@@ -545,6 +549,7 @@ private:
 
 		state.entered = true;
 		state.enter_timestamp = timestamp;
+		state.enter_price_index = fav_index;
 
 		return true;
 	}
@@ -553,7 +558,20 @@ private:
 				   bool worker_aborted, market_agg_state& state,
 				   spdlog::logger* logger) -> bool
 	{
-		state.pl += sim.pl();
+		if (worker_state.entered) {
+			state.num_enters++;
+			double pl = sim.pl();
+			state.pl += pl;
+
+#ifdef PRINT_PL
+			logger->info("{}\t{}\t{}\t{}\t{}", core, worker_state.market_id,
+				     worker_state.enter_timestamp,
+				     betfair::price_range::index_to_price(
+					     worker_state.enter_price_index),
+				     pl);
+#endif
+		}
+
 		return true;
 	}
 
@@ -561,23 +579,21 @@ private:
 				 bool market_reducer_aborted, node_agg_state& state,
 				 spdlog::logger* logger) -> bool
 	{
-		state.pls[state.config_index++] = market_agg_state.pl;
-
-		if (state.config_index % 10 == 0) {
-			logger->info("Core {}: Processing index {}/{}", core, state.config_index,
-				     TOTAL_NUM_CONFIGS);
-		}
+		state.pls[state.config_index] = market_agg_state.pl;
+		state.num_enters[state.config_index] = market_agg_state.num_enters;
+		state.config_index++;
 
 		return state.config_index < TOTAL_NUM_CONFIGS;
 	}
 
 	static auto reducer(const std::vector<node_agg_state>& states) -> result
 	{
-		result ret = {.pls = {0}};
+		result ret = {.pls = {0}, .num_enters = {0}};
 
 		for (const auto& state : states) {
 			for (uint64_t i = 0; i < TOTAL_NUM_CONFIGS; i++) {
 				ret.pls[i] += state.pls[i];
+				ret.num_enters[i] += state.num_enters[i];
 			}
 		}
 
