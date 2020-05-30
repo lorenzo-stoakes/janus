@@ -9,7 +9,7 @@
 #include <vector>
 
 //#define DUMP_CONFIG
-#define PRINT_PL
+//#define PRINT_PL
 
 // TODO(lorenzo): Terrible mess, first draft stuff!
 
@@ -45,9 +45,9 @@ static constexpr uint64_t NUM_TRIGGER_NUM_TICKS = 1;
 const static std::array<uint64_t, NUM_TRIGGER_NUM_TICKS> trigger_num_ticks_params = {2};
 
 static constexpr uint64_t NUM_INTERVAL_MS = 1;
-const static std::array<uint64_t, NUM_INTERVAL_MS> interval_ms_params = {100};
+const static std::array<uint64_t, NUM_INTERVAL_MS> interval_ms_params = {1000};
 
-static constexpr uint64_t NUM_MAX_FAV_PRICEX100 = 3;
+static constexpr uint64_t NUM_MAX_FAV_PRICEX100 = 1;
 const static std::array<uint64_t, NUM_MAX_FAV_PRICEX100> max_fav_pricex100_params = {0};
 
 static constexpr uint64_t NUM_BACK_LAY = 1; // lay.
@@ -56,10 +56,13 @@ static constexpr uint64_t NUM_OPPOSE = 1;
 
 static constexpr uint64_t NUM_EXIT_STRAT_NO_PARAMS = 1;
 
+static constexpr uint64_t NUM_EXIT_TICKS = 1;
+const static std::array<uint64_t, NUM_EXIT_TICKS> exit_ticks_params = {5};
+
 static constexpr uint64_t TOTAL_NUM_CONFIGS =
 	NUM_MAX_LOSS_TICKS * NUM_PRE_POST_SECS * NUM_MAX_AFTER_POST_SECS * NUM_MIN_VOLS *
 	NUM_TRIGGER_NUM_TICKS * NUM_INTERVAL_MS * NUM_BACK_LAY * NUM_OPPOSE *
-	NUM_EXIT_STRAT_NO_PARAMS * NUM_MAX_FAV_PRICEX100;
+	NUM_EXIT_STRAT_NO_PARAMS * NUM_MAX_FAV_PRICEX100 * NUM_EXIT_TICKS;
 
 struct config_catch
 {
@@ -75,6 +78,7 @@ struct config_catch
 	uint64_t exit_num_ticks;      // If PROFIT_TICKS exit strat, number of ticks.
 	uint64_t exit_duration_ms;    // If MAX_DURATION exit strat, max duration.
 	uint64_t max_fav_pricex100;   // Maximum price of favourite *100.
+	uint64_t exit_ticks;          // Number of ticks we want to exceed by.
 };
 
 static std::array<config_catch, TOTAL_NUM_CONFIGS> configs_catch;
@@ -122,13 +126,21 @@ static inline void print_config(uint64_t index, config_catch& conf)
 	std::cout << std::endl;
 }
 
-static inline void init_configs_catch11(config_catch& conf, uint64_t& index)
+static inline void init_configs_catch12(config_catch& conf, uint64_t& index)
 {
 #ifdef DUMP_CONFIG
 	print_config(index, conf);
 #endif
 
 	configs_catch[index++] = conf;
+}
+
+static inline void init_configs_catch11(config_catch& conf, uint64_t& index)
+{
+	for (uint64_t i = 0; i < NUM_EXIT_TICKS; i++) {
+		conf.exit_ticks = exit_ticks_params[i];
+		init_configs_catch12(conf, index);
+	}
 }
 
 static inline void init_configs_catch10(config_catch& conf, uint64_t& index)
@@ -542,10 +554,21 @@ private:
 		if (conf.oppose)
 			is_back = !is_back;
 
-		if (is_back)
-			sim.add_bet(fav_id, 1.01, STAKE_SIZE, true);
-		else
-			sim.add_bet(fav_id, 1000, STAKE_SIZE, false);
+		if (is_back) {
+			double price =
+				betfair::price_range::index_to_price(fav_index + conf.exit_ticks);
+			// sim.add_bet(fav_id, 1.01, STAKE_SIZE, true);
+			sim.add_bet(fav_id, price, STAKE_SIZE, true);
+			sim.add_bet(fav_id, betfair::price_range::index_to_price(fav_index),
+				    STAKE_SIZE, false);
+		} else {
+			double price =
+				betfair::price_range::index_to_price(fav_index - conf.exit_ticks);
+			// sim.add_bet(fav_id, 1000, STAKE_SIZE, false);
+			sim.add_bet(fav_id, price, STAKE_SIZE, false);
+			sim.add_bet(fav_id, betfair::price_range::index_to_price(fav_index),
+				    STAKE_SIZE, true);
+		}
 
 		state.entered = true;
 		state.enter_timestamp = timestamp;
@@ -558,17 +581,19 @@ private:
 				   betfair::market& market, bool worker_aborted,
 				   market_agg_state& state, spdlog::logger* logger) -> bool
 	{
-		if (worker_state.entered) {
+		double pl = sim.pl();
+		if (worker_state.entered && pl != 0) {
 			state.num_enters++;
-			double pl = sim.pl();
 			state.pl += pl;
-
 #ifdef PRINT_PL
-			logger->info("{}\t{}\t{}\t{}\t{}", core, worker_state.market_id,
+			betfair::runner* runner = market.find_runner(worker_state.fav_id);
+			double sp = runner == nullptr ? 0 : runner->sp();
+
+			logger->info("{}\t{}\t{}\t{}\t{}\t{}", core, worker_state.market_id,
 				     worker_state.enter_timestamp,
 				     betfair::price_range::index_to_price(
 					     worker_state.enter_price_index),
-				     pl);
+				     sp, pl);
 #endif
 		}
 
