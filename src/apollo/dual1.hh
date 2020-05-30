@@ -143,14 +143,14 @@ private:
 	struct node_agg_state
 	{
 		uint64_t config_index;
-		std::array<double, TOTAL_NUM_CONFIGS> num_enters;
-		std::array<double, TOTAL_NUM_CONFIGS> pls;
+		std::array<double, TOTAL_NUM_CONFIGS_DUAL> num_enters;
+		std::array<double, TOTAL_NUM_CONFIGS_DUAL> pls;
 	};
 
 	struct result
 	{
-		std::array<double, TOTAL_NUM_CONFIGS> num_enters;
-		std::array<double, TOTAL_NUM_CONFIGS> pls;
+		std::array<double, TOTAL_NUM_CONFIGS_DUAL> num_enters;
+		std::array<double, TOTAL_NUM_CONFIGS_DUAL> pls;
 	};
 
 	const worker_state zero_worker_state = {
