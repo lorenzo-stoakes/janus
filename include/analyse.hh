@@ -25,8 +25,9 @@ public:
 	using update_worker_fn_t =
 		std::function<bool(int, const meta_view&, betfair::market&, sim&,
 				   const TNodeAggState&, TWorkerState&, spdlog::logger*)>;
-	using market_reducer_fn_t = std::function<bool(int, const TWorkerState&, sim&, bool,
-						       TMarketAggState&, spdlog::logger*)>;
+	using market_reducer_fn_t =
+		std::function<bool(int, const TWorkerState&, sim&, betfair::market&, bool,
+				   TMarketAggState&, spdlog::logger*)>;
 	using node_reducer_fn_t = std::function<bool(int, const TMarketAggState&, bool,
 						     TNodeAggState&, spdlog::logger*)>;
 	using reducer_fn_t = std::function<TResult(const std::vector<TNodeAggState>&)>;

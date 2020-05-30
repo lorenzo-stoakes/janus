@@ -153,8 +153,8 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 			sim.update();
 
 			// Per-market reducer.
-			if (!_market_reducer(core, state, sim, worker_aborted, market_agg_state,
-					     logger.get())) {
+			if (!_market_reducer(core, state, sim, market, worker_aborted,
+					     market_agg_state, logger.get())) {
 				market_agg_aborted = true;
 				break;
 			}

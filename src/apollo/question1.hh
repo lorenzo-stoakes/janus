@@ -357,8 +357,8 @@ private:
 	}
 
 	static auto market_reducer(int core, const worker_state& worker_state, janus::sim& sim,
-				   bool worker_aborted, market_agg_state& state,
-				   spdlog::logger* logger) -> bool
+				   betfair::market& market, bool worker_aborted,
+				   market_agg_state& state, spdlog::logger* logger) -> bool
 	{
 		if (!worker_state.started)
 			return true;
