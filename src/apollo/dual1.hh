@@ -176,7 +176,7 @@ private:
 	};
 
 	const node_agg_state zero_node_agg_state = {
-		.config_index = 19,
+		.config_index = 0,
 		.num_enters = {0},
 		.pls = {0},
 	};
@@ -392,10 +392,10 @@ private:
 	{
 		state.pls[state.config_index] = market_agg_state.pl;
 		state.num_enters[state.config_index] = market_agg_state.num_enters;
-		// state.config_index++;
+		state.config_index++;
 
-		// return state.config_index < TOTAL_NUM_CONFIGS_DUAL;
-		return false;
+		return state.config_index < TOTAL_NUM_CONFIGS_DUAL;
+		// return false;
 	}
 
 	static auto reducer(const std::vector<node_agg_state>& states) -> result
