@@ -98,7 +98,8 @@ auto sim::add_bet(uint64_t runner_id, double price, double stake, bool is_back, 
 	if (!bypass && _market.state() != betfair::market_state::OPEN)
 		return nullptr;
 
-	// Currently we do not support simulating inplay bets.
+	// Currently we do not support simulating inplay bets (but do allow
+	// pre-off bets to be settled inplay).
 	if (!bypass && _market.inplay())
 		return nullptr;
 

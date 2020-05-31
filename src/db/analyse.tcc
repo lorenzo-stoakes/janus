@@ -56,6 +56,8 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 
 	uint64_t num_iters = 0;
 	while (true) {
+		num_iters++;
+
 		bool market_agg_aborted = false;
 
 		// State that is aggregated across ALL markets.
@@ -163,8 +165,6 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 		if (!_node_reducer(core, market_agg_state, market_agg_aborted, node_agg_state,
 				   logger.get()))
 			break;
-
-		num_iters++;
 	} // iterations
 
 	auto stop_time = std::chrono::steady_clock::now();
