@@ -68,7 +68,7 @@ private:
 	// price. If the market has moved such that this price has now swapped
 	// side the function returns -1. If better price available, sets bet to
 	// that price.
-	auto get_matched(bet& bet, betfair::runner& runner) -> double;
+	auto get_matched(bet& bet, betfair::runner& runner, bool first) -> double;
 
 	// Determine the target matched volume for the bet's runner at the bet
 	// price. If the market has moved such that this price has now swapped
