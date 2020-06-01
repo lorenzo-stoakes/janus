@@ -81,7 +81,7 @@
             <property name="minimumSize">
              <size>
               <width>120</width>
-              <height>0</height>
+              <height>60</height>
              </size>
             </property>
             <property name="maximumSize">
@@ -264,6 +264,31 @@
              </property>
              <property name="text">
               <string>04/05/2020 12:10:00</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+            <widget class="QLabel" name="timestampLabel">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>40</y>
+               <width>101</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="font">
+              <font>
+               <family>Open Sans</family>
+               <pointsize>8</pointsize>
+               <weight>50</weight>
+               <italic>false</italic>
+               <bold>false</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>1542638520171</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -2160,16 +2185,6 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="0">
-              <widget class="QComboBox" name="runner0ComboBox">
-               <property name="font">
-                <font>
-                 <weight>75</weight>
-                 <bold>true</bold>
-                </font>
-               </property>
-              </widget>
-             </item>
              <item row="1" column="0">
               <widget class="QFrame" name="frame_5">
                <property name="minimumSize">
@@ -2255,6 +2270,16 @@
                  </widget>
                 </item>
                </layout>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QComboBox" name="runner0ComboBox">
+               <property name="font">
+                <font>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
               </widget>
              </item>
              <item row="3" column="0">

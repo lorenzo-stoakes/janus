@@ -107,6 +107,7 @@ void main_controller::clear(update_level level)
 		_view->inplayLabel->setText("");
 		_view->nowLabel->setText("");
 		_view->tradedVolLabel->setText("");
+		_view->timestampLabel->setText("");
 
 		_view->timeHorizontalSlider->setValue(0);
 		_view->timeHorizontalSlider->setMinimum(0);
@@ -321,13 +322,16 @@ void main_controller::update_market_dynamic()
 {
 	janus::betfair::market& market = _curr_universe.markets()[0];
 
-	std::string now;
+	uint64_t timestamp;
+
 	if (_playing)
-		now = janus::local_epoch_ms_to_string(_playback_timestamp);
+		timestamp = _playback_timestamp;
 	else
-		now = janus::local_epoch_ms_to_string(_curr_timestamp);
+		timestamp = _curr_timestamp;
+	std::string now = janus::local_epoch_ms_to_string(timestamp);
 
 	_view->nowLabel->setText(QString::fromStdString(now));
+	_view->timestampLabel->setText(QString::number(timestamp));
 
 	uint64_t start_timestamp = _curr_meta->market_start_timestamp();
 	std::string start = janus::local_epoch_ms_to_string(start_timestamp);
