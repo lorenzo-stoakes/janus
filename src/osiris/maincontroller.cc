@@ -151,7 +151,10 @@ void main_controller::populate_runner_combo(const std::vector<janus::runner_view
 
 	for (const auto& runner : runners) {
 		std::string_view name = runner.name();
-		combo->addItem(QString::fromUtf8(name.data(), name.size()));
+		std::string runner_text =
+			std::string(name.data()) + " (" + std::to_string(runner.id()) + ")";
+
+		combo->addItem(QString::fromStdString(runner_text));
 	}
 
 	// By default when setting the runner combo the index we're looking at
