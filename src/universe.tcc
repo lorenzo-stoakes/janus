@@ -178,6 +178,10 @@ void universe<Cap>::do_apply_update(const update& update)
 	if (type == update_type::TIMESTAMP) {
 		apply_timestamp(get_update_timestamp(update));
 		_num_updates++;
+
+		if (_last_market != nullptr)
+			set_market_timestamp();
+
 		return;
 	}
 

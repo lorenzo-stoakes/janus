@@ -77,8 +77,8 @@ TEST(universe_test, apply_update)
 	universe.apply_update(janus::make_timestamp_update(1234567));
 	EXPECT_EQ(universe.num_updates(), 3);
 	EXPECT_EQ(universe.last_timestamp(), 1234567);
-	// The market and runner timestamps should NOT yet be updated.
-	EXPECT_EQ(universe[123456].last_timestamp(), 0);
+	EXPECT_EQ(universe[123456].last_timestamp(), 1234567);
+	// The runner timestamp should NOT yet be updated.
 	EXPECT_EQ(universe[123456][0].last_timestamp(), 0);
 
 	// We should now be able to send any update we like.
