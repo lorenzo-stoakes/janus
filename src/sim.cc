@@ -17,7 +17,7 @@ void sim::init()
 	}
 }
 
-auto sim::get_matched(bet& bet, betfair::runner& runner) -> double
+auto sim::get_matched(bet& bet, betfair::runner& runner, bool first) -> double
 {
 	// Note that this expects the caller to have determined that this is a
 	// valid runner and bet.
@@ -42,7 +42,8 @@ auto sim::get_matched(bet& bet, betfair::runner& runner) -> double
 		uint64_t max_atb = ladder.max_atb_index();
 		if (max_atb >= price_index) {
 			// Provide best price.
-			bet.set_price(betfair::price_range::index_to_price(max_atb));
+			if (first)
+				bet.set_price(betfair::price_range::index_to_price(max_atb));
 
 			return -1;
 		}
@@ -50,7 +51,8 @@ auto sim::get_matched(bet& bet, betfair::runner& runner) -> double
 		uint64_t min_atl = ladder.min_atl_index();
 		if (min_atl <= price_index) {
 			// Provide best price.
-			bet.set_price(betfair::price_range::index_to_price(min_atl));
+			if (first)
+				bet.set_price(betfair::price_range::index_to_price(min_atl));
 
 			return -1;
 		}
@@ -61,7 +63,7 @@ auto sim::get_matched(bet& bet, betfair::runner& runner) -> double
 
 auto sim::get_target_matched(bet& bet, betfair::runner& runner) -> double
 {
-	double matched = get_matched(bet, runner);
+	double matched = get_matched(bet, runner, true);
 	if (matched == -1)
 		return -1;
 
@@ -98,7 +100,8 @@ auto sim::add_bet(uint64_t runner_id, double price, double stake, bool is_back, 
 	if (!bypass && _market.state() != betfair::market_state::OPEN)
 		return nullptr;
 
-	// Currently we do not support simulating inplay bets.
+	// Currently we do not support simulating inplay bets (but do allow
+	// pre-off bets to be settled inplay).
 	if (!bypass && _market.inplay())
 		return nullptr;
 
@@ -155,7 +158,7 @@ void sim::update_bet(bet& bet)
 	if (bet.is_complete())
 		return;
 
-	double matched = get_matched(bet, runner);
+	double matched = get_matched(bet, runner, false);
 	// If the market has moved over us, we simply mark the bet fully
 	// matched. TODO(lorenzo): Reconsider.
 	if (matched == -1) {
