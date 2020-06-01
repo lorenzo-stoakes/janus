@@ -2,6 +2,7 @@
 #include "catch1.hh"
 #include "dual1.hh"
 #include "janus.hh"
+#include "micro1.hh"
 #include "question1.hh"
 #include "tote1.hh"
 
@@ -35,6 +36,9 @@ auto main(int argc, char** argv) -> int
 	} else if (strat_name == "tote1") {
 		janus::apollo::tote1::init_configs();
 		janus::apollo::tote1::strat s;
+		s.run();
+	} else if (strat_name == "micro1") {
+		janus::apollo::micro1::strat s;
 		s.run();
 	} else {
 		std::cerr << "Unknown strategy '" << strat_name << "'??" << std::endl;
