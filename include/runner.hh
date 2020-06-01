@@ -134,13 +134,13 @@ public:
 		_ladder.clear();
 	}
 
-	// Get last timestamp market was updated at.
+	// Get last timestamp runner was updated at.
 	auto last_timestamp() -> uint64_t
 	{
 		return _last_timestamp;
 	}
 
-	// Set last timestamp market was updated at.
+	// Set last timestamp runner was updated at.
 	void set_last_timestamp(uint64_t timestamp)
 	{
 		_last_timestamp = timestamp;
