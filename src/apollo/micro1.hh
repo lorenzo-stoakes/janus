@@ -118,8 +118,9 @@ private:
 		betfair::runner& capla_spirit = *market.find_runner(25334027);
 		betfair::runner& intrepid_italian = *market.find_runner(25724347);
 
-		// 14:59:46
 		if (market_timestamp == 1583852386739) {
+			// 14:59:46
+
 			sim.add_bet(capla_spirit.id(), 1000, STAKE_SIZE, false);
 			auto& bet = sim.bets()[0];
 			logger->info("Core {}: Capla Spirit {} {} @ {}, {} matched", core,
@@ -132,8 +133,9 @@ private:
 			logger->info("Core {}: Intrepid Italian {} {} @ {}, {} matched", core,
 				     bet2.is_back() ? "BACK" : "LAY", bet2.stake(), bet2.price(),
 				     bet2.matched());
-
 		} else if (market_timestamp == 1583852484548) {
+			// 15:01:24
+
 			sim.hedge(capla_spirit.id());
 
 			auto& bet = sim.bets()[2];
