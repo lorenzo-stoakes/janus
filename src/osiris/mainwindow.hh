@@ -35,7 +35,9 @@ private slots:
 	void on_raceDateSelecter_selectionChanged();
 	void on_raceListWidget_currentRowChanged(int row);
 	void on_timeHorizontalSlider_sliderMoved(int pos);
+	void on_rewindButton_clicked();
 	void on_playButton_clicked();
+	void on_fastforwardButton_clicked();
 
 	void on_follow0CheckBox_toggled(bool state);
 	void on_follow1CheckBox_toggled(bool state);

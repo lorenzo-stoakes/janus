@@ -152,6 +152,12 @@ public:
 	// Tick timer.
 	void timer_tick();
 
+	// Rewind by single iota.
+	void rewind();
+
+	// Fast-forward by single iota.
+	void fastforward();
+
 	// Determine whether we calculate virtual prices (cross-match).
 	void set_calc_virtual(bool state);
 

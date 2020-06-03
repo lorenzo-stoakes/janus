@@ -84,9 +84,19 @@ void MainWindow::on_runner3ComboBox_currentIndexChanged(int index)
 	_controller.set_ladder_to_runner(3, index);
 }
 
+void MainWindow::on_rewindButton_clicked()
+{
+	_controller.rewind();
+}
+
 void MainWindow::on_playButton_clicked()
 {
 	_controller.toggle_play();
+}
+
+void MainWindow::on_fastforwardButton_clicked()
+{
+	_controller.fastforward();
 }
 
 void MainWindow::on__playback_timer_timeout()

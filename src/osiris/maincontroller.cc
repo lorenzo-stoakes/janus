@@ -607,6 +607,28 @@ void main_controller::timer_tick()
 	update_market_dynamic();
 }
 
+void main_controller::rewind()
+{
+	if (_playing || _curr_index == 0)
+		return;
+
+	set_index(_curr_index - 1);
+
+	_view->timeHorizontalSlider->setValue(_curr_index);
+	update_market_dynamic();
+}
+
+void main_controller::fastforward()
+{
+	if (_playing || _curr_index >= _num_indexes - 1)
+		return;
+
+	set_index(_curr_index + 1);
+
+	_view->timeHorizontalSlider->setValue(_curr_index);
+	update_market_dynamic();
+}
+
 void main_controller::set_calc_virtual(bool state)
 {
 	_calc_virtual = state;
