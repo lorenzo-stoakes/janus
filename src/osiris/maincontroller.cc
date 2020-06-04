@@ -609,7 +609,7 @@ void main_controller::timer_tick()
 
 void main_controller::rewind()
 {
-	if (_playing || _curr_index == 0)
+	if (_playing || _curr_index == 0 || _curr_meta == nullptr)
 		return;
 
 	set_index(_curr_index - 1);
@@ -620,7 +620,7 @@ void main_controller::rewind()
 
 void main_controller::fastforward()
 {
-	if (_playing || _curr_index >= _num_indexes - 1)
+	if (_playing || _curr_index >= _num_indexes - 1 || _curr_meta == nullptr)
 		return;
 
 	set_index(_curr_index + 1);
