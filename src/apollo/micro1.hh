@@ -111,9 +111,9 @@ private:
 		if (market.state() != betfair::market_state::OPEN)
 			return true;
 
-		// uint64_t start_timestamp = meta.market_start_timestamp();
-		// if (market_timestamp > start_timestamp)
-		//	return true;
+		uint64_t start_timestamp = meta.market_start_timestamp();
+		if (market_timestamp > start_timestamp)
+			return true;
 
 		betfair::runner& capla_spirit = *market.find_runner(25334027);
 		betfair::runner& intrepid_italian = *market.find_runner(25724347);
