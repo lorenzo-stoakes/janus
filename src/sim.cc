@@ -415,4 +415,12 @@ auto sim::hedge(uint64_t runner_id, double price) -> bool
 
 	return true;
 }
+
+void sim::cancel_all()
+{
+	for (uint64_t i = 0; i < _bets.size(); i++) {
+		bet& bet = _bets[i];
+		bet.cancel();
+	}
+}
 } // namespace janus
