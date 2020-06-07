@@ -64,8 +64,8 @@ private:
 
 	static auto predicate(const janus::meta_view& meta, const janus::stats& stats) -> bool
 	{
-		// March 10th 2020 Southwell 15:05.
-		return meta.market_id() == 169971977;
+		// Lingfield 6f Mdn Stakes 2020-06-05 13:30
+		return meta.market_id() == 170630572;
 
 		// Leave rest of logic for informational purposes.
 
@@ -115,40 +115,42 @@ private:
 		if (market_timestamp > start_timestamp)
 			return true;
 
-		betfair::runner& capla_spirit = *market.find_runner(25334027);
-		betfair::runner& intrepid_italian = *market.find_runner(25724347);
+		betfair::runner& bowman = *market.find_runner(166899);
+		betfair::runner& igotatext = *market.find_runner(28583485);
 
-		if (market_timestamp == 1583852386739) {
-			// 14:59:46
+		if (market_timestamp == 1591359383996) {
+			// 13:16:23
 
-			sim.add_bet(capla_spirit.id(), 1000, STAKE_SIZE, false);
+			// Lay.
+			sim.add_bet(bowman.id(), 1000, STAKE_SIZE, false);
 			auto& bet = sim.bets()[0];
-			logger->info("Core {}: Capla Spirit {} {} @ {}, {} matched", core,
+			logger->info("Core {}: Bowman {} {} @ {}, {} matched", core,
 				     bet.is_back() ? "BACK" : "LAY", bet.stake(), bet.price(),
 				     bet.matched());
 
-			sim.add_bet(intrepid_italian.id(), 1.01, STAKE_SIZE, true);
+			// Back
+			sim.add_bet(igotatext.id(), 1.01, STAKE_SIZE, true);
 
 			auto& bet2 = sim.bets()[1];
-			logger->info("Core {}: Intrepid Italian {} {} @ {}, {} matched", core,
+			logger->info("Core {}: Igotatext {} {} @ {}, {} matched", core,
 				     bet2.is_back() ? "BACK" : "LAY", bet2.stake(), bet2.price(),
 				     bet2.matched());
-		} else if (market_timestamp == 1583852484548) {
-			// 15:01:24
+		} else if (market_timestamp == 1591359780721) {
+			// 13:23:00
 
-			sim.hedge(capla_spirit.id());
+			sim.hedge(bowman.id());
 
 			auto& bet = sim.bets()[2];
-			logger->info("Core {}: [HEDGE] Capla Spirit {} {} @ {}, {} matched", core,
+			logger->info("Core {}: [HEDGE] Bowman {} {} @ {}, {} matched", core,
 				     bet.is_back() ? "BACK" : "LAY", bet.stake(), bet.price(),
 				     bet.matched());
 
-			sim.hedge(intrepid_italian.id());
+			sim.hedge(igotatext.id());
 
 			auto& bet2 = sim.bets()[3];
-			logger->info("Core {}: [HEDGE] Intrepid Italian {} {} @ {}, {} matched",
-				     core, bet2.is_back() ? "BACK" : "LAY", bet2.stake(),
-				     bet2.price(), bet2.matched());
+			logger->info("Core {}: [HEDGE] Igotatext {} {} @ {}, {} matched", core,
+				     bet2.is_back() ? "BACK" : "LAY", bet2.stake(), bet2.price(),
+				     bet2.matched());
 		}
 
 		return true;

@@ -121,19 +121,25 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 			}
 
 			bool worker_aborted = false;
+			bool went_inplay = false;
 
 			// Now iterate through rest of market timeline.
 			while (buf.read_offset() != buf.size()) {
 				auto& u = buf.read<janus::update>();
 
 				// We skip inplay updates currently.
-				if (u.type == update_type::TIMESTAMP && !market.inplay()) {
-					if (!_update_worker(core, meta, market, sim, node_agg_state,
-							    state, logger.get())) {
+				if (u.type == update_type::TIMESTAMP && !went_inplay) {
+					if (market.inplay()) {
+						sim.update();
+						sim.cancel_all();
+						went_inplay = true;
+					} else if (!_update_worker(core, meta, market, sim,
+								   node_agg_state, state,
+								   logger.get())) {
 						worker_aborted = true;
+						sim.update();
 						break;
 					}
-					sim.update();
 				}
 
 				try {

@@ -50,6 +50,9 @@ public:
 	// runners).
 	auto hedge(uint64_t runner_id = 0, double price = -1) -> bool;
 
+	// Cancel all unmatched bets.
+	void cancel_all();
+
 private:
 	betfair::price_range& _range;
 	betfair::market& _market;
