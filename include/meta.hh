@@ -66,7 +66,7 @@ public:
 	explicit meta_view(dynamic_buffer& dyn_buf);
 
 	// Provide a short description of the market.
-	auto describe() -> std::string;
+	auto describe(bool show_date = false) const -> std::string;
 
 	auto market_id() const -> uint64_t
 	{

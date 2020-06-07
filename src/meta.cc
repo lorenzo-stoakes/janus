@@ -205,15 +205,20 @@ auto parse_meta_json(const char* filename, char* str, uint64_t size, dynamic_buf
 }
 } // namespace betfair
 
-auto meta_view::describe() -> std::string
+auto meta_view::describe(bool show_date) const -> std::string
 {
-	uint64_t year, month, day, ms; // UNUSED.
+	uint64_t year, month, day, ms;
 	uint64_t hour, minute, second;
 	local_unpack_epoch_ms(market_start_timestamp(), year, month, day, hour, minute, second, ms);
 
 	std::ostringstream oss;
-	oss << std::setfill('0') << std::setw(2) << hour << ":" << std::setw(2) << minute << ":"
-	    << std::setw(2) << second << " / ";
+	oss << std::setfill('0');
+
+	if (show_date)
+		oss << year << "-" << std::setw(2) << month << "-" << std::setw(2) << day << " ";
+
+	oss << std::setw(2) << hour << ":" << std::setw(2) << minute << ":" << std::setw(2)
+	    << second << " / ";
 
 	oss << event_country_code() << " / ";
 
