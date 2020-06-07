@@ -1,5 +1,8 @@
 #pragma once
 
+#include <sstream>
+#include <string>
+
 namespace janus
 {
 // Represents the state of a bet.
@@ -260,6 +263,37 @@ public:
 	void set_price(double price)
 	{
 		_price = price;
+	}
+
+	auto describe() -> std::string
+	{
+		std::ostringstream oss;
+
+		if (_is_back)
+			oss << "BACK ";
+		else
+			oss << "LAY  ";
+
+		oss << _stake << " (orig " << _orig_stake << ", matched " << _matched << ") ";
+		oss << "@ " << _price << " (orig " << _orig_price << ")";
+		oss << " on " << _runner_id << " ";
+
+		if ((_flags & bet_flags::SIM) == bet_flags::SIM)
+			oss << "SIM ";
+
+		if ((_flags & bet_flags::ACKED) == bet_flags::ACKED)
+			oss << "ACKED ";
+
+		if ((_flags & bet_flags::REDUCED) == bet_flags::REDUCED)
+			oss << "REDUCED ";
+
+		if ((_flags & bet_flags::CANCELLED) == bet_flags::CANCELLED)
+			oss << "CANCELLED ";
+
+		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
+			oss << "VOIDED ";
+
+		return oss.str();
 	}
 
 private:
