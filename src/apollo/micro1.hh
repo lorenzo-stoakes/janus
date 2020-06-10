@@ -10,6 +10,15 @@ namespace janus::apollo::micro1
 {
 static constexpr uint64_t STAKE_SIZE = 500;
 
+// Southwell 5f Nov Stks, 2019-08-26 16:45:00
+static constexpr uint64_t MARKET_ID = 161743011;
+// ~16:41:35
+static constexpr uint64_t ENTRY_TIMESTAMP = 1566834095006;
+// ~16:43:26
+static constexpr uint64_t EXIT_TIMESTAMP = 1566834206839;
+// Bhangra
+static constexpr uint64_t BACK_RUNNER_ID = 19056873;
+
 class strat
 {
 public:
@@ -64,8 +73,7 @@ private:
 
 	static auto predicate(const janus::meta_view& meta, const janus::stats& stats) -> bool
 	{
-		// Lingfield 6f Mdn Stakes 2020-06-05 13:30
-		return meta.market_id() == 170630572;
+		return meta.market_id() == MARKET_ID;
 
 		// Leave rest of logic for informational purposes.
 
@@ -77,11 +85,8 @@ private:
 		auto flags = stats.flags;
 		if ((flags & janus::stats_flags::WENT_INPLAY) != janus::stats_flags::WENT_INPLAY ||
 		    (flags & janus::stats_flags::WAS_CLOSED) != janus::stats_flags::WAS_CLOSED ||
-		    (flags & janus::stats_flags::SAW_WINNER) != janus::stats_flags::SAW_WINNER) {
-			std::cout << "IVG1" << std::endl;
-
+		    (flags & janus::stats_flags::SAW_WINNER) != janus::stats_flags::SAW_WINNER)
 			return false;
-		}
 
 		// We want to see a decent update interval pre-off.
 		auto& five_mins = stats.pre_post_intervals[static_cast<int>(
@@ -115,42 +120,22 @@ private:
 		if (market_timestamp > start_timestamp)
 			return true;
 
-		betfair::runner& bowman = *market.find_runner(166899);
-		betfair::runner& igotatext = *market.find_runner(28583485);
+		betfair::runner& bhangra = *market.find_runner(BACK_RUNNER_ID);
 
-		if (market_timestamp == 1591359383996) {
-			// 13:16:23
+		if (market_timestamp == ENTRY_TIMESTAMP) {
+			sim.add_bet(bhangra.id(), 1.01, STAKE_SIZE, true);
 
-			// Lay.
-			sim.add_bet(bowman.id(), 1000, STAKE_SIZE, false);
 			auto& bet = sim.bets()[0];
-			logger->info("Core {}: Bowman {} {} @ {}, {} matched", core,
+			logger->info("Core {}: Bhangra {} {} @ {}, {} matched", core,
 				     bet.is_back() ? "BACK" : "LAY", bet.stake(), bet.price(),
 				     bet.matched());
+		} else if (market_timestamp == EXIT_TIMESTAMP) {
+			sim.hedge();
 
-			// Back
-			sim.add_bet(igotatext.id(), 1.01, STAKE_SIZE, true);
-
-			auto& bet2 = sim.bets()[1];
-			logger->info("Core {}: Igotatext {} {} @ {}, {} matched", core,
-				     bet2.is_back() ? "BACK" : "LAY", bet2.stake(), bet2.price(),
-				     bet2.matched());
-		} else if (market_timestamp == 1591359780721) {
-			// 13:23:00
-
-			sim.hedge(bowman.id());
-
-			auto& bet = sim.bets()[2];
-			logger->info("Core {}: [HEDGE] Bowman {} {} @ {}, {} matched", core,
+			auto& bet = sim.bets()[1];
+			logger->info("Core {}: [HEDGE] Bhangra {} {} @ {}, {} matched", core,
 				     bet.is_back() ? "BACK" : "LAY", bet.stake(), bet.price(),
 				     bet.matched());
-
-			sim.hedge(igotatext.id());
-
-			auto& bet2 = sim.bets()[3];
-			logger->info("Core {}: [HEDGE] Igotatext {} {} @ {}, {} matched", core,
-				     bet2.is_back() ? "BACK" : "LAY", bet2.stake(), bet2.price(),
-				     bet2.matched());
 		}
 
 		return true;
