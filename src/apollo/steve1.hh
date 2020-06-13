@@ -7,7 +7,7 @@
 #include <iostream>
 #include <vector>
 
-//#define PRINT_ORDERS
+#define PRINT_TRADES
 
 namespace janus::apollo::steve1
 {
@@ -550,6 +550,7 @@ private:
 
 			// Exit at post.
 			if (exit) {
+#ifdef PRINT_TRADES
 				uint64_t price_index =
 					market[state.enter_index].ladder().best_atl().first;
 				char print_buf[25];
@@ -559,6 +560,7 @@ private:
 					core, market.id(), timestamp_str.data(), market_timestamp,
 					betfair::price_range::index_to_price(price_index),
 					market.traded_vol());
+#endif
 
 				sim.hedge();
 				state.exited = true;
@@ -615,15 +617,14 @@ private:
 		// Now we've decided our favourite is backable and we have no
 		// opposition. Time to enter.
 
-		// #ifdef PRINT_ORDERS
+#ifdef PRINT_TRADES
 		char print_buf[25];
 		auto timestamp_str = print_iso8601(print_buf, market_timestamp);
 		logger->info(
 			"Core {}: Market {}: Runner {}: ENTER at {} (timestamp {}) at price {}, market vol {}",
 			core, market.id(), fav.id(), timestamp_str.data(), market_timestamp,
 			betfair::price_range::index_to_price(fav_price_index), market.traded_vol());
-		// #endif
-
+#endif
 		sim.add_bet(fav.id(), 1.01, STAKE_SIZE, true);
 
 		state.entered = true;
