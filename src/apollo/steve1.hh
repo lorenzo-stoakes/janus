@@ -38,6 +38,8 @@ static constexpr uint64_t MIN_RISE = 3;
 static constexpr uint64_t MAX_LOSS_TICKS = 4;
 // MAx loss in GBP.
 static constexpr double MAX_LOSS_GBP = 1000;
+// Min entry price.
+static constexpr uint64_t MIN_ENTER_PRICEX100 = 165;
 // Max entry price.
 static constexpr uint64_t MAX_ENTER_PRICEX100 = 600;
 
@@ -189,8 +191,9 @@ public:
 	auto can_back(betfair::runner& runner) -> uint64_t
 	{
 		uint64_t price_index = runner.ladder().best_atl().first;
+		uint64_t pricex100 = betfair::price_range::index_to_pricex100(price_index);
 
-		if (betfair::price_range::index_to_pricex100(price_index) > MAX_ENTER_PRICEX100)
+		if (pricex100 < MIN_ENTER_PRICEX100 || pricex100 > MAX_ENTER_PRICEX100)
 			return false;
 
 		auto [bottom, top] = get_top_bottom_range(runner);
