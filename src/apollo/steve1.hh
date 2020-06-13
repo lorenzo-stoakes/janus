@@ -44,6 +44,8 @@ static constexpr uint64_t MIN_ENTER_PRICEX100 = 165;
 // Max entry price.
 static constexpr uint64_t MAX_ENTER_PRICEX100 = 600;
 
+static constexpr double HEDGE_AT_PROFIT_GBP = 0;
+
 // Southwell 5f Nov Stks, 2019-08-26 16:45:00
 static constexpr uint64_t MARKET_ID = 161743011;
 
@@ -556,6 +558,19 @@ private:
 				}
 			}
 
+			if (HEDGE_AT_PROFIT_GBP > 0 && price_index < state.enter_price_index) {
+				double enter_price = betfair::price_range::index_to_price(
+					state.enter_price_index);
+				double price = betfair::price_range::index_to_price(price_index);
+				double profit = STAKE_SIZE * (enter_price - price) / price;
+				if (profit >= HEDGE_AT_PROFIT_GBP) {
+					exit = true;
+					logger->info(
+						"PROFIT! Core {}: Market {}: price {} > entry {}, loss of {}, exiting!",
+						core, market.id(), price, enter_price, profit);
+				}
+			}
+
 			// Exit at post.
 			if (exit) {
 #ifdef PRINT_TRADES
@@ -569,7 +584,6 @@ private:
 					betfair::price_range::index_to_price(price_index),
 					market.traded_vol());
 #endif
-
 				sim.hedge();
 				state.exited = true;
 
