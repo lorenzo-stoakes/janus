@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 
+#define USE_PRESET_MARKETS
 #define PRINT_TRADES
 
 namespace janus::apollo::steve1
@@ -477,8 +478,8 @@ private:
 
 	static auto predicate(const janus::meta_view& meta, const janus::stats& stats) -> bool
 	{
+#ifdef USE_PRESET_MARKETS
 		uint64_t market_id = meta.market_id();
-
 		for (uint64_t i = 0; i < sizeof(market_ids) / sizeof(uint64_t); i++) {
 			if (market_id == market_ids[i]) {
 				std::cout << market_id << ": " << meta.describe(true) << std::endl;
@@ -487,6 +488,7 @@ private:
 		}
 
 		return false;
+#endif
 
 		// We only want horse races.
 		if (meta.event_type_id() != 7)
