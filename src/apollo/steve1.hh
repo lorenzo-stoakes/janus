@@ -235,13 +235,7 @@ public:
 		if (ticks_below_top > MAX_TICKS_BELOW_TOP)
 			return true;
 
-		auto [drop, rise] = get_max_drop_rise();
-		if (drop >= rise)
-			return true;
-
-		if (rise < MIN_RISE)
-			return true;
-
+		// We ignore rise/fall, just look at top of range.
 		return false;
 	}
 
