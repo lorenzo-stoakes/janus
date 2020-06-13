@@ -461,6 +461,13 @@ private:
 		return false;
 #endif
 
+		// Ignore maidens.
+		if (meta.name().find("Mdn") != std::string::npos)
+			return false;
+
+		if (meta.name().find("Nursery") != std::string::npos)
+			return false;
+
 		// We only want horse races.
 		if (meta.event_type_id() != 7)
 			return false;
