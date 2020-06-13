@@ -46,6 +46,8 @@ static constexpr uint64_t MAX_ENTER_PRICEX100 = 600;
 
 static constexpr double HEDGE_AT_PROFIT_GBP = 0;
 
+static constexpr uint64_t MIN_TICKS_ABOVE_XO_OPP = 4;
+
 // Southwell 5f Nov Stks, 2019-08-26 16:45:00
 static constexpr uint64_t MARKET_ID = 161743011;
 
@@ -243,6 +245,13 @@ public:
 			return true;
 
 		if (rise < MIN_RISE)
+			return true;
+
+		if (MIN_TICKS_ABOVE_XO_OPP == 0)
+			return false;
+
+		uint64_t ticks_above_xo = get_ticks_above_xo(runner);
+		if (ticks_above_xo < MIN_TICKS_ABOVE_XO_OPP)
 			return true;
 
 		return false;
