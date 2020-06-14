@@ -5,6 +5,7 @@
 #include "micro1.hh"
 #include "micro2.hh"
 #include "question1.hh"
+#include "steve1.hh"
 #include "tote1.hh"
 
 #include <iomanip>
@@ -43,6 +44,9 @@ auto main(int argc, char** argv) -> int
 		s.run();
 	} else if (strat_name == "micro2") {
 		janus::apollo::micro2::strat s;
+		s.run();
+	} else if (strat_name == "steve1") {
+		janus::apollo::steve1::strat s;
 		s.run();
 	} else {
 		std::cerr << "Unknown strategy '" << strat_name << "'??" << std::endl;
