@@ -43,15 +43,20 @@ static constexpr double MAX_LOSS_GBP = 1000;
 static constexpr uint64_t MIN_ENTER_PRICEX100 = 165;
 // Max entry price.
 static constexpr uint64_t MAX_ENTER_PRICEX100 = 600;
-
+// Hedge at specified profit, 0 means do not hedge until post.
 static constexpr double HEDGE_AT_PROFIT_GBP = 0;
-
+// Minimum ticks above X/O to not be considered opposition.
 static constexpr uint64_t MIN_TICKS_ABOVE_XO_OPP = 5;
-
+// Minimum ticks below X/O to not be considered opposition.
 static constexpr uint64_t MIN_TICKS_BELOW_XO_OPP = 3;
+// MS after the post to merge.
+static constexpr uint64_t MS_AFTER_POST = 0;
 
+// Initial test market.
 // Southwell 5f Nov Stks, 2019-08-26 16:45:00
 static constexpr uint64_t MARKET_ID = 161743011;
+
+
 
 static uint64_t find_fav(betfair::market& market)
 {
@@ -529,7 +534,7 @@ private:
 		uint64_t price_index = market[state.enter_index].ladder().best_atl().first;
 
 		if (state.entered) {
-			bool exit = market_timestamp > start_timestamp;
+			bool exit = market_timestamp > start_timestamp + MS_AFTER_POST;
 			if (price_index > state.enter_price_index) {
 				double enter_price = betfair::price_range::index_to_price(
 					state.enter_price_index);
