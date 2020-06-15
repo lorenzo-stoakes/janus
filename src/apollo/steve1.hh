@@ -12,7 +12,7 @@
 
 namespace janus::apollo::steve1
 {
-static constexpr double STAKE_SIZE = 500;
+static constexpr double STAKE_SIZE = 1;
 static constexpr double MIN_MARKET_TRADED_VOL = 50000;
 static constexpr uint64_t NUM_HISTORY_TICKS = 20;
 static constexpr uint64_t MAX_NUM_RUNNERS = 50;
