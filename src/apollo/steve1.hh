@@ -30,15 +30,15 @@ static constexpr uint64_t MAX_TICKS_BELOW_TOP = 3;
 // Minimum ticks above X/O for a back.
 static constexpr uint64_t MIN_TICKS_ABOVE_XO = 5;
 // The minimum number of ticks below XO.
-static constexpr uint64_t MIN_TICKS_BELOW_XO = 0;
+static constexpr uint64_t MIN_TICKS_BELOW_XO = 3;
 // Minimum drop before we'll back.
 static constexpr uint64_t MIN_DROP = 3;
 // Minimum rise before we consider no opposition
 static constexpr uint64_t MIN_RISE = 3;
 // Maximum loss ticks before exit.
 static constexpr uint64_t MAX_LOSS_TICKS = 4;
-// MAx loss in GBP.
-static constexpr double MAX_LOSS_GBP = 1000;
+// Max loss in GBP.
+static constexpr double MAX_LOSS_GBP = 100;
 // Min entry price.
 static constexpr uint64_t MIN_ENTER_PRICEX100 = 165;
 // Max entry price.
@@ -49,14 +49,16 @@ static constexpr double HEDGE_AT_PROFIT_GBP = 0;
 static constexpr uint64_t MIN_TICKS_ABOVE_XO_OPP = 5;
 // Minimum ticks below X/O to not be considered opposition.
 static constexpr uint64_t MIN_TICKS_BELOW_XO_OPP = 3;
-// MS after the post to merge.
+// MS after post to hedge.
 static constexpr uint64_t MS_AFTER_POST = 0;
+// MS before post to hedge.
+static constexpr uint64_t MS_BEFORE_POST = 0;
+// If we gain this many ticks enter again.
+static constexpr uint64_t REENTER_TICKS = 0;
 
 // Initial test market.
 // Southwell 5f Nov Stks, 2019-08-26 16:45:00
 static constexpr uint64_t MARKET_ID = 161743011;
-
-
 
 static uint64_t find_fav(betfair::market& market)
 {
@@ -394,8 +396,10 @@ private:
 		bool entered;
 		bool exited;
 		uint64_t enter_price_index;
+		uint64_t orig_enter_price_index;
 		uint64_t enter_index;
 		uint64_t lowest_enter_price_index;
+		uint64_t num_enters;
 		std::array<runner_state, MAX_NUM_RUNNERS> states;
 	};
 
@@ -420,6 +424,7 @@ private:
 		.enter_price_index = 0,
 		.enter_index = 0,
 		.lowest_enter_price_index = 0,
+		.num_enters = 0,
 		.states = {},
 	};
 
@@ -534,12 +539,21 @@ private:
 		uint64_t price_index = market[state.enter_index].ladder().best_atl().first;
 
 		if (state.entered) {
-			bool exit = market_timestamp > start_timestamp + MS_AFTER_POST;
+			bool exit = false;
+			if (MS_BEFORE_POST > 0 && market_timestamp < start_timestamp &&
+			    start_timestamp - market_timestamp < MS_BEFORE_POST)
+				exit = true;
+			else if (market_timestamp > start_timestamp + MS_AFTER_POST)
+				exit = true;
+
 			if (price_index > state.enter_price_index) {
 				double enter_price = betfair::price_range::index_to_price(
 					state.enter_price_index);
 				double price = betfair::price_range::index_to_price(price_index);
-				double loss = STAKE_SIZE * (price - enter_price) / price;
+
+				// TODO(lorenzo): Work out P/L more accurately.
+				double loss = static_cast<double>(state.num_enters) * STAKE_SIZE *
+					      (price - enter_price) / price;
 				if (loss > MAX_LOSS_GBP) {
 					exit = true;
 					logger->info(
@@ -552,7 +566,9 @@ private:
 				double enter_price = betfair::price_range::index_to_price(
 					state.enter_price_index);
 				double price = betfair::price_range::index_to_price(price_index);
-				double profit = STAKE_SIZE * (enter_price - price) / price;
+				// TODO(lorenzo): Work out P/L more accurately.
+				double profit = static_cast<double>(state.num_enters) * STAKE_SIZE *
+						(enter_price - price) / price;
 				if (profit >= HEDGE_AT_PROFIT_GBP) {
 					exit = true;
 					logger->info(
@@ -578,6 +594,23 @@ private:
 				state.exited = true;
 
 				return true;
+			} else if (REENTER_TICKS > 0 && price_index < state.enter_price_index &&
+				   state.enter_price_index - price_index > REENTER_TICKS) {
+				auto& fav = market[state.enter_index];
+				sim.add_bet(fav.id(), 1.01, STAKE_SIZE, true);
+				state.enter_price_index = price_index;
+				state.num_enters++;
+
+#ifdef PRINT_TRADES
+				char print_buf[25];
+				auto timestamp_str = print_iso8601(print_buf, market_timestamp);
+				logger->info(
+					"Core {}: Market {}: Runner {}: RE-ENTER at {} (timestamp {}) at price {}, market vol {}",
+					core, market.id(), fav.id(), timestamp_str.data(),
+					market_timestamp,
+					betfair::price_range::index_to_price(price_index),
+					market.traded_vol());
+#endif
 			}
 
 			return true;
@@ -637,9 +670,14 @@ private:
 			core, market.id(), fav.id(), timestamp_str.data(), market_timestamp,
 			betfair::price_range::index_to_price(fav_price_index), market.traded_vol());
 #endif
-		sim.add_bet(fav.id(), 1.01, STAKE_SIZE, true);
+		if (betfair::price_range::index_to_price(fav_price_index) < 2)
+			sim.add_bet(fav.id(), 1.01, 2 * STAKE_SIZE, true);
+		else
+			sim.add_bet(fav.id(), 1.01, STAKE_SIZE, true);
+		state.num_enters++;
 
 		state.entered = true;
+		state.orig_enter_price_index = fav_price_index;
 		state.enter_price_index = fav_price_index;
 		state.lowest_enter_price_index = fav_price_index;
 		state.enter_index = fav_index;
