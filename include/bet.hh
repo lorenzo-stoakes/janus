@@ -16,6 +16,14 @@ enum class bet_flags : uint64_t
 	VOIDED = 1 << 4,    // Bet was voided.
 };
 
+// What to do with the order at inplay.
+enum class bet_persist_type : uint64_t
+{
+	LAPSE = 0,           // Lapse at inplay.
+	PERSIST = 1,         // Persist at inplay.
+	MARKET_ON_CLOSE = 2, // Enter into BSP auction at inplay.
+};
+
 // Permit flags to use the | operator.
 static inline auto operator|(bet_flags a, bet_flags b) -> bet_flags
 {
@@ -41,7 +49,8 @@ static inline auto operator&(bet_flags a, bet_flags b) -> bet_flags
 class bet
 {
 public:
-	bet(uint64_t runner_id, double price, double stake, bool is_back, bool sim = false)
+	bet(uint64_t runner_id, double price, double stake, bool is_back, bool sim = false,
+	    bet_persist_type persist = bet_persist_type::LAPSE)
 		: _flags{sim ? bet_flags::SIM : bet_flags::DEFAULT},
 		  _runner_id{runner_id},
 		  _price{price},
@@ -51,7 +60,8 @@ public:
 		  _is_back{is_back},
 		  _matched{0},
 		  _bet_id{0},
-		  _target_matched{0}
+		  _target_matched{0},
+		  _persist{persist}
 	{
 	}
 
@@ -121,6 +131,12 @@ public:
 	auto target_matched() const -> double
 	{
 		return _target_matched;
+	}
+
+	// Determine bet persistence.
+	auto persist() const -> bet_persist_type
+	{
+		return _persist;
 	}
 
 	// Determine if there is no remaining unmatched - either the original
@@ -307,5 +323,6 @@ private:
 	double _matched;
 	uint64_t _bet_id;
 	double _target_matched;
+	bet_persist_type _persist;
 };
 } // namespace janus

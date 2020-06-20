@@ -153,6 +153,20 @@ TEST(bet_test, basic)
 	EXPECT_DOUBLE_EQ(bet8.price(), 1.21);
 	bet8.set_price(6.4);
 	EXPECT_DOUBLE_EQ(bet8.price(), 6.4);
+
+	// Persistence.
+
+	// Defaults to lapse.
+	janus::bet bet9(1234, 1.01, 1000, true);
+	EXPECT_EQ(bet9.persist(), janus::bet_persist_type::LAPSE);
+
+	// Persisted bet.
+	janus::bet bet10(1234, 1.01, 1000, true, false, janus::bet_persist_type::PERSIST);
+	EXPECT_EQ(bet10.persist(), janus::bet_persist_type::PERSIST);
+
+	// Market on close bet.
+	janus::bet bet11(1234, 1.01, 1000, true, false, janus::bet_persist_type::MARKET_ON_CLOSE);
+	EXPECT_EQ(bet11.persist(), janus::bet_persist_type::MARKET_ON_CLOSE);
 }
 
 // Test that scale_stake_sim() behaves as expected.
