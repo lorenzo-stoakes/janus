@@ -447,4 +447,35 @@ TEST(sim_test, hedge_all)
 	run(1);
 	run(2);
 }
+
+// Test that we correctly handle bets at inplay.
+TEST(sim_test, handle_inplay_bets)
+{
+	janus::betfair::price_range range;
+
+	janus::betfair::market market1(123456);
+	janus::betfair::runner& runner1 = market1.add_runner(123);
+
+	auto sim = std::make_unique<janus::sim>(range, market1);
+
+	janus::bet* lapse_bet = sim->add_bet(123, 6.4, 1000, true, janus::bet_persist_type::LAPSE);
+	janus::bet* persist_bet =
+		sim->add_bet(123, 6.8, 1000, true, janus::bet_persist_type::PERSIST);
+
+	EXPECT_EQ(lapse_bet->persist(), janus::bet_persist_type::LAPSE);
+	EXPECT_DOUBLE_EQ(lapse_bet->unmatched(), 1000);
+
+	EXPECT_EQ(persist_bet->persist(), janus::bet_persist_type::PERSIST);
+	EXPECT_DOUBLE_EQ(persist_bet->unmatched(), 1000);
+
+	// MARKET_ON_CLOSE not implemented in the sim yet.
+
+	market1.set_inplay(true);
+	sim->update();
+
+	EXPECT_DOUBLE_EQ(lapse_bet->unmatched(), 0);
+	EXPECT_TRUE((lapse_bet->flags() & janus::bet_flags::CANCELLED) ==
+		    janus::bet_flags::CANCELLED);
+	EXPECT_DOUBLE_EQ(persist_bet->unmatched(), 1000);
+}
 } // namespace

@@ -130,9 +130,10 @@ void analyser<TWorkerState, TMarketAggState, TNodeAggState, TResult>::thread_fn(
 				// We skip inplay updates currently.
 				if (u.type == update_type::TIMESTAMP && !went_inplay) {
 					if (market.inplay()) {
-						sim.update();
-						sim.cancel_all();
 						went_inplay = true;
+						// The sim will handle bet
+						// operations at inplay.
+						sim.update();
 					} else if (!_update_worker(core, meta, market, sim,
 								   node_agg_state, state,
 								   logger.get())) {
