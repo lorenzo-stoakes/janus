@@ -12,7 +12,7 @@
 
 namespace janus::apollo::steve1
 {
-static constexpr double STAKE_SIZE = 1;
+static constexpr double STAKE_SIZE = 500;
 static constexpr double MIN_MARKET_TRADED_VOL = 50000;
 static constexpr uint64_t NUM_HISTORY_TICKS = 20;
 static constexpr uint64_t MAX_NUM_RUNNERS = 50;
@@ -547,11 +547,13 @@ private:
 				exit = true;
 
 			if (price_index > state.enter_price_index) {
-				double enter_price = betfair::price_range::index_to_price(state.enter_price_index);
+				double enter_price = betfair::price_range::index_to_price(
+					state.enter_price_index);
 				double price = betfair::price_range::index_to_price(price_index);
 
 				// TODO(lorenzo): Work out P/L more accurately.
-				double loss = static_cast<double>(state.num_enters) * STAKE_SIZE * (price - enter_price) / price;
+				double loss = static_cast<double>(state.num_enters) * STAKE_SIZE *
+					      (price - enter_price) / price;
 				if (loss > MAX_LOSS_GBP) {
 					exit = true;
 					logger->info(
@@ -565,7 +567,8 @@ private:
 					state.enter_price_index);
 				double price = betfair::price_range::index_to_price(price_index);
 				// TODO(lorenzo): Work out P/L more accurately.
-				double profit = static_cast<double>(state.num_enters) * STAKE_SIZE * (enter_price - price) / price;
+				double profit = static_cast<double>(state.num_enters) * STAKE_SIZE *
+						(enter_price - price) / price;
 				if (profit >= HEDGE_AT_PROFIT_GBP) {
 					exit = true;
 					logger->info(
@@ -603,8 +606,10 @@ private:
 				auto timestamp_str = print_iso8601(print_buf, market_timestamp);
 				logger->info(
 					"Core {}: Market {}: Runner {}: RE-ENTER at {} (timestamp {}) at price {}, market vol {}",
-					core, market.id(), fav.id(), timestamp_str.data(), market_timestamp,
-					betfair::price_range::index_to_price(price_index), market.traded_vol());
+					core, market.id(), fav.id(), timestamp_str.data(),
+					market_timestamp,
+					betfair::price_range::index_to_price(price_index),
+					market.traded_vol());
 #endif
 			}
 
