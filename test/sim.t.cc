@@ -454,7 +454,7 @@ TEST(sim_test, handle_inplay_bets)
 	janus::betfair::price_range range;
 
 	janus::betfair::market market1(123456);
-	janus::betfair::runner& runner1 = market1.add_runner(123);
+	market1.add_runner(123);
 
 	auto sim = std::make_unique<janus::sim>(range, market1);
 
