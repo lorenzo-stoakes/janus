@@ -1,5 +1,7 @@
 #include "mainmodel.hh"
 
+#include <iostream>
+#include <stdexcept>
 #include <vector>
 
 main_model::main_model() : _meta_dyn_buf{META_MAX_BYTES}, _update_dyn_buf{UPDATE_MAX_BYTES} {}
@@ -35,5 +37,10 @@ auto main_model::get_market_at(uint64_t ms, int index) -> janus::meta_view*
 auto main_model::get_market_updates(uint64_t id) -> uint64_t
 {
 	_update_dyn_buf.reset();
-	return janus::read_market_updates(_config, _update_dyn_buf, id);
+	try {
+		return janus::read_market_updates(_config, _update_dyn_buf, id);
+	} catch (std::runtime_error& e) {
+		std::cerr << e.what() << std::endl;
+		return 0;
+	}
 }

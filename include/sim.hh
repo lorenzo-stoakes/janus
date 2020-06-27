@@ -19,7 +19,7 @@ public:
 	using bets_t = dynamic_array<bet, MAX_SIM_BETS>;
 
 	explicit sim(betfair::price_range& range, betfair::market& market)
-		: _range{range}, _market{market}, _next_bet_id{0}
+		: _range{range}, _market{market}, _next_bet_id{0}, _went_inplay{false}
 	{
 		init();
 	}
@@ -30,7 +30,8 @@ public:
 	//       stake: Bet stake.
 	//     is_back: True for back bets, false for lay.
 	//     returns: nullptr if unable to add bet, or a pointer to the added bet otherwise.
-	auto add_bet(uint64_t runner_id, double price, double stake, bool is_back) -> bet*;
+	auto add_bet(uint64_t runner_id, double price, double stake, bool is_back,
+		     bet_persist_type persist = bet_persist_type::LAPSE) -> bet*;
 
 	// Retrieve simulated bets.
 	auto bets() -> bets_t&
@@ -59,10 +60,11 @@ private:
 	bets_t _bets;
 	dynamic_array<bool, betfair::MAX_RUNNERS> _removed;
 	uint64_t _next_bet_id;
+	bool _went_inplay;
 
 	// Implementation of add_bet() with option to bypass checks.
-	auto add_bet(uint64_t runner_id, double price, double stake, bool is_back, bool bypass)
-		-> bet*;
+	auto add_bet(uint64_t runner_id, double price, double stake, bool is_back,
+		     bet_persist_type persist, bool bypass) -> bet*;
 
 	// Perform initialisation on object creation.
 	void init();
@@ -104,5 +106,9 @@ private:
 	// best price if set to -1). Returns true if hedge succeeded for each
 	// runner.
 	auto hedge_all(double price) -> bool;
+
+	// correctly handle bets in the sim at the moment the market turns
+	// inplay.
+	void handle_inplay();
 };
 } // namespace janus

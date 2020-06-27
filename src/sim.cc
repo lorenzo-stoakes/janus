@@ -84,12 +84,14 @@ auto sim::get_target_matched(bet& bet, betfair::runner& runner) -> double
 	return matched + 2 * queue_length;
 }
 
-auto sim::add_bet(uint64_t runner_id, double price, double stake, bool is_back) -> bet*
+auto sim::add_bet(uint64_t runner_id, double price, double stake, bool is_back,
+		  bet_persist_type persist) -> bet*
 {
-	return add_bet(runner_id, price, stake, is_back, false);
+	return add_bet(runner_id, price, stake, is_back, persist, false);
 }
 
-auto sim::add_bet(uint64_t runner_id, double price, double stake, bool is_back, bool bypass) -> bet*
+auto sim::add_bet(uint64_t runner_id, double price, double stake, bool is_back,
+		  bet_persist_type persist, bool bypass) -> bet*
 {
 	// If the bet is patently ridiculous don't allow it.
 	if (stake < 0 || price < 1)
@@ -110,7 +112,7 @@ auto sim::add_bet(uint64_t runner_id, double price, double stake, bool is_back, 
 	if (!bypass && runner.state() != betfair::runner_state::ACTIVE)
 		return nullptr;
 
-	bet& bet = _bets.emplace_back(runner_id, price, stake, is_back, true);
+	bet& bet = _bets.emplace_back(runner_id, price, stake, is_back, true, persist);
 	bet.set_bet_id(_next_bet_id++);
 
 	// Note that this will set the correct best available price if the input
@@ -189,7 +191,7 @@ void sim::apply_removal(double adj_factor)
 		double split_stake = 0;
 		if (bet.apply_adj_factor(adj_factor, split_stake))
 			add_bet(bet.runner_id(), bet.orig_price(), split_stake, bet.is_back(),
-				true);
+				bet_persist_type::LAPSE, true);
 	}
 }
 
@@ -214,6 +216,9 @@ void sim::apply_removals()
 
 void sim::update()
 {
+	if (!_went_inplay && _market.inplay())
+		handle_inplay();
+
 	if (_market.state() != betfair::market_state::OPEN)
 		return;
 
@@ -393,7 +398,7 @@ auto sim::hedge(uint64_t runner_id, double price) -> bool
 	if (dz(stake))
 		return false;
 
-	auto* bet = add_bet(runner_id, price, stake, is_back, true);
+	auto* bet = add_bet(runner_id, price, stake, is_back, bet_persist_type::LAPSE, true);
 	if (bet == nullptr)
 		return false;
 
@@ -422,5 +427,26 @@ void sim::cancel_all()
 		bet& bet = _bets[i];
 		bet.cancel();
 	}
+}
+
+void sim::handle_inplay()
+{
+	for (uint64_t i = 0; i < _bets.size(); i++) {
+		bet& bet = _bets[i];
+
+		switch (bet.persist()) {
+		case bet_persist_type::LAPSE:
+			bet.cancel();
+			break;
+		case bet_persist_type::PERSIST:
+			// Leave the bet in the market.
+			break;
+		case bet_persist_type::MARKET_ON_CLOSE:
+			// TODO(lorenzo): Implement taking BSP at inplay.
+			break;
+		}
+	}
+
+	_went_inplay = true;
 }
 } // namespace janus
