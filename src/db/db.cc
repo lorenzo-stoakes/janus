@@ -102,7 +102,7 @@ auto read_market_updates_string(const config& config, uint64_t id) -> std::strin
 		file = std::ifstream(path, std::ios::binary | std::ios::ate);
 		if (!file)
 			throw std::runtime_error(std::string("couldn't open ") + path +
-						 "[.snap] for reading");
+						 " for reading");
 		is_compressed = true;
 	}
 
