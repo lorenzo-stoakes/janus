@@ -309,6 +309,22 @@ public:
 		if ((_flags & bet_flags::VOIDED) == bet_flags::VOIDED)
 			oss << "VOIDED ";
 
+		oss << "on inplay ";
+		switch (_persist) {
+		case bet_persist_type::LAPSE:
+			oss << "LAPSE ";
+			break;
+		case bet_persist_type::PERSIST:
+			oss << "PERSIST ";
+			break;
+		case bet_persist_type::MARKET_ON_CLOSE:
+			oss << "TAKE SP ";
+			break;
+		default:
+			oss << "UNKNOWN?! ";
+			break;
+		}
+
 		return oss.str();
 	}
 
