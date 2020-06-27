@@ -47,11 +47,7 @@ auto get_market_ids(session& session, const std::string& filter_json)
 
 	std::string response = session.api("listMarketCatalogue", json);
 
-	// Horrid const-cast as sajson mutates data. It's terrible I know. I KNOW!
-	sajson::document doc =
-		janus::internal::parse_json("",
-					    const_cast<char*>(response.data()), // NOLINT
-					    response.size());
+	sajson::document doc = janus::internal::parse_json("", &response[0], response.size());
 	const sajson::value& root = doc.get_root();
 	if (root.get_type() != sajson::TYPE_ARRAY)
 		throw std::runtime_error("listMarketCatalogue returned non-array response");
