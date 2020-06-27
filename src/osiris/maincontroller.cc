@@ -398,13 +398,6 @@ void main_controller::select_market(int index)
 	// Setup our market.
 	_curr_universe.apply_update(janus::make_market_id_update(_curr_meta->market_id()));
 
-	// Work out how many indexes of timestamps we have to iterate through.
-	auto indexes = janus::index_market_updates(_model.update_dyn_buf(), _num_market_updates);
-	_num_indexes = indexes.size();
-	janus::update* ptr = reinterpret_cast<janus::update*>(_model.update_dyn_buf().data());
-	uint64_t last_offset = indexes[_num_indexes - 1];
-	_last_timestamp = janus::get_update_timestamp(ptr[last_offset]);
-
 	_view->marketNameLabel->setText(QString::fromStdString(title));
 
 	auto& runners = _curr_meta->runners();
@@ -415,6 +408,16 @@ void main_controller::select_market(int index)
 			populate_runner_combo(runners, i);
 		}
 	}
+
+	if (_num_market_updates == 0)
+		return;
+
+	// Work out how many indexes of timestamps we have to iterate through.
+	auto indexes = janus::index_market_updates(_model.update_dyn_buf(), _num_market_updates);
+	_num_indexes = indexes.size();
+	janus::update* ptr = reinterpret_cast<janus::update*>(_model.update_dyn_buf().data());
+	uint64_t last_offset = indexes[_num_indexes - 1];
+	_last_timestamp = janus::get_update_timestamp(ptr[last_offset]);
 
 	if (!get_first_update())
 		std::cerr << "Error in getting first update." << std::endl;
