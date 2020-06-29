@@ -14,10 +14,12 @@
 // Show status line indicating number of lines processed.
 //#define SHOW_STATUS_LINE
 
-// This is a hacked up skeleton version for testing purposes, initially we are simply logging in to
-// betfair and performing simple queries.
+// The maximum number of markets to store in the universe object.
+static constexpr uint64_t MAX_NUM_MARKETS = 1000;
+// Number of bytes in dynamic buffer containing each stream line's data.
+static constexpr uint64_t DYN_BUF_BYTES = 50'000'000;
 
-// make the decltype slightly easier to the eye
+// make the decltype slightly easier on the eye.
 using ms_t = std::chrono::milliseconds;
 
 // Maximum number of subsequent stream errors before we abort.
@@ -112,6 +114,16 @@ static void print_status_line(uint64_t num_lines)
 }
 #endif
 
+static void update_universe(janus::betfair::universe<MAX_NUM_MARKETS>& universe,
+			    janus::dynamic_buffer& dyn_buf)
+{
+	while (dyn_buf.read_offset() != dyn_buf.size()) {
+		auto u = dyn_buf.read<janus::update>();
+		universe.apply_update(u);
+	}
+	dyn_buf.reset();
+}
+
 static auto run_loop(janus::config& config, janus::betfair::session& session) -> bool
 {
 	std::string meta_dir = config.json_data_root + "/meta/";
@@ -150,6 +162,18 @@ static auto run_loop(janus::config& config, janus::betfair::session& session) ->
 
 	spdlog::info("Starting stream...");
 
+	janus::betfair::price_range range;
+	janus::betfair::update_state state = {
+		.range = &range,
+		.filename = "",
+		.line = 1,
+	};
+
+	// TODO(lorenzo): Keep a universe updated as we go, later we'll use it
+	// to expose current market state to consumers.
+	janus::dynamic_buffer dyn_buf(DYN_BUF_BYTES);
+	auto universe = std::make_unique<janus::betfair::universe<MAX_NUM_MARKETS>>();
+
 	uint64_t num_lines = 0;
 	uint64_t num_errors = 0;
 	while (true) {
@@ -160,9 +184,14 @@ static auto run_loop(janus::config& config, janus::betfair::session& session) ->
 
 		try {
 			int size;
-			const char* line = stream.read_next_line(size);
+			char* line = stream.read_next_line(size);
+
 			num_lines++;
 			write_stream_line(stream_file, line, size, num_lines);
+
+			janus::betfair::parse_update_stream_json(state, line, size, dyn_buf);
+			update_universe(*universe, dyn_buf);
+
 #ifdef SHOW_STATUS_LINE
 			print_status_line(num_lines);
 #endif
