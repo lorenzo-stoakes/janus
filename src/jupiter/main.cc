@@ -14,10 +14,7 @@
 // Show status line indicating number of lines processed.
 //#define SHOW_STATUS_LINE
 
-// This is a hacked up skeleton version for testing purposes, initially we are simply logging in to
-// betfair and performing simple queries.
-
-// make the decltype slightly easier to the eye
+// make the decltype slightly easier on the eye.
 using ms_t = std::chrono::milliseconds;
 
 // Maximum number of subsequent stream errors before we abort.
