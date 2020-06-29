@@ -238,7 +238,7 @@ static auto parse_place_instruction_report(sajson::value node, const std::string
 
 	sajson::value size_matched = node.get_value_of_key(sajson::literal("sizeMatched"));
 	if (size_matched.get_type() != sajson::TYPE_NULL)
-		ret.average_price_matched = size_matched.get_number_value();
+		ret.size_matched = size_matched.get_number_value();
 
 	sajson::value instruction = node.get_value_of_key(sajson::literal("instruction"));
 	if (instruction.get_type() == sajson::TYPE_OBJECT)

@@ -149,6 +149,25 @@ target_link_libraries(apollo
 	snappy
 )
 
+# Mars
+
+file(GLOB_RECURSE MARS_SOURCES
+	"src/mars/*.cc"
+)
+add_executable(mars
+	${JANUS_SOURCES}
+	${NETWORK_SOURCES}
+	${MARS_SOURCES}
+)
+target_compile_options(mars
+	PUBLIC ${SHARED_COMPILE_OPTIONS} -O3
+)
+
+target_link_libraries(mars
+	m
+	mbed
+)
+
 # Checker
 
 file(GLOB_RECURSE CHECKER_SOURCES
