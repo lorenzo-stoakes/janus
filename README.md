@@ -1,6 +1,6 @@
 # Janus
 
-Janus is a sports trading toolset consisting of the following components:
+Janus is a betfair sports trading toolset consisting of the following components:
 
 - __jupiter__: Reads a live market data stream and transmits it to other
   components while writing the data for future analysis.
